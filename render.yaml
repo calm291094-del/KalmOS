@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: kalm-os
+    runtime: python
+    repo: https://github.com/tu-usuario/kalm-os
+    plan: starter
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: python kalm.py
+    envVars:
+      - key: UI_PORT
+        value: 8080
+      - key: DNS_PORT
+        value: 5353
+      - key: PROXY_PORT
+        value: 8888
+      - key: SESSION_TIMEOUT
+        value: 3600
+      - key: ROOT_USER
+        value: root
+      - key: ROOT_PASS
+        value: Kalm*4815162342+-
+      - key: USER_USER
+        value: user
+      - key: USER_PASS
+        value: user*26

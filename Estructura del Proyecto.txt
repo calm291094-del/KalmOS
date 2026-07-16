@@ -1,0 +1,37 @@
+kalm_os/
+├── kalm.py                    # 🚀 Lanzador principal
+├── .env                       # 🔐 Configuración
+├── system/                    # 🧠 Módulos del sistema
+│   ├── __init__.py
+│   ├── config.py              # Configuración global
+│   ├── auth.py                # Autenticación
+│   ├── dns_server.py          # Servidor DNS
+│   ├── proxy.py               # Proxy inverso
+│   ├── task_manager.py        # Task Manager + Monitor
+│   ├── script_runner.py       # Ejecutor de scripts/portables
+│   ├── file_manager.py        # Explorador de archivos
+│   ├── program_detector.py    # Detector de portables
+│   └── web_server.py          # Servidor web principal
+│   └── program/               # 📦 Portables (auto-detectados)
+├── views/                     # 🎨 Interfaces HTML
+│   ├── login.html
+│   └── desktop.html
+├── static/                    # 📂 Recursos estáticos
+│   ├── css/
+│   │   ├── login.css
+│   │   ├── desktop.css
+│   │   └── windows.css
+│   ├── js/
+│   │   ├── app.js
+│   │   ├── file_manager.js
+│   │   ├── window_manager.js
+│   │   └── terminal.js
+│   └── img/
+├── kalm_data/                 # 💾 Datos del sistema
+└── D/                         # 💿 Disco virtual
+    ├── Apps/
+    ├── Projects/
+    ├── Scripts/
+    ├── Documents/
+    ├── Media/
+    └── Servers/
