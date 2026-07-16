@@ -1,0 +1,66 @@
+kalm_os/
+├── kalm.py
+├── requirements.txt
+├── render.yaml
+├── Dockerfile
+├── .gitignore
+├── README.md
+├── system/
+│   ├── __init__.py
+│   ├── auth.py
+│   ├── config.py
+│   ├── dns_server.py
+│   ├── file_manager.py
+│   ├── internal_browser.py
+│   ├── network_manager.py
+│   ├── pac_generator.py
+│   ├── persistence.py
+│   ├── process_streamer.py
+│   ├── program_detector.py
+│   ├── proxy.py
+│   ├── registry.py
+│   ├── sandbox.py
+│   ├── script_runner.py
+│   ├── task_manager.py
+│   ├── virtual_runner.py
+│   ├── web_server.py
+│   ├── web_server_docs.py
+│   └── program/
+│       ├── herramientas.py
+│       ├── conversor_unidades.py
+│       ├── generador_passwords.py
+│       ├── snake.py
+│       ├── buscaminas.py
+│       ├── sokoban.py
+│       ├── blackjack.py
+│       ├── ajedrez.py
+│       ├── memoria.py
+│       └── ahorcado.py
+├── views/
+│   ├── login.html
+│   └── desktop.html
+├── static/
+│   ├── css/
+│   │   ├── desktop.css
+│   │   ├── login.css
+│   │   ├── windows.css
+│   │   └── themes.css
+│   └── js/
+│       ├── app.js
+│       ├── file_manager.js
+│       ├── window_manager.js
+│       ├── terminal.js
+│       ├── internal_browser.js
+│       ├── games.js
+│       ├── tools.js
+│       ├── music.js
+│       ├── notepad.js
+│       ├── clock.js
+│       └── calculator.js
+└── D/
+    ├── Apps/
+    ├── Projects/
+    ├── Scripts/
+    ├── Documents/
+    ├── Media/
+    └── Servers/

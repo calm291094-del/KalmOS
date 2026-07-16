@@ -24,3 +24,5 @@ services:
         value: user
       - key: USER_PASS
         value: user*26
+      - key: KALM_CLOUD
+        value: true
