@@ -14,7 +14,6 @@ class ProgramDetector:
         """Escanea system/program/ buscando ejecutables"""
         programs = []
         
-        # Asegurar que el directorio existe
         if not self.program_dir.exists():
             log(f"📁 Creando directorio de programas: {self.program_dir}")
             self.program_dir.mkdir(parents=True, exist_ok=True)
@@ -43,17 +42,15 @@ class ProgramDetector:
                     except Exception as e:
                         log(f"⚠️ Error escaneando {item}: {e}", "WARN")
             
-            log(f"✅ {len(programs)} programas detectados")
+            log(f"✅ {len(programs)} programas detectados en {self.program_dir}")
             
         except Exception as e:
             log(f"❌ Error escaneando programas: {e}", "ERROR")
         
-        # Guardar en caché
         save_json(self.cache_file, programs)
         return programs
     
     def _format_size(self, size):
-        """Formatea el tamaño de archivo"""
         for unit in ['B', 'KB', 'MB', 'GB']:
             if size < 1024:
                 return f"{size:.1f} {unit}"
@@ -61,9 +58,7 @@ class ProgramDetector:
         return f"{size:.1f} TB"
     
     def _detect_type(self, ext, path):
-        """Detecta el tipo de programa"""
         name_lower = path.stem.lower()
-        
         if ext == '.exe':
             if 'portable' in name_lower or 'port' in name_lower:
                 return "portable"
@@ -86,7 +81,6 @@ class ProgramDetector:
             return "other"
     
     def _categorize(self, path):
-        """Categoriza el programa"""
         name_lower = path.stem.lower()
         categories = {
             "browser": ['firefox', 'chrome', 'brave', 'edge', 'opera', 'vivaldi'],
@@ -104,7 +98,6 @@ class ProgramDetector:
         return "other"
     
     def _get_icon(self, ext):
-        """Retorna un icono para el tipo de archivo"""
         icons = {
             '.exe': '⚙️',
             '.bat': '📜',
@@ -121,13 +114,10 @@ class ProgramDetector:
         return icons.get(ext, '📄')
     
     def get_cached(self):
-        """Retorna la lista de programas en caché"""
         cached = load_json(self.cache_file, [])
         if not cached:
-            # Si no hay caché, escanear
             return self.scan()
         return cached
     
     def refresh(self):
-        """Fuerza un re-escaneo"""
         return self.scan()

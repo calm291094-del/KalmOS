@@ -53,7 +53,6 @@ def load_env():
                 if line and not line.startswith("#") and "=" in line:
                     k, v = line.split("=", 1)
                     env[k.strip()] = v.strip()
-    # Sobrescribir con variables de entorno (para Render)
     for k in ["ROOT_USER", "ROOT_PASS", "USER_USER", "USER_PASS", 
               "UI_PORT", "DNS_PORT", "PROXY_PORT", "SESSION_TIMEOUT"]:
         if os.environ.get(k):
