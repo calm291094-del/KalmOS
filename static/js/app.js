@@ -1264,3 +1264,31 @@ window.openTerminalForProcess = openTerminalForProcess;
 window.closeTerminalWindow = closeTerminalWindow;
 
 console.log('🏰 Kalm OS v4.3 - Aplicación cargada correctamente');
+
+
+
+// ═══ Asegurar que las funciones estén disponibles globalmente ═══
+// Estas funciones son definidas en otros archivos (games.js, tools.js, file_manager.js)
+// pero las exportamos aquí para que estén disponibles globalmente
+
+// Verificar que las funciones existen antes de exportarlas
+if (typeof runGame !== 'undefined') {
+    window.runGame = runGame;
+} else {
+    console.warn('⚠️ runGame no está definido - asegúrate de que games.js se cargue antes que app.js');
+}
+
+if (typeof runTool !== 'undefined') {
+    window.runTool = runTool;
+} else {
+    console.warn('⚠️ runTool no está definido - asegúrate de que tools.js se cargue antes que app.js');
+}
+
+if (typeof openTerminalForProcess !== 'undefined') {
+    window.openTerminalForProcess = openTerminalForProcess;
+    window.closeTerminalWindow = closeTerminalWindow;
+} else {
+    console.warn('⚠️ openTerminalForProcess no está definido - asegúrate de que file_manager.js se cargue antes que app.js');
+}
+
+console.log('🏰 Kalm OS v4.3 - Aplicación cargada correctamente');
