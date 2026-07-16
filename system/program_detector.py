@@ -1,4 +1,4 @@
-"""Detector de programas portables en system/program/"""
+"""Detector de programas portables en system/Program/"""
 from pathlib import Path
 from datetime import datetime
 from system.config import BASE_DIR, PROGRAM_DIR, PROGRAMS_CACHE, save_json, load_json, log
@@ -12,14 +12,13 @@ class ProgramDetector:
         self.cache_file = PROGRAMS_CACHE
     
     def scan(self):
-        """Escanea system/program/ buscando ejecutables"""
+        """Escanea system/Program/ buscando ejecutables"""
         programs = []
         
         log(f"📂 BASE_DIR: {BASE_DIR}")
         log(f"📂 PROGRAM_DIR: {self.program_dir}")
         log(f"📂 PROGRAM_DIR existe: {self.program_dir.exists()}")
         
-        # Verificar si el directorio existe
         if not self.program_dir.exists():
             log(f"📁 Creando directorio de programas: {self.program_dir}")
             try:
@@ -28,7 +27,7 @@ class ProgramDetector:
                 log(f"❌ Error creando directorio: {e}", "ERROR")
             return programs
         
-        # Listar todos los archivos en el directorio
+        # Listar archivos
         try:
             all_items = list(self.program_dir.iterdir())
             log(f"📂 Archivos en {self.program_dir}: {[f.name for f in all_items if f.is_file()]}")
@@ -36,15 +35,12 @@ class ProgramDetector:
         except Exception as e:
             log(f"❌ Error listando directorio: {e}", "ERROR")
         
-        # Escanear recursivamente
-        log(f"🔍 Escaneando {self.program_dir} recursivamente...")
+        log(f"🔍 Escaneando {self.program_dir}...")
         
         try:
             for item in self.program_dir.rglob('*'):
                 if item.is_file():
                     ext = item.suffix.lower()
-                    log(f"   📄 Archivo encontrado: {item.name} (ext: {ext})", "DEBUG")
-                    
                     if ext in self.EXECUTABLE_EXTS:
                         try:
                             stat = item.stat()
@@ -61,7 +57,7 @@ class ProgramDetector:
                                 "category": self._categorize(item),
                                 "icon": self._get_icon(ext)
                             })
-                            log(f"   ✅ Detectado: {item.name}", "INFO")
+                            log(f"   ✅ Detectado: {item.name}")
                         except Exception as e:
                             log(f"⚠️ Error escaneando {item}: {e}", "WARN")
             
@@ -70,13 +66,7 @@ class ProgramDetector:
         except Exception as e:
             log(f"❌ Error escaneando programas: {e}", "ERROR")
         
-        # Guardar en caché
-        try:
-            save_json(self.cache_file, programs)
-            log(f"💾 Caché guardado en: {self.cache_file}")
-        except Exception as e:
-            log(f"❌ Error guardando caché: {e}", "ERROR")
-        
+        save_json(self.cache_file, programs)
         return programs
     
     def _format_size(self, size):
@@ -144,9 +134,7 @@ class ProgramDetector:
     
     def get_cached(self):
         cached = load_json(self.cache_file, [])
-        log(f"📂 Caché cargado: {len(cached)} programas")
         if not cached:
-            log("🔄 Caché vacío, escaneando...")
             return self.scan()
         return cached
     

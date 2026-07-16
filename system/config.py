@@ -20,7 +20,8 @@ BASE_DIR = Path(__file__).parent.parent.resolve()
 DATA_DIR = BASE_DIR / "kalm_data"
 DRIVE_D = BASE_DIR / "D"
 SYSTEM_DIR = BASE_DIR / "system"
-PROGRAM_DIR = SYSTEM_DIR / "program"
+# ═══ IMPORTANTE: Usar "Program" con P mayúscula ═══
+PROGRAM_DIR = SYSTEM_DIR / "Program"  # <-- CORREGIDO: Program con P mayúscula
 VIEWS_DIR = BASE_DIR / "views"
 STATIC_DIR = BASE_DIR / "static"
 
@@ -30,7 +31,7 @@ if IS_CLOUD:
     DATA_DIR = CLOUD_DATA_DIR
     DRIVE_D = CLOUD_DATA_DIR / "D"
     SYSTEM_DIR = BASE_DIR / "system"
-    PROGRAM_DIR = SYSTEM_DIR / "program"
+    PROGRAM_DIR = SYSTEM_DIR / "Program"  # <-- CORREGIDO: Program con P mayúscula
     VIEWS_DIR = BASE_DIR / "views"
     STATIC_DIR = BASE_DIR / "static"
 
@@ -41,7 +42,7 @@ BG_FILE = DATA_DIR / "background.jpg"
 ENV_FILE = BASE_DIR / ".env"
 SESSIONS_FILE = DATA_DIR / "sessions.json"
 RUNNING_PROCS_FILE = DATA_DIR / "running_procs.json"
-PROGRAMS_CACHE = DATA_DIR / "programs_cache.json"
+PROGRAMS_CACHE = DATA_DIR / "programs_cache.json"  # Este puede quedar igual
 
 # ═══ Funciones de utilidad ═══
 def load_env():
@@ -100,12 +101,13 @@ def ensure_structure():
         DRIVE_D / "Documents", DRIVE_D / "Media", DRIVE_D / "Servers",
         DRIVE_D / "Downloads", DRIVE_D / "Desktop",
         DATA_DIR / "logs", DATA_DIR / "temp",
-        SYSTEM_DIR, PROGRAM_DIR,
+        SYSTEM_DIR, PROGRAM_DIR,  # PROGRAM_DIR ahora es system/Program
         VIEWS_DIR, STATIC_DIR / "css", STATIC_DIR / "js", STATIC_DIR / "img"
     ]
     for d in dirs:
         try:
             d.mkdir(parents=True, exist_ok=True)
+            log(f"   ✓ {d.relative_to(BASE_DIR)}")
         except Exception as e:
             log(f"   ⚠️ Error creando {d}: {e}", "WARN")
     
@@ -120,6 +122,7 @@ DNS_PORT=5353
 PROXY_PORT=8888
 SESSION_TIMEOUT=3600
 """, encoding="utf-8")
+        log("   ✅ .env creado")
     
     for f, default in [(SESSIONS_FILE, {}), (RUNNING_PROCS_FILE, []), (PROGRAMS_CACHE, [])]:
         if not f.exists():
@@ -143,3 +146,4 @@ ensure_structure()
 
 log(f"🌍 Entorno: {'Cloud' if IS_CLOUD else 'Local'}")
 log(f"📁 Datos: {DATA_DIR}")
+log(f"📁 Programas: {PROGRAM_DIR}")
