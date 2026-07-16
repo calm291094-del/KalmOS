@@ -2,6 +2,7 @@
 from pathlib import Path
 from datetime import datetime
 from system.config import PROGRAM_DIR, PROGRAMS_CACHE, save_json, load_json, log
+import os
 
 class ProgramDetector:
     EXECUTABLE_EXTS = {'.exe', '.bat', '.cmd', '.py', '.sh', '.com', '.msi', '.pif', '.scr', '.jar', '.js'}
@@ -14,40 +15,59 @@ class ProgramDetector:
         """Escanea system/program/ buscando ejecutables"""
         programs = []
         
+        # Verificar si el directorio existe
         if not self.program_dir.exists():
             log(f"📁 Creando directorio de programas: {self.program_dir}")
-            self.program_dir.mkdir(parents=True, exist_ok=True)
+            try:
+                self.program_dir.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                log(f"❌ Error creando directorio: {e}", "ERROR")
             return programs
         
         log(f"🔍 Escaneando {self.program_dir}...")
         
+        # Verificar si hay archivos en el directorio
+        try:
+            all_files = list(self.program_dir.iterdir())
+            log(f"📂 Archivos en {self.program_dir}: {[f.name for f in all_files]}")
+        except Exception as e:
+            log(f"❌ Error listando directorio: {e}", "ERROR")
+        
         try:
             for item in self.program_dir.rglob('*'):
-                if item.is_file() and item.suffix.lower() in self.EXECUTABLE_EXTS:
-                    try:
-                        stat = item.stat()
-                        programs.append({
-                            "name": item.stem,
-                            "filename": item.name,
-                            "path": str(item),
-                            "relative_path": str(item.relative_to(self.program_dir)),
-                            "ext": item.suffix.lower(),
-                            "size": stat.st_size,
-                            "size_fmt": self._format_size(stat.st_size),
-                            "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                            "type": self._detect_type(item.suffix.lower(), item),
-                            "category": self._categorize(item),
-                            "icon": self._get_icon(item.suffix.lower())
-                        })
-                    except Exception as e:
-                        log(f"⚠️ Error escaneando {item}: {e}", "WARN")
+                if item.is_file():
+                    ext = item.suffix.lower()
+                    if ext in self.EXECUTABLE_EXTS:
+                        try:
+                            stat = item.stat()
+                            programs.append({
+                                "name": item.stem,
+                                "filename": item.name,
+                                "path": str(item),
+                                "relative_path": str(item.relative_to(self.program_dir)),
+                                "ext": ext,
+                                "size": stat.st_size,
+                                "size_fmt": self._format_size(stat.st_size),
+                                "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                                "type": self._detect_type(ext, item),
+                                "category": self._categorize(item),
+                                "icon": self._get_icon(ext)
+                            })
+                            log(f"   ✅ Detectado: {item.name}", "DEBUG")
+                        except Exception as e:
+                            log(f"⚠️ Error escaneando {item}: {e}", "WARN")
             
             log(f"✅ {len(programs)} programas detectados en {self.program_dir}")
             
         except Exception as e:
             log(f"❌ Error escaneando programas: {e}", "ERROR")
         
-        save_json(self.cache_file, programs)
+        # Guardar en caché
+        try:
+            save_json(self.cache_file, programs)
+        except Exception as e:
+            log(f"❌ Error guardando caché: {e}", "ERROR")
+        
         return programs
     
     def _format_size(self, size):
