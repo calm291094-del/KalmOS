@@ -561,7 +561,7 @@ async function viewLastLog() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MENÚ DE PROGRAMAS (CORREGIDO - ABRE TERMINAL AUTOMÁTICA)
+// MENÚ DE PROGRAMAS (CORREGIDO CON LOGS)
 // ═══════════════════════════════════════════════════════════
 
 async function loadProgramMenu() {
@@ -569,15 +569,22 @@ async function loadProgramMenu() {
     if (!submenu) return;
     
     try {
+        console.log('📂 Cargando programas desde /api/programs...');
         const response = await fetch('/api/programs');
-        if (!response.ok) return;
+        if (!response.ok) {
+            console.error('❌ Error en /api/programs:', response.status);
+            submenu.innerHTML = '<div class="item" style="color:#ff6b6b">❌ Error cargando programas</div>';
+            return;
+        }
         const programs = await response.json();
+        console.log(`📂 ${programs.length} programas cargados:`, programs.map(p => p.name));
         
         submenu.innerHTML = '';
         submenu.dataset.loaded = 'true';
         
         if (!programs || programs.length === 0) {
             submenu.innerHTML = '<div class="item" style="color:#9370db;font-style:italic">📂 No hay programas en system/program/</div>';
+            console.warn('⚠️ No hay programas en system/program/');
             return;
         }
         
@@ -609,34 +616,36 @@ async function loadProgramMenu() {
             items.forEach(p => {
                 const item = document.createElement('div');
                 item.className = 'item';
-                item.textContent = `${p.icon || '📄'} ${p.name}`;
+                const icon = p.icon || '📄';
+                item.textContent = `${icon} ${p.name}`;
                 item.title = `${p.filename}\n${p.relative_path}`;
                 item.onclick = function() {
+                    console.log(`▶️ Ejecutando programa: ${p.path}`);
                     toggleStart();
-                    // Ejecutar el programa y abrir terminal automáticamente
                     executeProgramFromMenu(p.path, p.name);
                 };
                 submenu.appendChild(item);
             });
         }
         
+        console.log('✅ Menú de programas cargado correctamente');
+        
     } catch (error) {
-        console.error('Error cargando programas:', error);
+        console.error('❌ Error cargando programas:', error);
         submenu.innerHTML = '<div class="item" style="color:#ff6b6b">❌ Error cargando programas</div>';
     }
 }
 
-// ═══ EJECUTAR PROGRAMA DESDE EL MENÚ (CON TERMINAL) ═══
+// ═══ EJECUTAR PROGRAMA DESDE EL MENÚ ═══
 function executeProgramFromMenu(path, name) {
-    // Cerrar el menú
+    console.log(`▶️ Ejecutando: ${path} (${name})`);
     toggleStart();
     
-    // Mostrar notificación
     if (typeof showNotification === 'function') {
         showNotification(`⏳ Ejecutando ${name}...`, 'info');
     }
     
-    // Ejecutar el programa
+    // Enviar la ruta tal cual, el servidor la resolverá
     fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -644,66 +653,49 @@ function executeProgramFromMenu(path, name) {
     })
     .then(r => r.json())
     .then(data => {
+        console.log('📤 Respuesta de /api/run:', data);
+        
         if (data.ok && data.stdout) {
-            // Si el script terminó rápido y devolvió salida
             if (typeof showNotification === 'function') {
                 showNotification(`✅ ${name} ejecutado correctamente`, 'success');
             }
-            // Mostrar en la ventana de Script Runner si está abierta
             const output = document.getElementById('script-out');
-            if (output) {
-                output.textContent = data.stdout;
-            }
-            // También abrir la ventana de Script Runner
+            if (output) output.textContent = data.stdout;
             openWin('runner');
         } else if (data.ok && data.session_id) {
-            // Programa en ejecución - ABRIR TERMINAL
             if (typeof showNotification === 'function') {
                 showNotification(`✅ ${name} ejecutado (PID ${data.pid})`, 'success');
             }
-            
-            // Abrir terminal virtual automáticamente
             if (typeof openTerminalForProcess === 'function') {
                 openTerminalForProcess(data.session_id, name);
             } else {
-                // Fallback: abrir Script Runner
                 openWin('runner');
                 const output = document.getElementById('script-out');
-                if (output) {
-                    output.textContent = `✅ ${name} ejecutado (PID ${data.pid})\n📋 Abre la Terminal para ver la salida.`;
-                }
+                if (output) output.textContent = `✅ ${name} ejecutado (PID ${data.pid})\n📋 Abre la Terminal para ver la salida.`;
             }
-            
-            // Actualizar servidores
-            if (typeof loadServers === 'function') {
-                loadServers();
-            }
+            if (typeof loadServers === 'function') loadServers();
         } else if (data.ok && data.viewer_url) {
-            // Documento abierto en visor
             window.open(data.viewer_url, '_blank');
             if (typeof showNotification === 'function') {
                 showNotification(`📄 ${name} abierto en visor`, 'success');
             }
         } else {
+            console.error('❌ Error ejecutando programa:', data.error);
             if (typeof showNotification === 'function') {
                 showNotification(`❌ Error: ${data.error || 'desconocido'}`, 'error');
             }
-            // Mostrar en Script Runner
             openWin('runner');
             const output = document.getElementById('script-out');
-            if (output) {
-                output.textContent = `❌ Error: ${data.error || 'desconocido'}`;
-            }
+            if (output) output.textContent = `❌ Error: ${data.error || 'desconocido'}`;
         }
     })
     .catch(err => {
+        console.error('❌ Error de conexión:', err);
         if (typeof showNotification === 'function') {
             showNotification(`❌ Error: ${err.message}`, 'error');
         }
         const output = document.getElementById('script-out');
-        if (output) {
-            output.textContent = `❌ Error de conexión: ${err.message}`;
-        }
+        if (output) output.textContent = `❌ Error de conexión: ${err.message}`;
         openWin('runner');
     });
 }
