@@ -12,6 +12,9 @@ except ImportError:
     HAS_PSUTIL = False
     print("[!] psutil no instalado. Task Manager en modo limitado.")
 
+# ═══ Detectar entorno (Render / Cloud) ═══
+IS_CLOUD = os.environ.get("RENDER") == "true" or os.environ.get("KALM_CLOUD") == "true"
+
 # ═══ Rutas base ═══
 BASE_DIR = Path(__file__).parent.parent.resolve()
 DATA_DIR = BASE_DIR / "kalm_data"
@@ -20,6 +23,16 @@ SYSTEM_DIR = BASE_DIR / "system"
 PROGRAM_DIR = SYSTEM_DIR / "program"
 VIEWS_DIR = BASE_DIR / "views"
 STATIC_DIR = BASE_DIR / "static"
+
+# ═══ En cloud, usar directorio temporal para datos ═══
+if IS_CLOUD:
+    CLOUD_DATA_DIR = Path("/tmp/kalm_os_data")
+    DATA_DIR = CLOUD_DATA_DIR
+    DRIVE_D = CLOUD_DATA_DIR / "D"
+    SYSTEM_DIR = BASE_DIR / "system"
+    PROGRAM_DIR = SYSTEM_DIR / "program"
+    VIEWS_DIR = BASE_DIR / "views"
+    STATIC_DIR = BASE_DIR / "static"
 
 # ═══ Archivos de datos ═══
 DNS_FILE = DATA_DIR / "dns_rules.json"
@@ -40,6 +53,11 @@ def load_env():
                 if line and not line.startswith("#") and "=" in line:
                     k, v = line.split("=", 1)
                     env[k.strip()] = v.strip()
+    # Sobrescribir con variables de entorno (para Render)
+    for k in ["ROOT_USER", "ROOT_PASS", "USER_USER", "USER_PASS", 
+              "UI_PORT", "DNS_PORT", "PROXY_PORT", "SESSION_TIMEOUT"]:
+        if os.environ.get(k):
+            env[k] = os.environ[k]
     return env
 
 def save_json(path, data):
@@ -123,3 +141,6 @@ SESSION_TIMEOUT = int(ENV.get("SESSION_TIMEOUT", "3600"))
 
 # Crear estructura al importar
 ensure_structure()
+
+log(f"🌍 Entorno: {'Cloud' if IS_CLOUD else 'Local'}")
+log(f"📁 Datos: {DATA_DIR}")
