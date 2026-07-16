@@ -25,10 +25,69 @@ class VirtualRunner:
             d.mkdir(parents=True, exist_ok=True)
     
     @classmethod
+    def resolve_path(cls, path):
+        """Resuelve una ruta correctamente - Busca en system/program/"""
+        path_str = str(path)
+        path_obj = Path(path_str)
+        
+        # Si la ruta ya existe, devolverla
+        if path_obj.exists():
+            return path_obj
+        
+        # Si empieza con system/program/, buscar en la raíz
+        if path_str.startswith("system/program/") or path_str.startswith("/system/program/"):
+            rel_path = path_str.replace("system/program/", "").replace("/system/program/", "")
+            program_path = BASE_DIR / "system" / "program" / rel_path
+            if program_path.exists():
+                return program_path
+        
+        # Si empieza con D:/Scripts/, buscar en system/program/
+        if path_str.startswith("D:/Scripts/") or path_str.startswith("D:\\Scripts\\"):
+            filename = Path(path_str).name
+            program_path = BASE_DIR / "system" / "program" / filename
+            if program_path.exists():
+                return program_path
+        
+        # Si es solo un nombre de archivo, buscar en system/program/
+        if path_obj.parent == Path(".") or path_obj.parent == Path("/"):
+            program_path = BASE_DIR / "system" / "program" / path_str
+            if program_path.exists():
+                return program_path
+        
+        # Intentar buscar en system/program/ por nombre
+        filename = path_obj.name
+        # Buscar con extensión .py
+        test_path = BASE_DIR / "system" / "program" / f"{filename}"
+        if test_path.exists():
+            return test_path
+        
+        # Buscar con extensiones comunes
+        for ext in ['.py', '.sh', '.js', '.bat', '.cmd']:
+            test_path = BASE_DIR / "system" / "program" / f"{filename}{ext}"
+            if test_path.exists():
+                return test_path
+        
+        # Buscar en D:/
+        if DRIVE_D.exists():
+            test_path = DRIVE_D / "Scripts" / filename
+            if test_path.exists():
+                return test_path
+            test_path = DRIVE_D / "Projects" / filename
+            if test_path.exists():
+                return test_path
+        
+        # Si no se encuentra, devolver la ruta original
+        log(f"⚠️ No se encontró el archivo: {path_str}", "WARN")
+        return path_obj
+    
+    @classmethod
     def execute(cls, program_path, args=None):
-        program_path = Path(program_path).resolve()
+        """Ejecuta un programa"""
+        # Resolver la ruta correctamente
+        program_path = cls.resolve_path(program_path)
         
         if not program_path.exists():
+            log(f"❌ Programa no encontrado: {program_path}", "ERROR")
             return {"ok": False, "error": f"Programa no encontrado: {program_path}"}
         
         cls.init()
@@ -63,14 +122,19 @@ class VirtualRunner:
     def _run_python(cls, py_path, args=None):
         """Ejecuta un script Python y captura su salida en tiempo real"""
         try:
+            # Asegurar que la ruta existe
+            py_path = cls.resolve_path(py_path)
+            if not py_path.exists():
+                return {"ok": False, "error": f"Python script no encontrado: {py_path}"}
+            
             env = os.environ.copy()
             env.update({
                 "PYTHONIOENCODING": "utf-8",
                 "PYTHONUTF8": "1",
-                "PYTHONUNBUFFERED": "1"  # Importante para salida en tiempo real
+                "PYTHONUNBUFFERED": "1"
             })
             
-            cmd = [sys.executable, "-u", str(py_path)]  # -u para unbuffered
+            cmd = [sys.executable, "-u", str(py_path)]
             if args:
                 cmd.extend(args)
             
@@ -79,7 +143,6 @@ class VirtualRunner:
             
             log_file = cls.OUTPUT_DIR / f"{py_path.stem}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
             
-            # Iniciar proceso con pipes para capturar salida
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
@@ -141,6 +204,10 @@ class VirtualRunner:
     @classmethod
     def _run_bash(cls, sh_path, args=None):
         try:
+            sh_path = cls.resolve_path(sh_path)
+            if not sh_path.exists():
+                return {"ok": False, "error": f"Bash script no encontrado: {sh_path}"}
+            
             env = os.environ.copy()
             cmd = ['bash', str(sh_path)]
             if args:
@@ -205,6 +272,10 @@ class VirtualRunner:
     @classmethod
     def _run_node(cls, js_path, args=None):
         try:
+            js_path = cls.resolve_path(js_path)
+            if not js_path.exists():
+                return {"ok": False, "error": f"Node.js script no encontrado: {js_path}"}
+            
             node_path = shutil.which('node')
             if not node_path:
                 return {"ok": False, "error": "Node.js no está instalado"}
@@ -276,6 +347,10 @@ class VirtualRunner:
             import platform
             if platform.system() != "Windows":
                 return {"ok": False, "error": "Este programa solo funciona en Windows"}
+            
+            file_path = cls.resolve_path(file_path)
+            if not file_path.exists():
+                return {"ok": False, "error": f"Archivo no encontrado: {file_path}"}
             
             cmd = [str(file_path)]
             if args:
@@ -626,7 +701,6 @@ class VirtualRunner:
         
         outputs = []
         try:
-            # Recolectar todos los outputs disponibles
             while True:
                 item = output_queue.get(timeout=timeout)
                 outputs.append(item)

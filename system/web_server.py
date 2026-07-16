@@ -472,7 +472,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ RUN SCRIPT ═══
+        # ═══ RUN SCRIPT ═══ (CON LOGS DE DEPURACIÓN)
         if p == "/api/run":
             try:
                 data = json.loads(body)
@@ -483,8 +483,21 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": "Ruta requerida"})
                     return
                 
+                # Log para depuración
+                log(f"📂 Ejecutando desde frontend: {path}", "DEBUG")
+                
+                # Resolver la ruta
                 if path.startswith("/D/"):
                     path = str(DRIVE_D) + path[2:]
+                elif path.startswith("D:/Scripts/") or path.startswith("D:\\Scripts\\"):
+                    # Intentar buscar en system/program/
+                    filename = Path(path).name
+                    alt_path = BASE_DIR / "system" / "program" / filename
+                    if alt_path.exists():
+                        path = str(alt_path)
+                        log(f"📂 Ruta redirigida a: {path}", "DEBUG")
+                
+                log(f"📂 Ejecutando final: {path}", "DEBUG")
                 
                 result = ScriptRunner.run(path, args)
                 
