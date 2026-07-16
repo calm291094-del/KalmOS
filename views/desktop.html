@@ -38,7 +38,7 @@
 </head>
 <body>
 
-<!-- ═══ MONITOR DE RECURSOS (MEJORADO) ═══ -->
+<!-- ═══ MONITOR DE RECURSOS ═══ -->
 <div id="resource-monitor">
     <div class="rm-header">
         <h3>📊 System Monitor</h3>
@@ -416,6 +416,182 @@
     </div>
 </div>
 
+<!-- ═══ VENTANA: DNS ═══ -->
+<div id="win-dns" class="window resizable" data-title="🌐 DNS Admin" style="top:90px;left:350px;width:550px;height:420px">
+    <div class="title-bar" onmousedown="startDrag(event,'dns')">
+        <span>🌐 Kalm DNS Admin</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('dns')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('dns')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('dns')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <h3 style="color:#da70d6;margin-bottom:8px">Reglas DNS</h3>
+        <table id="dns-table">
+            <thead><tr><th>Dominio</th><th>IP</th><th>Acción</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid #4b0082">
+            <input id="dns-dom" placeholder="Dominio">
+            <input id="dns-ip" placeholder="IP">
+            <button class="act" onclick="addDNS()">Añadir</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: PROXY ═══ -->
+<div id="win-proxy" class="window resizable" data-title="🔒 Proxy" style="top:110px;left:380px;width:600px;height:450px">
+    <div class="title-bar" onmousedown="startDrag(event,'proxy')">
+        <span>🔒 Kalm Reverse Proxy</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('proxy')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('proxy')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('proxy')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <h3 style="color:#da70d6;margin-bottom:8px">Reglas Proxy</h3>
+        <table id="proxy-table">
+            <thead><tr><th>Dominio</th><th>Backend</th><th>Acción</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid #4b0082">
+            <input id="proxy-dom" placeholder="Dominio">
+            <input id="proxy-back" placeholder="Backend">
+            <button class="act" onclick="addProxy()">Añadir</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: PAC ═══ -->
+<div id="win-pac" class="window resizable" data-title="📄 Config PAC" style="top:130px;left:410px;width:700px;height:550px">
+    <div class="title-bar" onmousedown="startDrag(event,'pac')">
+        <span>📄 Configuración Proxy Automático (PAC)</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('pac')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('pac')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('pac')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <div style="background:rgba(0,100,0,0.2);border:1px solid #0f0;padding:10px;border-radius:5px;margin-bottom:15px">
+            <h3 style="color:#0f0;margin-bottom:5px">✅ Modo Seguro para Entorno de Trabajo</h3>
+            <p style="font-size:12px;color:#d8bfd8">Esta configuración <b>NO modifica</b> el sistema host.</p>
+        </div>
+        <h3 style="color:#da70d6;margin-bottom:10px">📄 Archivo PAC</h3>
+        <div id="pac-info" style="background:#1a0033;padding:10px;border-radius:5px;border:1px solid #6a0dad">Cargando...</div>
+        <button class="act" onclick="generatePAC()" style="margin-top:10px">🔄 Regenerar PAC</button>
+        <h3 style="color:#da70d6;margin:20px 0 10px">🌐 Instrucciones por Navegador</h3>
+        <div id="pac-instructions"></div>
+        <h3 style="color:#da70d6;margin:20px 0 10px">📊 Log del Proxy</h3>
+        <div style="display:flex;gap:5px;margin-bottom:5px">
+            <button class="act small" onclick="loadProxyLog()">🔄 Refrescar</button>
+            <button class="act small" onclick="clearProxyLog()">🗑️ Limpiar</button>
+        </div>
+        <div id="proxy-log" class="console" style="height:150px;font-size:10px"></div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: SERVIDORES ═══ -->
+<div id="win-servers" class="window resizable" data-title="🚀 Servidores" style="top:150px;left:440px;width:750px;height:500px">
+    <div class="title-bar" onmousedown="startDrag(event,'servers')">
+        <span>🚀 Servidores Activos (Kalm)</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('servers')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('servers')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('servers')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <p style="color:#9370db;font-size:12px;margin:0">Procesos corriendo dentro del entorno virtual Kalm OS</p>
+            <button class="act danger" onclick="stopAllServers()" style="margin:0">⏹ Detener TODO</button>
+        </div>
+        <table id="srv-table">
+            <thead><tr><th>PID</th><th>Nombre</th><th>Tipo</th><th>Aislado</th><th>Hijos</th><th>Iniciado</th><th>Acción</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <div style="margin-top:10px;display:flex;gap:5px">
+            <button class="act" onclick="loadServers()">🔄 Refrescar</button>
+            <span id="srv-info" style="color:#9370db;font-size:11px;padding:8px"></span>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: SCRIPT RUNNER ═══ -->
+<div id="win-runner" class="window resizable" data-title="⚙️ Script Runner" style="top:170px;left:470px;width:700px;height:600px">
+    <div class="title-bar" onmousedown="startDrag(event,'runner')">
+        <span>⚙️ Script Runner (Kalm Environment)</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('runner')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('runner')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('runner')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <h4 style="color:#da70d6;margin-bottom:5px">Ruta del archivo (en D:)</h4>
+        <input id="script-path" placeholder="Ej: D:\Projects\miweb\start.bat">
+        <div style="display:flex;gap:10px;margin:10px 0;flex-wrap:wrap;align-items:center">
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#d8bfd8">
+                <input type="checkbox" id="opt-sandbox" checked> 🔒 Sandbox
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#d8bfd8">
+                <input type="checkbox" id="opt-preserve-path" checked> 🛣️ Preservar PATH
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#d8bfd8">
+                <input type="checkbox" id="opt-direct"> ⚡ Modo Directo
+            </label>
+        </div>
+        <div style="display:flex;gap:5px;margin-bottom:10px">
+            <button class="act" onclick="runScript()">▶️ Ejecutar</button>
+            <button class="act" onclick="runScriptDirect()">⚡ Ejecutar Directo</button>
+            <button class="act" onclick="viewLastLog()">📋 Ver Último Log</button>
+        </div>
+        <div style="background:rgba(0,100,0,0.15);border:1px solid #0f0;padding:8px;border-radius:5px;margin-bottom:10px;font-size:11px">
+            <b style="color:#0f0">💡 Tips:</b>
+            <ul style="margin:5px 0 0 20px;color:#d8bfd8">
+                <li><b>Sandbox</b>: Aísla el proceso con Job Object de Windows</li>
+                <li><b>Modo Directo</b>: Ejecuta igual que Windows (si sandbox falla)</li>
+                <li><b>Ver Log</b>: Muestra la salida del último programa</li>
+            </ul>
+        </div>
+        <h4 style="color:#da70d6;margin:10px 0 5px">📤 Salida</h4>
+        <div id="script-out" class="console" style="height:280px">Esperando...</div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: NAVEGADOR ═══ -->
+<div id="win-browser" class="window resizable" data-title="🌐 Navegador Kalm" style="top:30px;left:200px;width:1000px;height:650px">
+    <div class="title-bar" onmousedown="startDrag(event,'browser')">
+        <span>🌐 Navegador Interno Kalm</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('browser')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('browser')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('browser')">✕</button>
+        </div>
+    </div>
+    <div class="window-body" style="padding:0;display:flex;flex-direction:column">
+        <div style="padding:8px;background:rgba(75,0,130,0.3);border-bottom:1px solid #6a0dad;display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+            <button class="act small" onclick="browserBack()">◀</button>
+            <button class="act small" onclick="browserForward()">▶</button>
+            <button class="act small" onclick="browserReload()">🔄</button>
+            <input type="text" id="browser-url" placeholder="https://kalmos.onrender.com" style="flex:1;min-width:200px;margin:0" onkeydown="if(event.key==='Enter')browserNavigate()">
+            <button class="act small" onclick="browserNavigate()">Ir</button>
+            <button class="act small" onclick="browserOpenExternal()">🔗 Externo</button>
+        </div>
+        <div style="padding:5px 8px;background:rgba(30,15,50,0.5);border-bottom:1px solid #4b0082;display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+            <span style="color:#9370db;font-size:11px;padding:3px">⭐ Marcadores:</span>
+            <div id="browser-bookmarks" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+        </div>
+        <iframe id="browser-frame" src="about:blank" style="flex:1;border:none;background:#fff;width:100%"></iframe>
+        <div style="padding:3px 8px;background:rgba(10,5,20,0.9);border-top:1px solid #6a0dad;font-size:10px;color:#9370db;display:flex;justify-content:space-between">
+            <span id="browser-status">Listo</span>
+            <span>🏰 Kalm Internal Browser v4.3</span>
+        </div>
+    </div>
+</div>
+
 <!-- ═══ MENÚ INICIO (Windows 10 Style - IZQUIERDA) ═══ -->
 <div id="start-menu">
     <div class="menu-header">
@@ -471,6 +647,9 @@
         <div class="item" onclick="openWin('proxy');toggleStart()">
             <span class="item-icon">🔒</span> Proxy
         </div>
+        <div class="item" onclick="openWin('runner');toggleStart()">
+            <span class="item-icon">⚙️</span> Script Runner
+        </div>
         
         <div class="sep"></div>
         
@@ -490,7 +669,7 @@
     </div>
 </div>
 
-<!-- ═══ TASKBAR (Windows 10 Style) ═══ -->
+<!-- ═══ TASKBAR ═══ -->
 <div id="taskbar">
     <div id="start-btn" onclick="toggleStart()">
         <span style="font-size:18px">🏰</span>
@@ -501,18 +680,18 @@
     <div id="clock">--:--:--</div>
 </div>
 
-<!-- Scripts -->
+<!-- ═══ SCRIPTS (ORDEN CORRECTO) ═══ -->
 <script src="/static/js/window_manager.js"></script>
 <script src="/static/js/file_manager.js"></script>
 <script src="/static/js/terminal.js"></script>
 <script src="/static/js/internal_browser.js"></script>
-<script src="/static/js/app.js"></script>
 <script src="/static/js/calculator.js"></script>
 <script src="/static/js/notepad.js"></script>
 <script src="/static/js/clock.js"></script>
+<script src="/static/js/music.js"></script>
 <script src="/static/js/tools.js"></script>
 <script src="/static/js/games.js"></script>
-<script src="/static/js/music.js"></script>
+<script src="/static/js/app.js"></script>
 
 <script>
     // ═══ FUNCIONES DE CONFIGURACIÓN ═══
@@ -540,7 +719,6 @@
         document.getElementById('icon-size').value = saved;
         changeIconSize(saved);
         
-        // Cargar tema guardado
         const theme = localStorage.getItem('kalm_theme') || 'dark';
         document.getElementById('theme-select').value = theme;
         applyTheme(theme);
@@ -552,7 +730,6 @@
         localStorage.setItem('kalm_theme', theme);
     }
 
-    // Cambiar tema
     document.getElementById('theme-select').addEventListener('change', function() {
         applyTheme(this.value);
     });
@@ -563,7 +740,6 @@
         alert('✅ Wallpaper restaurado');
     }
 
-    // Cargar wallpaper guardado
     document.addEventListener('DOMContentLoaded', function() {
         const savedBg = localStorage.getItem('kalm_wallpaper');
         if (savedBg) {
@@ -593,6 +769,8 @@
     }
 
     // ═══ FUNCIONES PARA CALCULADORA ═══
+    let calcDisplay = '';
+
     function calcInput(value) {
         const display = document.getElementById('calc-display');
         if (!display) return;
@@ -612,6 +790,7 @@
         }
         display.value = calcDisplay || '0';
     }
+
     function calcResult() {
         const display = document.getElementById('calc-display');
         if (!display) return;
@@ -634,6 +813,7 @@
         status.textContent = '✅ Guardado';
         setTimeout(() => status.textContent = 'Listo', 2000);
     }
+
     function notepadLoad() {
         const content = document.getElementById('notepad-content');
         const status = document.getElementById('notepad-status');
@@ -647,6 +827,7 @@
             status.textContent = '❌ No hay archivo guardado';
         }
     }
+
     function notepadClear() {
         const content = document.getElementById('notepad-content');
         const status = document.getElementById('notepad-status');
@@ -661,18 +842,13 @@
     // ═══ FUNCIONES PARA RELOJ ═══
     function updateWorldClocks() {
         const now = new Date();
-        // Hora local
         document.getElementById('clock-display').textContent = now.toLocaleTimeString('es-ES');
-        // Londres (UTC+0)
         const london = new Date(now.getTime() + (now.getTimezoneOffset() * 60000));
         document.getElementById('clock-london').textContent = london.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
-        // Nueva York (UTC-4)
         const ny = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) - 4*3600000);
         document.getElementById('clock-ny').textContent = ny.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
-        // Tokio (UTC+9)
         const tokyo = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + 9*3600000);
         document.getElementById('clock-tokyo').textContent = tokyo.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
-        // Sídney (UTC+10)
         const sydney = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + 10*3600000);
         document.getElementById('clock-sydney').textContent = sydney.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
     }
