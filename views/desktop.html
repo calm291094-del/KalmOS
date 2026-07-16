@@ -122,10 +122,439 @@
     <div class="desktop-icon" style="top:460px;left:240px" ondblclick="openWin('proxy')">
         <div class="ico">🔒</div><div class="lbl">Proxy</div>
     </div>
+    <div class="desktop-icon" style="top:20px;left:350px" ondblclick="openWin('runner')">
+        <div class="ico">⚙️</div><div class="lbl">Script Runner</div>
+    </div>
 </div>
 
-<!-- ═══ VENTANAS (resumidas para no repetir todo) ═══ -->
-<!-- Las ventanas son las mismas que antes, solo se elimina calcDisplay -->
+<!-- ═══ VENTANA: EXPLORADOR ═══ -->
+<div id="win-explorer" class="window resizable" data-title="💾 Este equipo" style="top:30px;left:200px;width:850px;height:580px">
+    <div class="title-bar" onmousedown="startDrag(event,'explorer')">
+        <span>💾 Este equipo - D:</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('explorer')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('explorer')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('explorer')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <div class="file-toolbar">
+            <button class="act small" onclick="fileUp()">⬆️</button>
+            <input type="text" class="file-path" id="file-path" readonly>
+            <button class="act small" onclick="refreshFiles()">🔄</button>
+            <button class="act small" onclick="createFolderPrompt()">📁 Nuevo</button>
+            <button class="act small" onclick="document.getElementById('file-upload').click()">📤 Subir</button>
+            <input type="file" id="file-upload" multiple style="display:none" onchange="uploadFiles(this)">
+            <input type="text" id="file-search" placeholder="🔍 Buscar..." style="width:200px" onkeydown="if(event.key==='Enter')searchFiles()">
+        </div>
+        <div class="file-grid" id="file-grid"></div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: TASK MANAGER ═══ -->
+<div id="win-taskmgr" class="window resizable" data-title="📊 Task Manager" style="top:50px;left:250px;width:700px;height:500px">
+    <div class="title-bar" onmousedown="startDrag(event,'taskmgr')">
+        <span>⚔️ Kalm Task Manager</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('taskmgr')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('taskmgr')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('taskmgr')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <table id="proc-table">
+            <thead><tr><th>PID</th><th>Nombre</th><th>CPU%</th><th>MEM%</th><th>Estado</th><th>Acción</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <div style="margin-top:10px"><button class="act" onclick="loadProcs()">🔄 Refrescar</button></div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: DNS ═══ -->
+<div id="win-dns" class="window resizable" data-title="🌐 DNS Admin" style="top:70px;left:300px;width:550px;height:420px">
+    <div class="title-bar" onmousedown="startDrag(event,'dns')">
+        <span>🌐 Kalm DNS Admin</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('dns')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('dns')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('dns')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <h3 style="color:#da70d6;margin-bottom:8px">Reglas DNS</h3>
+        <table id="dns-table">
+            <thead><tr><th>Dominio</th><th>IP</th><th>Acción</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid #4b0082">
+            <input id="dns-dom" placeholder="Dominio">
+            <input id="dns-ip" placeholder="IP">
+            <button class="act" onclick="addDNS()">Añadir</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: PROXY ═══ -->
+<div id="win-proxy" class="window resizable" data-title="🔒 Proxy" style="top:90px;left:350px;width:600px;height:450px">
+    <div class="title-bar" onmousedown="startDrag(event,'proxy')">
+        <span>🔒 Kalm Reverse Proxy</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('proxy')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('proxy')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('proxy')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <h3 style="color:#da70d6;margin-bottom:8px">Reglas Proxy</h3>
+        <table id="proxy-table">
+            <thead><tr><th>Dominio</th><th>Backend</th><th>Acción</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid #4b0082">
+            <input id="proxy-dom" placeholder="Dominio">
+            <input id="proxy-back" placeholder="Backend">
+            <button class="act" onclick="addProxy()">Añadir</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: SCRIPT RUNNER ═══ -->
+<div id="win-runner" class="window resizable" data-title="⚙️ Script Runner" style="top:110px;left:400px;width:700px;height:600px">
+    <div class="title-bar" onmousedown="startDrag(event,'runner')">
+        <span>⚙️ Script Runner (Kalm Environment)</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('runner')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('runner')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('runner')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <h4 style="color:#da70d6;margin-bottom:5px">Ruta del archivo (en D:)</h4>
+        <input id="script-path" placeholder="Ej: D:\Projects\miweb\start.bat">
+        <div style="display:flex;gap:10px;margin:10px 0;flex-wrap:wrap;align-items:center">
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#d8bfd8">
+                <input type="checkbox" id="opt-sandbox" checked> 🔒 Sandbox
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#d8bfd8">
+                <input type="checkbox" id="opt-preserve-path" checked> 🛣️ Preservar PATH
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#d8bfd8">
+                <input type="checkbox" id="opt-direct"> ⚡ Modo Directo
+            </label>
+        </div>
+        <div style="display:flex;gap:5px;margin-bottom:10px">
+            <button class="act" onclick="runScript()">▶️ Ejecutar</button>
+            <button class="act" onclick="runScriptDirect()">⚡ Ejecutar Directo</button>
+            <button class="act" onclick="viewLastLog()">📋 Ver Último Log</button>
+        </div>
+        <div style="background:rgba(0,100,0,0.15);border:1px solid #0f0;padding:8px;border-radius:5px;margin-bottom:10px;font-size:11px">
+            <b style="color:#0f0">💡 Tips:</b>
+            <ul style="margin:5px 0 0 20px;color:#d8bfd8">
+                <li><b>Sandbox</b>: Aísla el proceso con Job Object de Windows</li>
+                <li><b>Modo Directo</b>: Ejecuta igual que Windows (si sandbox falla)</li>
+                <li><b>Ver Log</b>: Muestra la salida del último programa</li>
+            </ul>
+        </div>
+        <h4 style="color:#da70d6;margin:10px 0 5px">📤 Salida</h4>
+        <div id="script-out" class="console" style="height:280px">Esperando...</div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: SERVIDORES ═══ -->
+<div id="win-servers" class="window resizable" data-title="🚀 Servidores" style="top:130px;left:450px;width:750px;height:500px">
+    <div class="title-bar" onmousedown="startDrag(event,'servers')">
+        <span>🚀 Servidores Activos (Kalm)</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('servers')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('servers')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('servers')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <p style="color:#9370db;font-size:12px;margin:0">Procesos corriendo dentro del entorno virtual Kalm OS</p>
+            <button class="act danger" onclick="stopAllServers()" style="margin:0">⏹ Detener TODO</button>
+        </div>
+        <table id="srv-table">
+            <thead><tr><th>PID</th><th>Nombre</th><th>Tipo</th><th>Aislado</th><th>Hijos</th><th>Iniciado</th><th>Acción</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <div style="margin-top:10px;display:flex;gap:5px">
+            <button class="act" onclick="loadServers()">🔄 Refrescar</button>
+            <span id="srv-info" style="color:#9370db;font-size:11px;padding:8px"></span>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: TERMINAL ═══ -->
+<div id="win-console" class="window resizable" data-title="💻 Terminal" style="top:150px;left:500px;width:600px;height:400px">
+    <div class="title-bar" onmousedown="startDrag(event,'console')">
+        <span>💻 Kalm Terminal</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('console')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('console')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('console')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <div id="term-out" class="console" style="height:300px">Kalm OS v4.3 - Escribe 'help'<br><br></div>
+        <div style="display:flex;margin-top:8px">
+            <span style="color:#0f0;margin-right:5px">kalm@os:~$</span>
+            <input id="term-in" style="flex:1;background:#000;color:#0f0;border:1px solid #0f0" onkeydown="if(event.key==='Enter')termExec()">
+        </div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: SETTINGS ═══ -->
+<div id="win-settings" class="window resizable" data-title="🎨 Configuración" style="top:170px;left:550px;width:500px;height:350px">
+    <div class="title-bar" onmousedown="startDrag(event,'settings')">
+        <span>🎨 Configuración</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('settings')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('settings')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('settings')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <h3 style="color:#da70d6;margin-bottom:8px">Wallpaper</h3>
+        <input type="file" id="bg-file" accept="image/*">
+        <button class="act" onclick="uploadBg()">🖼️ Aplicar</button>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: NAVEGADOR ═══ -->
+<div id="win-browser" class="window resizable" data-title="🌐 Navegador Kalm" style="top:30px;left:200px;width:1000px;height:650px">
+    <div class="title-bar" onmousedown="startDrag(event,'browser')">
+        <span>🌐 Navegador Interno Kalm</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('browser')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('browser')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('browser')">✕</button>
+        </div>
+    </div>
+    <div class="window-body" style="padding:0;display:flex;flex-direction:column">
+        <div style="padding:8px;background:rgba(75,0,130,0.3);border-bottom:1px solid #6a0dad;display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+            <button class="act small" onclick="browserBack()">◀</button>
+            <button class="act small" onclick="browserForward()">▶</button>
+            <button class="act small" onclick="browserReload()">🔄</button>
+            <input type="text" id="browser-url" placeholder="https://kalmos.onrender.com" style="flex:1;min-width:200px;margin:0" onkeydown="if(event.key==='Enter')browserNavigate()">
+            <button class="act small" onclick="browserNavigate()">Ir</button>
+            <button class="act small" onclick="browserOpenExternal()">🔗 Externo</button>
+        </div>
+        <div style="padding:5px 8px;background:rgba(30,15,50,0.5);border-bottom:1px solid #4b0082;display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+            <span style="color:#9370db;font-size:11px;padding:3px">⭐ Marcadores:</span>
+            <div id="browser-bookmarks" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+        </div>
+        <iframe id="browser-frame" src="about:blank" style="flex:1;border:none;background:#fff;width:100%"></iframe>
+        <div style="padding:3px 8px;background:rgba(10,5,20,0.9);border-top:1px solid #6a0dad;font-size:10px;color:#9370db;display:flex;justify-content:space-between">
+            <span id="browser-status">Listo</span>
+            <span>🏰 Kalm Internal Browser v4.3</span>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: PAC ═══ -->
+<div id="win-pac" class="window resizable" data-title="📄 Configuración PAC" style="top:80px;left:250px;width:700px;height:550px">
+    <div class="title-bar" onmousedown="startDrag(event,'pac')">
+        <span>📄 Configuración Proxy Automático (PAC)</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('pac')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('pac')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('pac')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <div style="background:rgba(0,100,0,0.2);border:1px solid #0f0;padding:10px;border-radius:5px;margin-bottom:15px">
+            <h3 style="color:#0f0;margin-bottom:5px">✅ Modo Seguro para Entorno de Trabajo</h3>
+            <p style="font-size:12px;color:#d8bfd8">Esta configuración <b>NO modifica</b> el sistema host.</p>
+        </div>
+        <h3 style="color:#da70d6;margin-bottom:10px">📄 Archivo PAC</h3>
+        <div id="pac-info" style="background:#1a0033;padding:10px;border-radius:5px;border:1px solid #6a0dad">Cargando...</div>
+        <button class="act" onclick="generatePAC()" style="margin-top:10px">🔄 Regenerar PAC</button>
+        <h3 style="color:#da70d6;margin:20px 0 10px">🌐 Instrucciones por Navegador</h3>
+        <div id="pac-instructions"></div>
+        <h3 style="color:#da70d6;margin:20px 0 10px">📊 Log del Proxy</h3>
+        <div style="display:flex;gap:5px;margin-bottom:5px">
+            <button class="act small" onclick="loadProxyLog()">🔄 Refrescar</button>
+            <button class="act small" onclick="clearProxyLog()">🗑️ Limpiar</button>
+        </div>
+        <div id="proxy-log" class="console" style="height:150px;font-size:10px"></div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: CALCULADORA ═══ -->
+<div id="win-calc" class="window resizable" data-title="🧮 Calculadora" style="top:50px;left:300px;width:320px;height:420px">
+    <div class="title-bar" onmousedown="startDrag(event,'calc')">
+        <span>🧮 Calculadora</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('calc')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('calc')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('calc')">✕</button>
+        </div>
+    </div>
+    <div class="window-body" style="padding:10px">
+        <input type="text" id="calc-display" readonly style="width:100%;padding:15px;font-size:24px;text-align:right;background:#0a0a1a;border:1px solid #4b0082;border-radius:5px;font-family:monospace;margin-bottom:10px">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+            <button class="act" style="padding:12px;font-size:16px" onclick="calcInput('7')">7</button>
+            <button class="act" style="padding:12px;font-size:16px" onclick="calcInput('8')">8</button>
+            <button class="act" style="padding:12px;font-size:16px" onclick="calcInput('9')">9</button>
+            <button class="act" style="padding:12px;font-size:16px;background:#8b0000" onclick="calcInput('C')">C</button>
+            <button class="act" style="padding:12px;font-size:16px" onclick="calcInput('4')">4</button>
+            <button class="act" style="padding:12px;font-size:16px" onclick="calcInput('5')">5</button>
+            <button class="act" style="padding:12px;font-size:16px" onclick="calcInput('6')">6</button>
+            <button class="act" style="padding:12px;font-size:16px;background:#4b0082" onclick="calcInput('/')">÷</button>
+            <button class="act" style="padding:12px;font-size:16px" onclick="calcInput('1')">1</button>
+            <button class="act" style="padding:12px;font-size:16px" onclick="calcInput('2')">2</button>
+            <button class="act" style="padding:12px;font-size:16px" onclick="calcInput('3')">3</button>
+            <button class="act" style="padding:12px;font-size:16px;background:#4b0082" onclick="calcInput('*')">×</button>
+            <button class="act" style="padding:12px;font-size:16px" onclick="calcInput('0')">0</button>
+            <button class="act" style="padding:12px;font-size:16px" onclick="calcInput('.')">.</button>
+            <button class="act" style="padding:12px;font-size:16px;background:#008800" onclick="calcResult()">=</button>
+            <button class="act" style="padding:12px;font-size:16px;background:#4b0082" onclick="calcInput('-')">−</button>
+            <button class="act" style="padding:12px;font-size:16px;background:#4b0082;grid-column:span 2" onclick="calcInput('+')">+</button>
+            <button class="act" style="padding:12px;font-size:16px;background:#4b0082" onclick="calcInput('**')">x²</button>
+            <button class="act" style="padding:12px;font-size:16px;background:#4b0082" onclick="calcInput('sqrt')">√</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: RELOJ MUNDIAL ═══ -->
+<div id="win-clock" class="window resizable" data-title="🕐 Reloj Mundial" style="top:70px;left:320px;width:400px;height:300px">
+    <div class="title-bar" onmousedown="startDrag(event,'clock')">
+        <span>🕐 Reloj Mundial</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('clock')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('clock')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('clock')">✕</button>
+        </div>
+    </div>
+    <div class="window-body" style="display:flex;flex-direction:column;gap:10px">
+        <div style="text-align:center;font-size:48px;padding:20px;background:#1a0033;border-radius:10px;border:1px solid #4b0082" id="clock-display">--:--:--</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="world-clocks">
+            <div style="background:#1a0033;padding:8px;border-radius:5px;text-align:center;border:1px solid #4b0082">
+                <div style="font-size:10px;color:#9370db">🌍 Londres</div>
+                <div style="font-size:16px;color:#fff" id="clock-london">--:--</div>
+            </div>
+            <div style="background:#1a0033;padding:8px;border-radius:5px;text-align:center;border:1px solid #4b0082">
+                <div style="font-size:10px;color:#9370db">🗽 Nueva York</div>
+                <div style="font-size:16px;color:#fff" id="clock-ny">--:--</div>
+            </div>
+            <div style="background:#1a0033;padding:8px;border-radius:5px;text-align:center;border:1px solid #4b0082">
+                <div style="font-size:10px;color:#9370db">🇯🇵 Tokio</div>
+                <div style="font-size:16px;color:#fff" id="clock-tokyo">--:--</div>
+            </div>
+            <div style="background:#1a0033;padding:8px;border-radius:5px;text-align:center;border:1px solid #4b0082">
+                <div style="font-size:10px;color:#9370db">🇦🇺 Sídney</div>
+                <div style="font-size:16px;color:#fff" id="clock-sydney">--:--</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: NOTEPAD ═══ -->
+<div id="win-notepad" class="window resizable" data-title="📝 Bloc de notas" style="top:40px;left:220px;width:700px;height:500px">
+    <div class="title-bar" onmousedown="startDrag(event,'notepad')">
+        <span>📝 Bloc de notas</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('notepad')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('notepad')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('notepad')">✕</button>
+        </div>
+    </div>
+    <div class="window-body" style="padding:0;display:flex;flex-direction:column;height:100%">
+        <div style="padding:8px;background:#1a0033;border-bottom:1px solid #4b0082;display:flex;gap:5px">
+            <button class="act small" onclick="notepadSave()">💾 Guardar</button>
+            <button class="act small" onclick="notepadLoad()">📂 Cargar</button>
+            <button class="act small" onclick="notepadClear()">🗑️ Limpiar</button>
+            <span style="flex:1"></span>
+            <span id="notepad-status" style="color:#9370db;font-size:11px;padding:4px">Listo</span>
+        </div>
+        <textarea id="notepad-content" style="flex:1;padding:10px;background:#0a0a1a;color:#e6e6fa;border:none;resize:none;font-family:'Consolas',monospace;font-size:14px;line-height:1.6" placeholder="Escribe aquí..."></textarea>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: HERRAMIENTAS ═══ -->
+<div id="win-tools" class="window resizable" data-title="🛠️ Herramientas" style="top:60px;left:280px;width:650px;height:480px">
+    <div class="title-bar" onmousedown="startDrag(event,'tools')">
+        <span>🛠️ Herramientas Profesionales</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('tools')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('tools')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('tools')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
+            <button class="act" onclick="runTool('info_sistema')">🖥️ Info Sistema</button>
+            <button class="act" onclick="runTool('analisis_disco')">💿 Análisis Disco</button>
+            <button class="act" onclick="runTool('generar_hash')">🔐 Generador Hash</button>
+            <button class="act" onclick="runTool('escanear_puertos')">🌐 Escáner Puertos</button>
+            <button class="act" onclick="runTool('monitor_procesos')">📊 Monitor Procesos</button>
+            <button class="act" onclick="runTool('limpiar_temporales')">🧹 Limpiar Temp</button>
+            <button class="act" onclick="runTool('convertir_unidades')">🔄 Conversor</button>
+            <button class="act" onclick="runTool('generar_password')">🔑 Generar Pass</button>
+        </div>
+        <div id="tool-output" class="console" style="height:250px;margin-top:10px">Selecciona una herramienta...</div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: JUEGOS ═══ -->
+<div id="win-games" class="window resizable" data-title="🎮 Juegos" style="top:70px;left:300px;width:650px;height:480px">
+    <div class="title-bar" onmousedown="startDrag(event,'games')">
+        <span>🎮 Juegos</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('games')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('games')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('games')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">
+            <button class="act success" onclick="runGame('snake')">🐍 Snake</button>
+            <button class="act success" onclick="runGame('buscaminas')">💣 Buscaminas</button>
+            <button class="act success" onclick="runGame('sokoban')">📦 Sokoban</button>
+            <button class="act success" onclick="runGame('blackjack')">♠️ Blackjack</button>
+            <button class="act success" onclick="runGame('ajedrez')">♛ Ajedrez</button>
+            <button class="act success" onclick="runGame('tetris')">🧱 Tetris</button>
+            <button class="act success" onclick="runGame('conecta4')">🟡 Conecta 4</button>
+            <button class="act success" onclick="runGame('batalla_naval')">⚓ Batalla Naval</button>
+        </div>
+        <div id="game-output" class="console" style="height:250px;margin-top:10px;font-size:12px">Selecciona un juego para jugar en la terminal...</div>
+    </div>
+</div>
+
+<!-- ═══ VENTANA: REPRODUCTOR ═══ -->
+<div id="win-music" class="window resizable" data-title="🎵 Reproductor" style="top:80px;left:320px;width:600px;height:400px">
+    <div class="title-bar" onmousedown="startDrag(event,'music')">
+        <span>🎵 Reproductor de Música</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('music')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('music')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('music')">✕</button>
+        </div>
+    </div>
+    <div class="window-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <button class="act" onclick="musicPlay()">▶️ Reproducir</button>
+            <button class="act" onclick="musicPause()">⏸️ Pausa</button>
+            <button class="act" onclick="musicNext()">⏭️ Siguiente</button>
+            <button class="act" onclick="musicPrev()">⏮️ Anterior</button>
+        </div>
+        <div style="background:#1a0033;padding:10px;border-radius:5px;border:1px solid #4b0082;margin-bottom:10px">
+            <div id="music-info" style="color:#d8bfd8;font-size:13px">🎵 Listo para reproducir</div>
+            <div style="margin-top:5px;background:#0a0a1a;height:6px;border-radius:3px;overflow:hidden">
+                <div id="music-progress" style="width:0%;height:100%;background:linear-gradient(to right,#6a0dad,#da70d6);border-radius:3px;transition:width 0.5s"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:#9370db;margin-top:3px">
+                <span id="music-time">0:00</span>
+                <span id="music-duration">0:00</span>
+            </div>
+        </div>
+        <div id="music-playlist" style="background:#0a0a1a;padding:8px;border-radius:5px;border:1px solid #4b0082;height:120px;overflow-y:auto;font-size:11px;color:#9370db">
+            📋 Playlist vacía. Usa "Escanear música" en la terminal.
+        </div>
+    </div>
+</div>
 
 <!-- ═══ MENÚ INICIO ═══ -->
 <div id="start-menu">
@@ -171,7 +600,7 @@
     <div id="clock">--:--:--</div>
 </div>
 
-<!-- ═══ SCRIPTS (ORDEN CORRECTO) ═══ -->
+<!-- ═══ SCRIPTS ═══ -->
 <script src="/static/js/window_manager.js"></script>
 <script src="/static/js/file_manager.js"></script>
 <script src="/static/js/terminal.js"></script>
@@ -188,7 +617,11 @@
     // ═══ FUNCIONES DE CONFIGURACIÓN ═══
     function changeIconSize(size) {
         const icons = document.querySelectorAll('.desktop-icon');
-        const sizes = { small: { width: '60px', fontSize: '28px', labelSize: '9px' }, medium: { width: '85px', fontSize: '42px', labelSize: '11px' }, large: { width: '110px', fontSize: '52px', labelSize: '13px' } };
+        const sizes = {
+            small: { width: '60px', fontSize: '28px', labelSize: '9px' },
+            medium: { width: '85px', fontSize: '42px', labelSize: '11px' },
+            large: { width: '110px', fontSize: '52px', labelSize: '13px' }
+        };
         const s = sizes[size] || sizes.medium;
         icons.forEach(icon => {
             icon.style.width = s.width;
@@ -202,11 +635,21 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         const saved = localStorage.getItem('kalm_icon_size') || 'medium';
-        document.getElementById('icon-size').value = saved;
-        changeIconSize(saved);
+        const iconSelect = document.getElementById('icon-size');
+        if (iconSelect) {
+            iconSelect.value = saved;
+            changeIconSize(saved);
+        }
         const theme = localStorage.getItem('kalm_theme') || 'dark';
-        document.getElementById('theme-select').value = theme;
-        applyTheme(theme);
+        const themeSelect = document.getElementById('theme-select');
+        if (themeSelect) {
+            themeSelect.value = theme;
+            applyTheme(theme);
+        }
+        const savedBg = localStorage.getItem('kalm_wallpaper');
+        if (savedBg) {
+            document.body.style.backgroundImage = `url(${savedBg})`;
+        }
     });
 
     function applyTheme(theme) {
@@ -214,7 +657,10 @@
         localStorage.setItem('kalm_theme', theme);
     }
 
-    document.getElementById('theme-select').addEventListener('change', function() { applyTheme(this.value); });
+    const themeSelect = document.getElementById('theme-select');
+    if (themeSelect) {
+        themeSelect.addEventListener('change', function() { applyTheme(this.value); });
+    }
 
     function resetBg() {
         document.body.style.backgroundImage = '';
@@ -224,28 +670,35 @@
 
     // ═══ FUNCIONES PARA REPRODUCTOR ═══
     function musicPlay() {
-        document.getElementById('music-info').textContent = '▶️ Reproduciendo...';
-        document.getElementById('music-progress').style.width = '30%';
-        document.getElementById('music-time').textContent = '0:30';
-        document.getElementById('music-duration').textContent = '2:30';
+        const info = document.getElementById('music-info');
+        const progress = document.getElementById('music-progress');
+        const time = document.getElementById('music-time');
+        const duration = document.getElementById('music-duration');
+        if (info) info.textContent = '▶️ Reproduciendo...';
+        if (progress) progress.style.width = '30%';
+        if (time) time.textContent = '0:30';
+        if (duration) duration.textContent = '2:30';
     }
     function musicPause() {
-        document.getElementById('music-info').textContent = '⏸️ Pausado';
+        const info = document.getElementById('music-info');
+        if (info) info.textContent = '⏸️ Pausado';
     }
     function musicNext() {
-        document.getElementById('music-info').textContent = '⏭️ Siguiente canción';
-        document.getElementById('music-progress').style.width = '0%';
-        document.getElementById('music-time').textContent = '0:00';
+        const info = document.getElementById('music-info');
+        const progress = document.getElementById('music-progress');
+        const time = document.getElementById('music-time');
+        if (info) info.textContent = '⏭️ Siguiente canción';
+        if (progress) progress.style.width = '0%';
+        if (time) time.textContent = '0:00';
     }
     function musicPrev() {
-        document.getElementById('music-info').textContent = '⏮️ Canción anterior';
-        document.getElementById('music-progress').style.width = '0%';
-        document.getElementById('music-time').textContent = '0:00';
+        const info = document.getElementById('music-info');
+        const progress = document.getElementById('music-progress');
+        const time = document.getElementById('music-time');
+        if (info) info.textContent = '⏮️ Canción anterior';
+        if (progress) progress.style.width = '0%';
+        if (time) time.textContent = '0:00';
     }
-
-    // ═══ FUNCIONES PARA CALCULADORA (SIN redeclarar calcDisplay) ═══
-    // NOTA: calcDisplay ya está declarado en calculator.js, aquí solo usamos las funciones
-    // Las funciones calcInput y calcResult están en calculator.js
 
     // ═══ FUNCIONES PARA NOTEPAD ═══
     function notepadSave() {
@@ -283,15 +736,22 @@
     // ═══ FUNCIONES PARA RELOJ ═══
     function updateWorldClocks() {
         const now = new Date();
-        document.getElementById('clock-display').textContent = now.toLocaleTimeString('es-ES');
+        const localDisplay = document.getElementById('clock-display');
+        if (localDisplay) {
+            localDisplay.textContent = now.toLocaleTimeString('es-ES');
+        }
         const london = new Date(now.getTime() + (now.getTimezoneOffset() * 60000));
-        document.getElementById('clock-london').textContent = london.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+        const londonEl = document.getElementById('clock-london');
+        if (londonEl) londonEl.textContent = london.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
         const ny = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) - 4*3600000);
-        document.getElementById('clock-ny').textContent = ny.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+        const nyEl = document.getElementById('clock-ny');
+        if (nyEl) nyEl.textContent = ny.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
         const tokyo = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + 9*3600000);
-        document.getElementById('clock-tokyo').textContent = tokyo.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+        const tokyoEl = document.getElementById('clock-tokyo');
+        if (tokyoEl) tokyoEl.textContent = tokyo.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
         const sydney = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + 10*3600000);
-        document.getElementById('clock-sydney').textContent = sydney.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+        const sydneyEl = document.getElementById('clock-sydney');
+        if (sydneyEl) sydneyEl.textContent = sydney.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
     }
     setInterval(updateWorldClocks, 1000);
     setTimeout(updateWorldClocks, 100);
