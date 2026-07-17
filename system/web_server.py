@@ -89,312 +89,319 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                             return (data[:-2] if data.endswith(b"\r\n") else data), fn
         return None, None
     
-    def do_GET(self):
-        parsed = urllib.parse.urlparse(self.path)
-        p = parsed.path
-        q = urllib.parse.parse_qs(parsed.query)
+def do_GET(self):
+    parsed = urllib.parse.urlparse(self.path)
+    p = parsed.path
+    q = urllib.parse.parse_qs(parsed.query)
+    
+    # ═══ FAVICON ═══
+    if p == "/favicon.ico":
+        self.send_response(204)
+        self.end_headers()
+        return
+    
+    # ═══ ESTÁTICOS ═══
+    if p.startswith("/static/"):
+        self._serve_static(p[8:])
+        return
+    
+    # ═══ PAC ═══
+    if p.startswith("/static/pac/"):
+        pac_file = DATA_DIR / "pac" / p[12:]
+        if pac_file.exists():
+            self.send_response(200)
+            self.send_header("Content-Type", "application/x-ns-proxy-autoconfig")
+            self.end_headers()
+            with open(pac_file, "rb") as f:
+                self.wfile.write(f.read())
+        else:
+            self.send_response(404)
+            self.end_headers()
+        return
+    
+    # ═══ SERVIR MÚSICA DESDE D:/Music/ ═══
+    if p.startswith("/D/Music/"):
+        # Decodificar la URL (manejar espacios y caracteres especiales)
+        rel_path = urllib.parse.unquote(p[8:])  # Quita "/D/Music/" y decodifica
+        file_path = DRIVE_D / "Music" / rel_path
         
-        # ═══ FAVICON ═══
-        if p == "/favicon.ico":
-            self.send_response(204)
+        log(f"🎵 Solicitando música: {file_path}", "DEBUG")
+        
+        if file_path.exists() and file_path.is_file():
+            mime, _ = mimetypes.guess_type(str(file_path))
+            self.send_response(200)
+            self.send_header("Content-Type", mime or "audio/mpeg")
+            self.send_header("Content-Disposition", f"inline; filename=\"{file_path.name}\"")
+            self.send_header("Cache-Control", "public, max-age=3600")
+            self.send_header("Accept-Ranges", "bytes")
+            self.end_headers()
+            with open(file_path, "rb") as f:
+                self.wfile.write(f.read())
+            log(f"✅ Música servida: {file_path.name}", "DEBUG")
+            return
+        else:
+            log(f"❌ Música no encontrada: {file_path}", "WARN")
+            self.send_response(404)
             self.end_headers()
             return
-        
-        # ═══ ESTÁTICOS ═══
-        if p.startswith("/static/"):
-            self._serve_static(p[8:])
+    
+    # ═══ SERVIR ARCHIVOS DESDE D: (PDF, imágenes, etc) ═══
+    if p.startswith("/D/"):
+        rel_path = p[3:]  # Quita "/D/"
+        file_path = DRIVE_D / rel_path
+        if file_path.exists() and file_path.is_file():
+            mime, _ = mimetypes.guess_type(str(file_path))
+            self.send_response(200)
+            self.send_header("Content-Type", mime or "application/octet-stream")
+            self.send_header("Content-Disposition", f"inline; filename=\"{file_path.name}\"")
+            self.send_header("Cache-Control", "public, max-age=3600")
+            self.end_headers()
+            with open(file_path, "rb") as f:
+                self.wfile.write(f.read())
             return
-        
-        # ═══ PAC ═══
-        if p.startswith("/static/pac/"):
-            pac_file = DATA_DIR / "pac" / p[12:]
-            if pac_file.exists():
-                self.send_response(200)
-                self.send_header("Content-Type", "application/x-ns-proxy-autoconfig")
-                self.end_headers()
-                with open(pac_file, "rb") as f:
-                    self.wfile.write(f.read())
-            else:
-                self.send_response(404)
-                self.end_headers()
+        else:
+            self.send_response(404)
+            self.end_headers()
             return
-
-        # ═══ SERVIR MÚSICA DESDE D:/Music/ ═══
-        if p.startswith("/D/Music/"):
-            rel_path = p[8:]  # Quita "/D/Music/"
-            file_path = DRIVE_D / "Music" / rel_path
-            if file_path.exists() and file_path.is_file():
-                mime, _ = mimetypes.guess_type(str(file_path))
-                self.send_response(200)
-                self.send_header("Content-Type", mime or "audio/mpeg")
-                self.send_header("Content-Disposition", f"inline; filename=\"{file_path.name}\"")
-                self.send_header("Cache-Control", "public, max-age=3600")
-                self.send_header("Accept-Ranges", "bytes")
-                self.end_headers()
-                with open(file_path, "rb") as f:
-                    self.wfile.write(f.read())
-                return
-            else:
-                self.send_response(404)
-                self.end_headers()
-                return
-
-        # ═══ SERVIR ARCHIVOS DESDE D: (PDF, imágenes, etc) ═══
-        if p.startswith("/D/"):
-            rel_path = p[3:]
-            file_path = DRIVE_D / rel_path
-            if file_path.exists() and file_path.is_file():
-                mime, _ = mimetypes.guess_type(str(file_path))
-                self.send_response(200)
-                self.send_header("Content-Type", mime or "application/octet-stream")
-                self.send_header("Content-Disposition", f"inline; filename=\"{file_path.name}\"")
-                self.send_header("Cache-Control", "public, max-age=3600")
-                self.end_headers()
-                with open(file_path, "rb") as f:
-                    self.wfile.write(f.read())
-                return
-            else:
-                self.send_response(404)
-                self.end_headers()
-                return
-
-        # ═══ PÚBLICAS ═══
-        if p in ["/", "/index.html", "/login"]:
-            self._serve_view("login.html")
+    
+    # ═══ PÚBLICAS ═══
+    if p in ["/", "/index.html", "/login"]:
+        self._serve_view("login.html")
+        return
+    
+    if p == "/desktop":
+        if not self.get_session():
+            self.send_response(302)
+            self.send_header("Location", "/")
+            self.end_headers()
             return
-        
-        if p == "/desktop":
-            if not self.get_session():
-                self.send_response(302)
-                self.send_header("Location", "/")
-                self.end_headers()
-                return
-            self._serve_view("desktop.html")
-            return
-        
-        if p == "/background":
-            if BG_FILE.exists():
-                self.send_response(200)
-                self.send_header("Content-Type", "image/jpeg")
-                self.send_header("Cache-Control", "no-cache")
-                self.end_headers()
-                with open(BG_FILE, "rb") as f:
-                    self.wfile.write(f.read())
-            else:
-                self.send_response(404)
-                self.end_headers()
-            return
-        
-        if p == "/api/background-check":
-            self._json({"exists": BG_FILE.exists()})
-            return
-
-        # ═══ LISTAR MÚSICA DESDE D:/Music/ ═══
-        if p == "/api/music/list":
-            try:
-                music_dir = DRIVE_D / "Music"
-                files = []
-                if music_dir.exists():
-                    for f in music_dir.iterdir():
-                        if f.is_file() and f.suffix.lower() in ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac']:
-                            # Crear URL para servir el archivo
-                            rel_path = str(f).replace(str(DRIVE_D), "/D").replace("\\", "/")
-                            files.append({
-                                "name": f.name,
-                                "path": str(f),
-                                "url": rel_path
-                            })
-                # Ordenar por nombre
-                files.sort(key=lambda x: x["name"].lower())
-                self._json({"ok": True, "files": files, "count": len(files)})
-            except Exception as e:
-                self._json({"ok": False, "error": str(e)})
-            return
-        
-        # ═══ VISOR DE DOCUMENTOS ═══
-        if p == "/api/viewer":
-            viewer_path = q.get('path', [''])[0]
-            if viewer_path and Path(viewer_path).exists():
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.end_headers()
-                with open(viewer_path, "r", encoding="utf-8") as f:
-                    self.wfile.write(f.read().encode("utf-8"))
-            else:
-                self.send_response(404)
-                self.end_headers()
-            return
-        
-        # ═══ BROWSER BOOKMARKS ═══
-        if p == "/api/browser/bookmarks":
+        self._serve_view("desktop.html")
+        return
+    
+    if p == "/background":
+        if BG_FILE.exists():
+            self.send_response(200)
+            self.send_header("Content-Type", "image/jpeg")
+            self.send_header("Cache-Control", "no-cache")
+            self.end_headers()
+            with open(BG_FILE, "rb") as f:
+                self.wfile.write(f.read())
+        else:
+            self.send_response(404)
+            self.end_headers()
+        return
+    
+    if p == "/api/background-check":
+        self._json({"exists": BG_FILE.exists()})
+        return
+    
+    # ═══ LISTAR MÚSICA DESDE D:/Music/ ═══
+    if p == "/api/music/list":
+        try:
+            music_dir = DRIVE_D / "Music"
+            files = []
+            if music_dir.exists():
+                for f in music_dir.iterdir():
+                    if f.is_file() and f.suffix.lower() in ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac']:
+                        # Crear URL para servir el archivo (codificar caracteres especiales)
+                        url_path = "/D/Music/" + urllib.parse.quote(f.name)
+                        files.append({
+                            "name": f.name,
+                            "path": str(f),
+                            "url": url_path
+                        })
+            # Ordenar por nombre
+            files.sort(key=lambda x: x["name"].lower())
+            self._json({"ok": True, "files": files, "count": len(files)})
+        except Exception as e:
+            self._json({"ok": False, "error": str(e)})
+        return
+    
+    # ═══ VISOR DE DOCUMENTOS ═══
+    if p == "/api/viewer":
+        viewer_path = q.get('path', [''])[0]
+        if viewer_path and Path(viewer_path).exists():
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            with open(viewer_path, "r", encoding="utf-8") as f:
+                self.wfile.write(f.read().encode("utf-8"))
+        else:
+            self.send_response(404)
+            self.end_headers()
+        return
+    
+    # ═══ BROWSER BOOKMARKS ═══
+    if p == "/api/browser/bookmarks":
+        try:
+            from system.internal_browser import InternalBrowser
+            bookmarks = InternalBrowser.get_bookmarks()
+            self._json(bookmarks)
+        except Exception as e:
+            self._json([])
+        return
+    
+    # ═══ BROWSER FETCH ═══
+    if p == "/api/browser/fetch":
+        url = q.get('url', [''])[0]
+        if not url:
+            self._json({"ok": False, "error": "URL requerida"})
+        else:
             try:
                 from system.internal_browser import InternalBrowser
-                bookmarks = InternalBrowser.get_bookmarks()
-                self._json(bookmarks)
+                result = InternalBrowser.fetch_url(url)
+                self._json(result)
             except Exception as e:
-                self._json([])
-            return
-        
-        # ═══ BROWSER FETCH ═══
-        if p == "/api/browser/fetch":
-            url = q.get('url', [''])[0]
-            if not url:
-                self._json({"ok": False, "error": "URL requerida"})
-            else:
-                try:
-                    from system.internal_browser import InternalBrowser
-                    result = InternalBrowser.fetch_url(url)
-                    self._json(result)
-                except Exception as e:
-                    self._json({"ok": False, "error": str(e)})
-            return
-        
-        # ═══ SSE - STREAM DE PROCESOS ═══
-        if p.startswith("/api/process/stream/"):
-            session = self.require_auth()
-            if not session:
-                return
-            
-            session_id = p.split("/")[-1]
-            
-            self.send_response(200)
-            self.send_header("Content-Type", "text/event-stream")
-            self.send_header("Cache-Control", "no-cache")
-            self.send_header("Connection", "keep-alive")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.send_header("X-Accel-Buffering", "no")
-            self.end_headers()
-            
-            try:
-                self.wfile.write(f"data: {json.dumps({'type': 'connected', 'data': 'Conectado'})}\n\n".encode())
-                self.wfile.flush()
-                
-                no_change_count = 0
-                max_no_change = 60
-                is_alive = True
-                
-                while is_alive:
-                    result = ScriptRunner.get_output(session_id, timeout=0.5)
-                    
-                    if result.get("ok"):
-                        outputs = result.get("outputs", [])
-                        if outputs:
-                            no_change_count = 0
-                            for output in outputs:
-                                self.wfile.write(f"data: {json.dumps(output)}\n\n".encode())
-                                self.wfile.flush()
-                        else:
-                            no_change_count += 1
-                        
-                        is_alive = result.get("is_alive", False)
-                        
-                        if no_change_count > max_no_change and not is_alive:
-                            self.wfile.write(f"data: {json.dumps({'type': 'exit', 'code': 0, 'data': 'Sin actividad'})}\n\n".encode())
-                            self.wfile.flush()
-                            break
-                        
-                        if not is_alive:
-                            self.wfile.write(f"data: {json.dumps({'type': 'exit', 'code': 0})}\n\n".encode())
-                            self.wfile.flush()
-                            break
-                    else:
-                        self.wfile.write(f"data: {json.dumps({'type': 'error', 'data': result.get('error', 'Error')})}\n\n".encode())
-                        self.wfile.flush()
-                        break
-                    
-                    time.sleep(0.3)
-                
-            except (BrokenPipeError, ConnectionResetError):
-                pass
-            except Exception as e:
-                log(f"Error en SSE: {e}", "ERROR")
-            
-            return
-        
-        # ═══ RUTAS PROTEGIDAS ═══
+                self._json({"ok": False, "error": str(e)})
+        return
+    
+    # ═══ SSE - STREAM DE PROCESOS ═══
+    if p.startswith("/api/process/stream/"):
         session = self.require_auth()
         if not session:
             return
         
-        # ═══ TASK MANAGER ═══
-        if p == "/api/processes":
-            self._json(TaskManager.list_processes())
-            return
+        session_id = p.split("/")[-1]
         
-        if p == "/api/system-stats":
-            self._json(TaskManager.get_system_stats())
-            return
-        
-        if p == "/api/running-procs":
-            self._json(ScriptRunner.list_running())
-            return
-        
-        if p == "/api/process/list":
-            self._json({"ok": True, "processes": ScriptRunner.list_running()})
-            return
-        
-        # ═══ PROGRAMAS ═══
-        if p == "/api/programs":
-            detector = ProgramDetector()
-            self._json(detector.get_cached())
-            return
-        
-        # ═══ DNS ═══
-        if p == "/api/dns":
-            dns = get_dns_server()
-            self._json({"rules": dns.get_rules() if dns else {}})
-            return
-        
-        # ═══ PROXY ═══
-        if p == "/api/proxy":
-            proxy = get_proxy_server()
-            self._json({"rules": proxy.get_rules() if proxy else {}})
-            return
-        
-        if p == "/api/proxy-log":
-            proxy = get_proxy_server()
-            self._json(proxy.get_log() if proxy else [])
-            return
-        
-        # ═══ PAC INFO ═══
-        if p == "/api/pac-info":
-            try:
-                from system.pac_generator import PACGenerator
-                pac_url = PACGenerator.get_pac_url()
-                instructions = PACGenerator.get_browser_config_instructions()
-                self._json({
-                    "ok": True,
-                    "pac_url": pac_url,
-                    "instructions": instructions
-                })
-            except Exception as e:
-                self._json({"ok": False, "error": str(e)})
-            return
-        
-        # ═══ ARCHIVOS ═══
-        if p == "/api/files":
-            fp = q.get('path', [''])[0]
-            if not fp or fp == "":
-                fp = "/D"
-            result = FileManager.list_directory(fp)
-            self._json(result)
-            return
-        
-        if p == "/api/files/search":
-            self._json(FileManager.search(q.get('q', [''])[0]))
-            return
-        
-        # ═══ LOGS ═══
-        if p == "/api/last-log":
-            log_data = ScriptRunner.get_last_log()
-            if log_data:
-                self._json({"ok": True, **log_data})
-            else:
-                self._json({"ok": False, "error": "No hay logs"})
-            return
-        
-        self.send_response(404)
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "keep-alive")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("X-Accel-Buffering", "no")
         self.end_headers()
+        
+        try:
+            self.wfile.write(f"data: {json.dumps({'type': 'connected', 'data': 'Conectado'})}\n\n".encode())
+            self.wfile.flush()
+            
+            no_change_count = 0
+            max_no_change = 60
+            is_alive = True
+            
+            while is_alive:
+                result = ScriptRunner.get_output(session_id, timeout=0.5)
+                
+                if result.get("ok"):
+                    outputs = result.get("outputs", [])
+                    if outputs:
+                        no_change_count = 0
+                        for output in outputs:
+                            self.wfile.write(f"data: {json.dumps(output)}\n\n".encode())
+                            self.wfile.flush()
+                    else:
+                        no_change_count += 1
+                    
+                    is_alive = result.get("is_alive", False)
+                    
+                    if no_change_count > max_no_change and not is_alive:
+                        self.wfile.write(f"data: {json.dumps({'type': 'exit', 'code': 0, 'data': 'Sin actividad'})}\n\n".encode())
+                        self.wfile.flush()
+                        break
+                    
+                    if not is_alive:
+                        self.wfile.write(f"data: {json.dumps({'type': 'exit', 'code': 0})}\n\n".encode())
+                        self.wfile.flush()
+                        break
+                else:
+                    self.wfile.write(f"data: {json.dumps({'type': 'error', 'data': result.get('error', 'Error')})}\n\n".encode())
+                    self.wfile.flush()
+                    break
+                
+                time.sleep(0.3)
+            
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+        except Exception as e:
+            log(f"Error en SSE: {e}", "ERROR")
+        
+        return
+    
+    # ═══ RUTAS PROTEGIDAS ═══
+    session = self.require_auth()
+    if not session:
+        return
+    
+    # ═══ TASK MANAGER ═══
+    if p == "/api/processes":
+        self._json(TaskManager.list_processes())
+        return
+    
+    if p == "/api/system-stats":
+        self._json(TaskManager.get_system_stats())
+        return
+    
+    if p == "/api/running-procs":
+        self._json(ScriptRunner.list_running())
+        return
+    
+    if p == "/api/process/list":
+        self._json({"ok": True, "processes": ScriptRunner.list_running()})
+        return
+    
+    # ═══ PROGRAMAS ═══
+    if p == "/api/programs":
+        detector = ProgramDetector()
+        self._json(detector.get_cached())
+        return
+    
+    # ═══ DNS ═══
+    if p == "/api/dns":
+        dns = get_dns_server()
+        self._json({"rules": dns.get_rules() if dns else {}})
+        return
+    
+    # ═══ PROXY ═══
+    if p == "/api/proxy":
+        proxy = get_proxy_server()
+        self._json({"rules": proxy.get_rules() if proxy else {}})
+        return
+    
+    if p == "/api/proxy-log":
+        proxy = get_proxy_server()
+        self._json(proxy.get_log() if proxy else [])
+        return
+    
+    # ═══ PAC INFO ═══
+    if p == "/api/pac-info":
+        try:
+            from system.pac_generator import PACGenerator
+            pac_url = PACGenerator.get_pac_url()
+            instructions = PACGenerator.get_browser_config_instructions()
+            self._json({
+                "ok": True,
+                "pac_url": pac_url,
+                "instructions": instructions
+            })
+        except Exception as e:
+            self._json({"ok": False, "error": str(e)})
+        return
+    
+    # ═══ ARCHIVOS ═══
+    if p == "/api/files":
+        fp = q.get('path', [''])[0]
+        if not fp or fp == "":
+            fp = "/D"
+        result = FileManager.list_directory(fp)
+        self._json(result)
+        return
+    
+    if p == "/api/files/search":
+        self._json(FileManager.search(q.get('q', [''])[0]))
+        return
+    
+    # ═══ LOGS ═══
+    if p == "/api/last-log":
+        log_data = ScriptRunner.get_last_log()
+        if log_data:
+            self._json({"ok": True, **log_data})
+        else:
+            self._json({"ok": False, "error": "No hay logs"})
+        return
+    
+    # ═══ 404 ═══
+    self.send_response(404)
+    self.end_headers()
     
     def do_POST(self):
         length = int(self.headers.get("Content-Length", 0))
