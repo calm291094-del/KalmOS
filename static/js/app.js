@@ -732,40 +732,34 @@ function executeProgramFromMenu(path, name) {
 // ═══════════════════════════════════════════════════════════
 // KrootCorp
 // ═══════════════════════════════════════════════════════════
+// ═══ KROOT CORP - VERSIÓN PARA RENDER ═══
 function openKrootCorp() {
-    // Primero, ejecutar el script de Kroot Corp
-    showNotification('🏢 Iniciando Kroot Corp IA...', 'info');
+    console.log('🏢 Abriendo Kroot Corp IA...');
     
-    fetch('/api/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            path: 'system/Program/kroot_corp/run.py',
-            args: ['--no-browser']  // Para que no abra el navegador automáticamente
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.ok && data.session_id) {
-            showNotification('✅ Kroot Corp IA iniciado', 'success');
-            // Abrir el navegador interno después de 2 segundos
-            setTimeout(() => {
-                openWin('browser');
-                setTimeout(() => {
-                    const urlInput = document.getElementById('browser-url');
-                    if (urlInput) {
-                        urlInput.value = 'http://localhost:8000/dashboard';
-                        browserNavigate();
-                    }
-                }, 500);
-            }, 2000);
-        } else {
-            showNotification('❌ Error iniciando Kroot Corp: ' + (data.error || 'desconocido'), 'error');
+    if (typeof showNotification === 'function') {
+        showNotification('🏢 Kroot Corp IA - Abriendo en nueva pestaña...', 'info');
+    }
+    
+    // En Render, abrir en nueva pestaña con la URL correcta
+    // Kroot Corp debe estar integrado en el mismo servidor
+    const url = '/api/kroot/dashboard';
+    
+    // Intentar abrir en el navegador interno
+    openWin('browser');
+    setTimeout(() => {
+        const urlInput = document.getElementById('browser-url');
+        if (urlInput) {
+            urlInput.value = url;
+            if (typeof browserNavigate === 'function') {
+                browserNavigate();
+            }
         }
-    })
-    .catch(err => {
-        showNotification('❌ Error: ' + err.message, 'error');
-    });
+    }, 1000);
+    
+    // También abrir en nueva pestaña como fallback
+    setTimeout(() => {
+        window.open(url, '_blank');
+    }, 2000);
 }
 
 // Exportar función globalmente
