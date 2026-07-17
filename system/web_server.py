@@ -581,6 +581,32 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             else:
                 self._json({"ok": False, "error": "Invalid"})
             return
+
+        # ═══ PERSISTENCIA CON GITHUB ═══
+        if p == "/api/persistence/save":
+            try:
+                data = json.loads(body)
+                name = data.get("name", "default")
+                content = data.get("data", {})
+        
+                from system.config import save_persistent_data
+                result = save_persistent_data(name, content)
+                self._json({"ok": result})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+            return
+
+        if p == "/api/persistence/load":
+            try:
+                data = json.loads(body)
+                name = data.get("name", "default")
+        
+                from system.config import load_persistent_data
+                content = load_persistent_data(name, {})
+                self._json({"ok": True, "data": content})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+            return
         
         # ═══ PERSISTENCIA - Guardar datos ═══
         if p == "/api/persistence/save":
