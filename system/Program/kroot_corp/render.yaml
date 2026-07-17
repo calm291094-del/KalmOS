@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: empresa-ia-kroot
+    env: docker
+    plan: standard # Necesario porque los agentes IA consumen RAM
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: GROQ_API_KEY
+        sync: false # Opcional: Si pones una key gratis de Groq, será más estable

@@ -1,0 +1,20 @@
+empresa-ia-kroot/
+│
+├── .env.example
+├── requirements.txt
+├── render.yaml
+├── Dockerfile
+├── README.md
+│
+└── app/
+    ├── __init__.py
+    ├── main.py           # FastAPI, Autenticación y Rutas
+    ├── llm_config.py     # Cerebro: APIs gratuitas con fallback
+    ├── memory.py         # Base de datos vectorial para "aprender"
+    ├── agents.py         # Definición de los empleados IA
+    ├── tasks.py          # Definición de los trabajos
+    ├── crew.py           # Orquestador de la empresa
+    │
+    └── templates/
+        ├── login.html    # Pantalla de login
+        └── dashboard.html# Panel de control de la empresa

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Kroot Corp IA{% endblock %}
+{% block page_title %}Panel de Control de Agentes{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-8">
+    
+    <!-- Generar Nuevo Informe -->
+    <div class="bg-white dark:bg-darkcard rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex items-center justify-center">
+                <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Generar Nuevo Informe</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Los agentes investigarán, redactarán y criticarán el tema.</p>
+            </div>
+        </div>
+        
+        <form id="crew-form" method="POST" action="/run_crew" class="flex flex-col sm:flex-row gap-4">
+            <input name="topico" type="text" placeholder="Ej: Tendencias de la IA en 2026, Impacto del café..." 
+                class="flex-grow px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all" required>
+            <button type="submit" class="px-6 py-3 bg-primary hover:bg-blue-700 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-play"></i> Ejecutar Agentes
+            </button>
+        </form>
+    </div>
+
+    <!-- ESTADO EN VIVO (Oculto por defecto) -->
+    <div id="live-status-container" class="hidden bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6 animate-pulse">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-300 flex items-center justify-center">
+                <i class="fa-solid fa-gear fa-spin text-2xl"></i>
+            </div>
+            <div class="flex-1">
+                <h4 class="text-lg font-bold text-blue-900 dark:text-blue-100">Procesando: <span id="status-topico" class="font-normal"></span></h4>
+                <p id="status-phase" class="text-blue-700 dark:text-blue-300 font-medium mt-1">Iniciando...</p>
+            </div>
+        </div>
+        <div class="mt-4 w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2.5">
+            <div class="bg-blue-600 h-2.5 rounded-full animate-[width_2s_ease-in-out_infinite]" style="width: 45%"></div>
+        </div>
+    </div>
+
+    <!-- Historial de Informes -->
+    <div class="bg-white dark:bg-darkcard rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                    <i class="fa-solid fa-clock-rotate-left text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Historial de Informes</h3>
+            </div>
+            <span class="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                <span id="report-count">{{ reports|length }}</span> registros
+            </span>
+        </div>
+
+        <div id="reports-list" class="divide-y divide-gray-200 dark:divide-gray-700">
+            {% if reports %}
+                {% for report in reports %}
+                    <div class="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors report-item">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
+                            <div class="flex items-center gap-3">
+                                <h4 class="font-semibold text-gray-900 dark:text-white text-lg">{{ report.topico }}</h4>
+                                <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full 
+                                    {% if report.estado == 'Éxito' %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400
+                                    {% elif report.estado == 'Procesando' %}bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400
+                                    {% else %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400{% endif %}">
+                                    {{ report.estado }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                            <pre class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans">{{ report.resultado }}</pre>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="p-12 text-center text-gray-500 dark:text-gray-400">
+                    <i class="fa-regular fa-folder-open text-4xl mb-3 opacity-50"></i>
+                    <p>No hay informes generados aún. ¡Crea el primero!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    let pollInterval;
+
+    // Función para iniciar el monitoreo en tiempo real
+    function startLiveMonitoring() {
+        const container = document.getElementById('live-status-container');
+        container.classList.remove('hidden');
+        
+        pollInterval = setInterval(async () => {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                if (data.estado === 'Procesando') {
+                    document.getElementById('status-topico').innerText = data.topico;
+                    document.getElementById('status-phase').innerText = data.phase;
+                } else if (data.estado === 'Éxito' || data.estado === 'Fallo') {
+                    // Detener el polling
+                    clearInterval(pollInterval);
+                    container.classList.add('hidden');
+                    
+                    // Añadir el nuevo informe al DOM sin recargar la página
+                    addReportToDOM(data.topico, data.resultado, data.estado);
+                    
+                    // Resetear estado para la próxima
+                    fetch('/api/status'); 
+                }
+            } catch (error) {
+                console.error("Error al consultar estado:", error);
+            }
+        }, 2000); // Consulta cada 2 segundos
+    }
+
+    // Función para inyectar el nuevo informe en la lista
+    function addReportToDOM(topico, resultado, estado) {
+        const list = document.getElementById('reports-list');
+        const emptyState = list.querySelector('.text-center');
+        if (emptyState) emptyState.remove();
+
+        const estadoClass = estado === 'Éxito' 
+            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+
+        const html = `
+            <div class="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors report-item animate-[fadeIn_0.5s_ease-out]">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
+                    <div class="flex items-center gap-3">
+                        <h4 class="font-semibold text-gray-900 dark:text-white text-lg">${topico}</h4>
+                        <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full ${estadoClass}">
+                            ${estado}
+                        </span>
+                    </div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                    <pre class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans">${resultado}</pre>
+                </div>
+            </div>
+        `;
+        
+        // Insertar al principio de la lista
+        list.insertAdjacentHTML('afterbegin', html);
+        
+        // Actualizar contador
+        const countEl = document.getElementById('report-count');
+        countEl.innerText = parseInt(countEl.innerText) + 1;
+    }
+
+    // Iniciar monitoreo al enviar el formulario
+    document.getElementById('crew-form').addEventListener('submit', function() {
+        startLiveMonitoring();
+    });
+
+    // Si al cargar la página ya hay una tarea en proceso, reanudar el monitoreo
+    window.addEventListener('DOMContentLoaded', async () => {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+        if (data.estado === 'Procesando') {
+            startLiveMonitoring();
+        }
+    });
+</script>
+
+<style>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
