@@ -13,10 +13,7 @@ let musicPlayer = {
     isLoading: false
 };
 
-// ═══ FORMATOS SOPORTADOS ═══
-const SUPPORTED_FORMATS = ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac', '.webm'];
-
-// ═══ PLAYLIST DE DEMOSTRACIÓN (CON CORS PERMITIDO) ═══
+// ═══ PLAYLIST DE DEMOSTRACIÓN (URLs CONFIRMADAS) ═══
 const DEMO_PLAYLIST = [
     { 
         name: '🎵 Classical - Beethoven', 
@@ -24,13 +21,13 @@ const DEMO_PLAYLIST = [
         isDemo: true
     },
     { 
-        name: '🎵 Classical - Bach', 
-        url: 'https://upload.wikimedia.org/wikipedia/commons/9/98/Bach_-_Brandenburg_Concerto_No._1_in_F_Major_BWV_1046_%281st_movement%29.ogg',
+        name: '🎵 Classical - Grieg', 
+        url: 'https://upload.wikimedia.org/wikipedia/commons/6/6c/Grieg_-_Peer_Gynt_Suite_No._1_%28movement_1%29.ogg',
         isDemo: true
     },
     { 
-        name: '🎵 Classical - Grieg', 
-        url: 'https://upload.wikimedia.org/wikipedia/commons/6/6c/Grieg_-_Peer_Gynt_Suite_No._1_%28movement_1%29.ogg',
+        name: '🎵 Classical - Bach', 
+        url: 'https://upload.wikimedia.org/wikipedia/commons/9/98/Bach_-_Brandenburg_Concerto_No._1_in_F_Major_BWV_1046_%281st_movement%29.ogg',
         isDemo: true
     }
 ];
@@ -69,30 +66,35 @@ function loadMusicFiles() {
             console.log('📥 Respuesta /api/music/list:', data);
             
             if (data.ok && data.files && data.files.length > 0) {
-                // Mostrar los nombres de archivos encontrados
-                console.log('📁 Archivos encontrados en D/Music/:');
-                data.files.forEach(f => console.log(`   - ${f.name} (${f.url})`));
+                // FILTRAR ARCHIVOS VÁLIDOS (más de 50KB)
+                const validFiles = data.files.filter(f => f.size > 50000);
+                console.log(`📁 Archivos válidos: ${validFiles.length} de ${data.files.length}`);
                 
-                // Agregar archivos locales a la playlist
-                const localFiles = data.files.map(f => ({
-                    name: f.name,
-                    path: f.path,
-                    url: f.url,
-                    isDemo: false,
-                    originalName: f.name
-                }));
-                
-                // Combinar: locales primero, luego demos
-                musicPlayer.playlist = [...localFiles, ...DEMO_PLAYLIST];
-                
-                const localCount = localFiles.length;
-                if (status) {
-                    status.textContent = `🎵 ${localCount} canciones locales + ${DEMO_PLAYLIST.length} demo`;
-                    status.style.color = '#00cc66';
+                if (validFiles.length > 0) {
+                    const localFiles = validFiles.map(f => ({
+                        name: f.name,
+                        path: f.path,
+                        url: f.url,
+                        isDemo: false,
+                        size: f.size
+                    }));
+                    
+                    musicPlayer.playlist = [...localFiles, ...DEMO_PLAYLIST];
+                    
+                    const localCount = localFiles.length;
+                    if (status) {
+                        status.textContent = `🎵 ${localCount} canciones locales + ${DEMO_PLAYLIST.length} demo`;
+                        status.style.color = '#00cc66';
+                    }
+                } else {
+                    if (status) {
+                        status.textContent = `⚠️ Archivos locales corruptos (${data.files.length} archivos < 50KB)`;
+                        status.style.color = '#ffaa00';
+                    }
                 }
             } else {
                 if (status) {
-                    status.textContent = '🎵 Modo Demo - Sin archivos locales';
+                    status.textContent = '🎵 Modo Demo - Sin archivos locales válidos';
                     status.style.color = '#ffaa00';
                 }
                 console.log('🎵 Usando solo playlist de demostración');
@@ -144,7 +146,6 @@ function updatePlaylistUI() {
         const isActive = index === musicPlayer.currentTrack;
         const isPlaying = isActive && musicPlayer.isPlaying;
         const isDemo = track.isDemo || false;
-        const isLocal = !isDemo;
         
         html += `
             <div style="
@@ -164,7 +165,6 @@ function updatePlaylistUI() {
                 <span style="color:${isPlaying ? '#da70d6' : (isActive ? '#e6e6fa' : '#9370db')};">
                     ${isPlaying ? '▶️' : (isActive ? '⏸️' : (isDemo ? '☁️' : '🎵'))} 
                     ${track.name}
-                    ${isLocal ? '' : ' ☁️'}
                 </span>
                 <span style="font-size:10px;color:#6a0dad;">${isDemo ? 'demo' : '📁'}</span>
             </div>
@@ -270,7 +270,6 @@ function selectTrack(index) {
         const errorCode = this.error ? this.error.code : 'desconocido';
         const errorMsg = this.error ? this.error.message : 'Error desconocido';
         
-        // DIAGNÓSTICO COMPLETO
         console.error('❌ ERROR DE AUDIO:');
         console.error('   Código:', errorCode);
         console.error('   Mensaje:', errorMsg);
@@ -278,33 +277,26 @@ function selectTrack(index) {
         console.error('   Canción:', track.name);
         console.error('   Es demo:', track.isDemo);
         
-        // Mostrar en la UI
         if (info) {
-            info.textContent = `❌ Error: ${track.name} (${errorMsg || 'Archivo no encontrado'})`;
+            info.textContent = `❌ Error: ${track.name}`;
             info.style.color = '#ff4444';
         }
         
         musicPlayer.isPlaying = false;
         updatePlaylistUI();
         
-        // Si es un error 404 (MEDIA_ERR_SRC_NOT_SUPPORTED = 4)
-        // y la canción NO es demo, mostrar sugerencia
-        if (errorCode === 4 && !track.isDemo) {
-            const status = document.getElementById('music-status');
-            if (status) {
-                status.textContent = `❌ Archivo no encontrado: ${track.name}`;
-                status.style.color = '#ff4444';
-            }
-            console.warn('💡 Sugerencia: El archivo no existe en D/Music/');
-            console.warn(`   Buscado: ${track.url}`);
-        }
-        
-        // Saltar a la siguiente canción después de 3 segundos (solo si es local y da error)
+        // Saltar a la siguiente canción después de 3 segundos
         if (!track.isDemo) {
             setTimeout(() => {
                 console.log('⏭️ Saltando a la siguiente canción...');
                 musicNext();
             }, 3000);
+        } else {
+            // Si es demo, intentar de nuevo (puede ser CORS)
+            setTimeout(() => {
+                console.log('🔄 Reintentando demo...');
+                selectTrack(index);
+            }, 2000);
         }
     });
 
@@ -480,4 +472,4 @@ window.selectTrack = selectTrack;
 window.loadMusicFiles = loadMusicFiles;
 
 console.log('🎵 Reproductor de música cargado correctamente');
-console.log('📌 Modo: Demo + Archivos locales');
+console.log('📌 Modo: Demo + Archivos locales (filtrados por tamaño)');
