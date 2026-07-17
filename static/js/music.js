@@ -16,26 +16,21 @@ let musicPlayer = {
 // ═══ FORMATOS SOPORTADOS ═══
 const SUPPORTED_FORMATS = ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac', '.webm'];
 
-// ═══ PLAYLIST DE DEMOSTRACIÓN ═══
+// ═══ PLAYLIST DE DEMOSTRACIÓN (CON CORS PERMITIDO) ═══
 const DEMO_PLAYLIST = [
     { 
-        name: '🎵 SoundHelix - Song 1', 
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        name: '🎵 Sample 1 - Ambient', 
+        url: 'https://upload.wikimedia.org/wikipedia/commons/6/6c/Grieg_-_Peer_Gynt_Suite_No._1_%28movement_1%29.ogg',
         isDemo: true
     },
     { 
-        name: '🎵 SoundHelix - Song 2', 
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+        name: '🎵 Sample 2 - Classical', 
+        url: 'https://upload.wikimedia.org/wikipedia/commons/9/98/Bach_-_Brandenburg_Concerto_No._1_in_F_Major_BWV_1046_%281st_movement%29.ogg',
         isDemo: true
     },
     { 
-        name: '🎵 SoundHelix - Song 3', 
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-        isDemo: true
-    },
-    { 
-        name: '🎵 SoundHelix - Song 4', 
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+        name: '🎵 Sample 3 - Piano', 
+        url: 'https://upload.wikimedia.org/wikipedia/commons/5/5d/Beethoven_-_Sonata_No._8_%28Path%C3%A9tique%29_in_C_minor_Op._13%2C_2nd_movement.ogg',
         isDemo: true
     }
 ];
