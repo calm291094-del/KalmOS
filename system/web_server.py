@@ -118,8 +118,28 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.send_response(404)
                 self.end_headers()
             return
-        
-        # ═══ SERVIR ARCHIVOS DESDE D: ═══
+
+        # ═══ SERVIR MÚSICA DESDE D:/Music/ ═══
+        if p.startswith("/D/Music/"):
+            rel_path = p[8:]  # Quita "/D/Music/"
+            file_path = DRIVE_D / "Music" / rel_path
+            if file_path.exists() and file_path.is_file():
+                mime, _ = mimetypes.guess_type(str(file_path))
+                self.send_response(200)
+                self.send_header("Content-Type", mime or "audio/mpeg")
+                self.send_header("Content-Disposition", f"inline; filename=\"{file_path.name}\"")
+                self.send_header("Cache-Control", "public, max-age=3600")
+                self.send_header("Accept-Ranges", "bytes")
+                self.end_headers()
+                with open(file_path, "rb") as f:
+                    self.wfile.write(f.read())
+                return
+            else:
+                self.send_response(404)
+                self.end_headers()
+                return
+
+        # ═══ SERVIR ARCHIVOS DESDE D: (PDF, imágenes, etc) ═══
         if p.startswith("/D/"):
             rel_path = p[3:]
             file_path = DRIVE_D / rel_path
@@ -137,7 +157,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.send_response(404)
                 self.end_headers()
                 return
-        
+
         # ═══ PÚBLICAS ═══
         if p in ["/", "/index.html", "/login"]:
             self._serve_view("login.html")
