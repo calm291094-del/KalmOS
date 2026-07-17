@@ -125,9 +125,9 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             # Decodificar la URL (manejar espacios y caracteres especiales)
             rel_path = urllib.parse.unquote(p[8:])  # Quita "/D/Music/" y decodifica
             file_path = DRIVE_D / "Music" / rel_path
-            
+    
             log(f"🎵 Solicitando música: {file_path}", "DEBUG")
-            
+    
             if file_path.exists() and file_path.is_file():
                 mime, _ = mimetypes.guess_type(str(file_path))
                 self.send_response(200)
