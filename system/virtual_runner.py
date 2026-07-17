@@ -17,104 +17,140 @@ class VirtualRunner:
     VIEWER_DIR = VIRTUAL_ENV / "viewer"
     
     _active_processes = {}
+    _initialized = False
     
     @classmethod
     def init(cls):
+        if cls._initialized:
+            return
         dirs = [cls.VIRTUAL_ENV, cls.OUTPUT_DIR, cls.VIEWER_DIR]
         for d in dirs:
             d.mkdir(parents=True, exist_ok=True)
+        cls._initialized = True
     
     @classmethod
     def resolve_path(cls, path):
-        """Resuelve una ruta correctamente - Busca en system/program/"""
+        """Resuelve una ruta - Busca en system/program/ y D:/"""
+        # Si es None o vacío
+        if not path:
+            return None
+        
         path_str = str(path)
         path_obj = Path(path_str)
         
-        # Si la ruta ya existe, devolverla
+        # ═══ 1. Si la ruta ya existe, devolverla ═══
         if path_obj.exists():
             return path_obj
         
-        # Si empieza con system/program/, buscar en la raíz
+        # ═══ 2. Buscar en system/program/ (minúscula) ═══
+        program_dir = BASE_DIR / "system" / "program"
+        
+        # 2a. Si la ruta empieza con system/program/
         if path_str.startswith("system/program/") or path_str.startswith("/system/program/"):
             rel_path = path_str.replace("system/program/", "").replace("/system/program/", "")
-            program_path = BASE_DIR / "system" / "program" / rel_path
-            if program_path.exists():
-                return program_path
+            test_path = program_dir / rel_path
+            if test_path.exists():
+                return test_path
         
-        # Si empieza con D:/Scripts/, buscar en system/program/
-        if path_str.startswith("D:/Scripts/") or path_str.startswith("D:\\Scripts\\"):
+        # 2b. Si la ruta empieza con D:/Scripts/ o D:/Apps/ etc
+        if path_str.startswith("D:/") or path_str.startswith("D:\\"):
+            # Extraer solo el nombre del archivo
             filename = Path(path_str).name
-            program_path = BASE_DIR / "system" / "program" / filename
-            if program_path.exists():
-                return program_path
+            if filename:
+                # Buscar en system/program/
+                test_path = program_dir / filename
+                if test_path.exists():
+                    return test_path
+                # Buscar con extensiones comunes
+                for ext in ['.py', '.sh', '.js', '.bat', '.cmd']:
+                    test_path = program_dir / f"{filename}{ext}"
+                    if test_path.exists():
+                        return test_path
         
-        # Si es solo un nombre de archivo, buscar en system/program/
+        # 2c. Si es solo un nombre de archivo (sin path)
         if path_obj.parent == Path(".") or path_obj.parent == Path("/"):
-            program_path = BASE_DIR / "system" / "program" / path_str
-            if program_path.exists():
-                return program_path
+            # Buscar en system/program/
+            test_path = program_dir / path_str
+            if test_path.exists():
+                return test_path
+            # Buscar con extensiones comunes
+            for ext in ['.py', '.sh', '.js', '.bat', '.cmd']:
+                test_path = program_dir / f"{path_str}{ext}"
+                if test_path.exists():
+                    return test_path
         
-        # Intentar buscar en system/program/ por nombre
+        # 2d. Buscar por nombre en system/program/ recursivamente
         filename = path_obj.name
-        # Buscar con extensión .py
-        test_path = BASE_DIR / "system" / "program" / f"{filename}"
-        if test_path.exists():
-            return test_path
+        if filename:
+            for ext in ['', '.py', '.sh', '.js', '.bat', '.cmd']:
+                test_path = program_dir / f"{filename}{ext}"
+                if test_path.exists():
+                    return test_path
         
-        # Buscar con extensiones comunes
-        for ext in ['.py', '.sh', '.js', '.bat', '.cmd']:
-            test_path = BASE_DIR / "system" / "program" / f"{filename}{ext}"
-            if test_path.exists():
-                return test_path
-        
-        # Buscar en D:/
+        # ═══ 3. Buscar en D:/ ═══
         if DRIVE_D.exists():
-            test_path = DRIVE_D / "Scripts" / filename
+            # Buscar en D:/Scripts/
+            test_path = DRIVE_D / "Scripts" / path_str
             if test_path.exists():
                 return test_path
-            test_path = DRIVE_D / "Projects" / filename
+            # Buscar en D:/Apps/
+            test_path = DRIVE_D / "Apps" / path_str
             if test_path.exists():
                 return test_path
+            # Buscar en D:/Projects/
+            test_path = DRIVE_D / "Projects" / path_str
+            if test_path.exists():
+                return test_path
+            # Buscar solo con el nombre
+            filename = path_obj.name
+            if filename:
+                for base in ["Scripts", "Apps", "Projects"]:
+                    test_path = DRIVE_D / base / filename
+                    if test_path.exists():
+                        return test_path
         
-        # Si no se encuentra, devolver la ruta original
+        # ═══ 4. No se encontró ═══
         log(f"⚠️ No se encontró el archivo: {path_str}", "WARN")
         return path_obj
     
     @classmethod
     def execute(cls, program_path, args=None):
         """Ejecuta un programa"""
-        # Resolver la ruta correctamente
-        program_path = cls.resolve_path(program_path)
-        
-        if not program_path.exists():
-            log(f"❌ Programa no encontrado: {program_path}", "ERROR")
-            return {"ok": False, "error": f"Programa no encontrado: {program_path}"}
-        
         cls.init()
-        ext = program_path.suffix.lower()
         
-        # ═══ DOCUMENTOS (PDF, imágenes, texto) ═══
+        # Resolver la ruta
+        resolved = cls.resolve_path(program_path)
+        if not resolved:
+            return {"ok": False, "error": f"Ruta inválida: {program_path}"}
+        
+        if not resolved.exists():
+            return {"ok": False, "error": f"Programa no encontrado: {resolved}"}
+        
+        ext = resolved.suffix.lower()
+        log(f"🔍 Ejecutando: {resolved} (ext: {ext})")
+        
+        # ═══ DOCUMENTOS ═══
         if ext == ".pdf":
-            return cls._open_pdf(program_path)
+            return cls._open_pdf(resolved)
         if ext in [".txt", ".md", ".log", ".json", ".xml", ".yaml", ".yml", ".csv"]:
-            return cls._view_text(program_path)
+            return cls._view_text(resolved)
         if ext in [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg", ".ico"]:
-            return cls._view_image(program_path)
+            return cls._view_image(resolved)
         
         # ═══ PROGRAMAS PYTHON ═══
         if ext == ".py":
-            return cls._run_python(program_path, args)
+            return cls._run_python(resolved, args)
         
         # ═══ SCRIPTS ═══
         if ext in [".sh", ".bash"]:
-            return cls._run_bash(program_path, args)
+            return cls._run_bash(resolved, args)
         
         if ext in [".js"]:
-            return cls._run_node(program_path, args)
+            return cls._run_node(resolved, args)
         
         # ═══ EJECUTABLES WINDOWS ═══
         if ext in [".exe", ".bat", ".cmd"]:
-            return cls._run_native(program_path, args)
+            return cls._run_native(resolved, args)
         
         return {"ok": False, "error": f"Tipo no soportado: {ext}"}
     
@@ -122,8 +158,6 @@ class VirtualRunner:
     def _run_python(cls, py_path, args=None):
         """Ejecuta un script Python y captura su salida en tiempo real"""
         try:
-            # Asegurar que la ruta existe
-            py_path = cls.resolve_path(py_path)
             if not py_path.exists():
                 return {"ok": False, "error": f"Python script no encontrado: {py_path}"}
             
@@ -134,7 +168,9 @@ class VirtualRunner:
                 "PYTHONUNBUFFERED": "1"
             })
             
-            cmd = [sys.executable, "-u", str(py_path)]
+            # Usar el mismo intérprete de Python que ejecuta Kalm
+            python_exe = sys.executable
+            cmd = [python_exe, "-u", str(py_path)]
             if args:
                 cmd.extend(args)
             
@@ -142,6 +178,8 @@ class VirtualRunner:
             output_queue = queue.Queue()
             
             log_file = cls.OUTPUT_DIR / f"{py_path.stem}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+            
+            log(f"▶️ Ejecutando Python: {' '.join(cmd)}")
             
             proc = subprocess.Popen(
                 cmd,
@@ -204,7 +242,6 @@ class VirtualRunner:
     @classmethod
     def _run_bash(cls, sh_path, args=None):
         try:
-            sh_path = cls.resolve_path(sh_path)
             if not sh_path.exists():
                 return {"ok": False, "error": f"Bash script no encontrado: {sh_path}"}
             
@@ -272,7 +309,6 @@ class VirtualRunner:
     @classmethod
     def _run_node(cls, js_path, args=None):
         try:
-            js_path = cls.resolve_path(js_path)
             if not js_path.exists():
                 return {"ok": False, "error": f"Node.js script no encontrado: {js_path}"}
             
@@ -348,7 +384,6 @@ class VirtualRunner:
             if platform.system() != "Windows":
                 return {"ok": False, "error": "Este programa solo funciona en Windows"}
             
-            file_path = cls.resolve_path(file_path)
             if not file_path.exists():
                 return {"ok": False, "error": f"Archivo no encontrado: {file_path}"}
             
@@ -371,7 +406,7 @@ class VirtualRunner:
                 encoding='utf-8',
                 errors='replace',
                 bufsize=1,
-                creationflags=subprocess.CREATE_NO_WINDOW
+                creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0
             )
             
             def read_output():
