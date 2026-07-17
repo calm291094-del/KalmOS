@@ -124,11 +124,20 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         
         # ═══ SERVIR MÚSICA DESDE D:/Music/ ═══
         if p.startswith("/D/Music/"):
-            rel_path = urllib.parse.unquote(p[8:])
-            file_path = DRIVE_D / "Music" / rel_path
-            
+            # Obtener la ruta relativa después de /D/Music/
+            rel_path = p[8:]  # Sin decodificar primero
+            # Decodificar la URL completa
+            decoded_path = urllib.parse.unquote(rel_path)
+    
+            # Construir la ruta completa como Path
+            music_dir = DRIVE_D / "Music"
+            file_path = music_dir / decoded_path
+    
             log(f"🎵 Solicitando música: {file_path}", "DEBUG")
-            
+            log(f"   URL original: {p}", "DEBUG")
+            log(f"   Ruta decodificada: {decoded_path}", "DEBUG")
+    
+            # Verificar si el archivo existe
             if file_path.exists() and file_path.is_file():
                 mime, _ = mimetypes.guess_type(str(file_path))
                 self.send_response(200)
@@ -142,7 +151,8 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 log(f"✅ Música servida: {file_path.name}", "DEBUG")
                 return
             else:
-                log(f"❌ Música no encontrada: {file_path}", "WARN")
+                # Intentar buscar el archivo sin decodificar (por si acaso)
+                log(f"❌ Música no encontrada en: {file_path}", "WARN")
                 self.send_response(404)
                 self.end_headers()
                 return
