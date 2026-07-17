@@ -166,6 +166,38 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.send_response(404)
                 self.end_headers()
                 return
+        
+        # ═══ PÚBLICAS ═══
+        if p in ["/", "/index.html", "/login"]:
+            self._serve_view("login.html")
+            return
+        
+        if p == "/desktop":
+            if not self.get_session():
+                self.send_response(302)
+                self.send_header("Location", "/")
+                self.end_headers()
+                return
+            self._serve_view("desktop.html")
+            return
+        
+        if p == "/background":
+            if BG_FILE.exists():
+                self.send_response(200)
+                self.send_header("Content-Type", "image/jpeg")
+                self.send_header("Cache-Control", "no-cache")
+                self.end_headers()
+                with open(BG_FILE, "rb") as f:
+                    self.wfile.write(f.read())
+            else:
+                self.send_response(404)
+                self.end_headers()
+            return
+        
+        if p == "/api/background-check":
+            self._json({"exists": BG_FILE.exists()})
+            return
+
 
         # ═══ PROXY PARA KROOT CORP ═══
         if p.startswith("/api/kroot/"):
@@ -246,38 +278,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 </html>
                 """)
             return
-        
-        # ═══ PÚBLICAS ═══
-        if p in ["/", "/index.html", "/login"]:
-            self._serve_view("login.html")
-            return
-        
-        if p == "/desktop":
-            if not self.get_session():
-                self.send_response(302)
-                self.send_header("Location", "/")
-                self.end_headers()
-                return
-            self._serve_view("desktop.html")
-            return
-        
-        if p == "/background":
-            if BG_FILE.exists():
-                self.send_response(200)
-                self.send_header("Content-Type", "image/jpeg")
-                self.send_header("Cache-Control", "no-cache")
-                self.end_headers()
-                with open(BG_FILE, "rb") as f:
-                    self.wfile.write(f.read())
-            else:
-                self.send_response(404)
-                self.end_headers()
-            return
-        
-        if p == "/api/background-check":
-            self._json({"exists": BG_FILE.exists()})
-            return
-        
+            
         # ═══ LISTAR MÚSICA DESDE D:/Music/ ═══
         if p == "/api/music/list":
             try:
