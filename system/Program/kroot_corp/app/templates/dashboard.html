@@ -74,6 +74,15 @@
                         <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                             <pre class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans">{{ report.resultado }}</pre>
                         </div>
+                        <!-- Botones de descarga -->
+                        <div class="flex gap-2 mt-4">
+                            <button onclick="downloadReport(this, 'txt')" class="px-4 py-2 text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/40 transition-colors">
+                                <i class="fa-solid fa-file-lines"></i> Descargar TXT
+                            </button>
+                            <button onclick="downloadReport(this, 'pdf')" class="px-4 py-2 text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/40 transition-colors">
+                                <i class="fa-solid fa-file-pdf"></i> Descargar PDF
+                            </button>
+                        </div>
                     </div>
                 {% endfor %}
             {% else %}
@@ -103,23 +112,17 @@
                     document.getElementById('status-topico').innerText = data.topico;
                     document.getElementById('status-phase').innerText = data.phase;
                 } else if (data.estado === 'Éxito' || data.estado === 'Fallo') {
-                    // Detener el polling
                     clearInterval(pollInterval);
                     container.classList.add('hidden');
-                    
-                    // Añadir el nuevo informe al DOM sin recargar la página
                     addReportToDOM(data.topico, data.resultado, data.estado);
-                    
-                    // Resetear estado para la próxima
                     fetch('/api/status'); 
                 }
             } catch (error) {
                 console.error("Error al consultar estado:", error);
             }
-        }, 2000); // Consulta cada 2 segundos
+        }, 2000);
     }
 
-    // Función para inyectar el nuevo informe en la lista
     function addReportToDOM(topico, resultado, estado) {
         const list = document.getElementById('reports-list');
         const emptyState = list.querySelector('.text-center');
@@ -129,36 +132,56 @@
             ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
             : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
 
+        // Escapar caracteres especiales para prevenir XSS
+        const escapedTopico = topico.replace(/[&<>"]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            if (m === '"') return '&quot;';
+            return m;
+        });
+        const escapedResultado = resultado.replace(/[&<>"]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            if (m === '"') return '&quot;';
+            return m;
+        });
+
         const html = `
             <div class="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors report-item animate-[fadeIn_0.5s_ease-out]">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
                     <div class="flex items-center gap-3">
-                        <h4 class="font-semibold text-gray-900 dark:text-white text-lg">${topico}</h4>
+                        <h4 class="font-semibold text-gray-900 dark:text-white text-lg">${escapedTopico}</h4>
                         <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full ${estadoClass}">
                             ${estado}
                         </span>
                     </div>
                 </div>
                 <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <pre class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans">${resultado}</pre>
+                    <pre class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans">${escapedResultado}</pre>
+                </div>
+                <div class="flex gap-2 mt-4">
+                    <button onclick="downloadReport(this, 'txt')" class="px-4 py-2 text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/40 transition-colors">
+                        <i class="fa-solid fa-file-lines"></i> Descargar TXT
+                    </button>
+                    <button onclick="downloadReport(this, 'pdf')" class="px-4 py-2 text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/40 transition-colors">
+                        <i class="fa-solid fa-file-pdf"></i> Descargar PDF
+                    </button>
                 </div>
             </div>
         `;
         
-        // Insertar al principio de la lista
         list.insertAdjacentHTML('afterbegin', html);
         
-        // Actualizar contador
         const countEl = document.getElementById('report-count');
         countEl.innerText = parseInt(countEl.innerText) + 1;
     }
 
-    // Iniciar monitoreo al enviar el formulario
     document.getElementById('crew-form').addEventListener('submit', function() {
         startLiveMonitoring();
     });
 
-    // Si al cargar la página ya hay una tarea en proceso, reanudar el monitoreo
     window.addEventListener('DOMContentLoaded', async () => {
         const response = await fetch('/api/status');
         const data = await response.json();
@@ -166,6 +189,52 @@
             startLiveMonitoring();
         }
     });
+
+    function downloadReport(btn, format) {
+        const reportItem = btn.closest('.report-item');
+        if (!reportItem) return;
+        
+        const topico = reportItem.querySelector('h4').textContent;
+        const resultado = reportItem.querySelector('pre').textContent;
+        
+        const filename = `Informe_${topico.replace(/\s+/g, '_')}.${format}`;
+        
+        if (format === 'txt') {
+            const blob = new Blob([`TEMA: ${topico}\n\n${resultado}`], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } else if (format === 'pdf') {
+            const content = `
+                <h1>Informe: ${topico}</h1>
+                <pre style="white-space:pre-wrap;font-family:sans-serif;">${resultado}</pre>
+            `;
+            const win = window.open('', '_blank');
+            if (win) {
+                win.document.write(`
+                    <html>
+                    <head><title>${topico}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: auto; }
+                        h1 { color: #1e40af; }
+                        pre { white-space: pre-wrap; font-family: Arial, sans-serif; }
+                    </style>
+                    </head>
+                    <body>${content}</body>
+                    </html>
+                `);
+                win.document.close();
+                setTimeout(() => {
+                    win.print();
+                }, 500);
+            }
+        }
+    }
 </script>
 
 <style>
