@@ -6,26 +6,35 @@ function loadGames() {
     const container = document.getElementById('game-buttons');
     if (!container) return;
 
+    container.innerHTML = '<div style="color:#9370db;text-align:center;padding:20px;">⏳ Cargando juegos...</div>';
+
     fetch('/api/programs')
-        .then(r => r.json())
+        .then(r => {
+            if (!r.ok) throw new Error('Error en la respuesta');
+            return r.json();
+        })
         .then(programs => {
-            // Filtrar solo juegos (categoría 'game')
+            // Filtrar juegos (categoría 'game')
             const games = programs.filter(p => p.category === 'game' || p.type === 'game');
+            
             if (games.length === 0) {
-                container.innerHTML = '<p style="color:#9370db;text-align:center;padding:10px;">No hay juegos disponibles</p>';
+                container.innerHTML = '<p style="color:#9370db;text-align:center;padding:10px;">🎮 No hay juegos disponibles en system/Program/</p>';
                 return;
             }
+            
             container.innerHTML = '';
             games.forEach(game => {
                 const btn = document.createElement('button');
                 btn.className = 'act success';
                 btn.textContent = `${game.icon || '🎮'} ${game.name}`;
                 btn.onclick = () => runGame(game.filename.replace(/\.[^.]+$/, ''));
+                btn.style.cssText = 'margin:4px;padding:8px 14px;';
                 container.appendChild(btn);
             });
         })
-        .catch(() => {
-            container.innerHTML = '<p style="color:#ff6b6b;text-align:center;padding:10px;">Error cargando juegos</p>';
+        .catch(err => {
+            console.error('Error cargando juegos:', err);
+            container.innerHTML = '<p style="color:#ff6b6b;text-align:center;padding:10px;">❌ Error cargando juegos</p>';
         });
 }
 
@@ -35,8 +44,7 @@ function runGame(game) {
     if (!output) return;
     output.textContent = `🎮 Iniciando ${game}...\n`;
     
-    const gameMap = window.GAME_MAP || {};
-    const script = gameMap[game] || `${game}.py`;
+    const script = `${game}.py`;
     const path = `system/Program/${script}`;
     
     fetch('/api/run', {
@@ -87,4 +95,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     observer.observe(document.body, { childList: true, subtree: true });
+    
+    // Si la ventana ya está abierta, cargar
+    setTimeout(() => {
+        const win = document.getElementById('win-games');
+        if (win && win.style.display !== 'none') {
+            loadGames();
+        }
+    }, 500);
 });
