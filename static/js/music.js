@@ -1,4 +1,4 @@
-// KALM OS v4.3 - Reproductor de Música REAL (CON MODO DEMO POR DEFECTO)
+// KALM OS v4.3 - Reproductor de Música REAL (CON DIAGNÓSTICO)
 
 let musicPlayer = {
     isPlaying: false,
@@ -16,7 +16,7 @@ let musicPlayer = {
 // ═══ FORMATOS SOPORTADOS ═══
 const SUPPORTED_FORMATS = ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac', '.webm'];
 
-// ═══ PLAYLIST DE DEMOSTRACIÓN (SIEMPRE DISPONIBLE) ═══
+// ═══ PLAYLIST DE DEMOSTRACIÓN ═══
 const DEMO_PLAYLIST = [
     { 
         name: '🎵 SoundHelix - Song 1', 
@@ -40,7 +40,7 @@ const DEMO_PLAYLIST = [
     }
 ];
 
-// ═══ CARGAR CANCIONES DESDE D:/Music/ + DEMO ═══
+// ═══ CARGAR CANCIONES DESDE D:/Music/ ═══
 function loadMusicFiles() {
     const status = document.getElementById('music-status');
     const playlistDiv = document.getElementById('music-playlist');
@@ -74,21 +74,25 @@ function loadMusicFiles() {
             console.log('📥 Respuesta /api/music/list:', data);
             
             if (data.ok && data.files && data.files.length > 0) {
-                // Agregar archivos locales a la playlist (al principio)
+                // Mostrar los nombres de archivos encontrados
+                console.log('📁 Archivos encontrados en D/Music/:');
+                data.files.forEach(f => console.log(`   - ${f.name} (${f.url})`));
+                
+                // Agregar archivos locales a la playlist
                 const localFiles = data.files.map(f => ({
                     name: f.name,
                     path: f.path,
                     url: f.url,
-                    isDemo: false
+                    isDemo: false,
+                    originalName: f.name
                 }));
                 
                 // Combinar: locales primero, luego demos
                 musicPlayer.playlist = [...localFiles, ...DEMO_PLAYLIST];
                 
-                console.log(`🎵 ${localFiles.length} locales + ${DEMO_PLAYLIST.length} demo = ${musicPlayer.playlist.length} canciones`);
-                
+                const localCount = localFiles.length;
                 if (status) {
-                    status.textContent = `🎵 ${localFiles.length} canciones locales + ${DEMO_PLAYLIST.length} demo`;
+                    status.textContent = `🎵 ${localCount} canciones locales + ${DEMO_PLAYLIST.length} demo`;
                     status.style.color = '#00cc66';
                 }
             } else {
@@ -103,7 +107,6 @@ function loadMusicFiles() {
             musicPlayer.isLoading = false;
             updatePlaylistUI();
             
-            // Seleccionar primera canción
             if (musicPlayer.playlist.length > 0) {
                 selectTrack(0);
             }
@@ -112,7 +115,6 @@ function loadMusicFiles() {
             console.error('❌ Error cargando música:', err);
             musicPlayer.isLoading = false;
             
-            // Usar solo la playlist de demostración
             musicPlayer.playlist = DEMO_PLAYLIST.map(track => ({ ...track }));
             musicPlayer.isLoaded = true;
             updatePlaylistUI();
@@ -147,6 +149,7 @@ function updatePlaylistUI() {
         const isActive = index === musicPlayer.currentTrack;
         const isPlaying = isActive && musicPlayer.isPlaying;
         const isDemo = track.isDemo || false;
+        const isLocal = !isDemo;
         
         html += `
             <div style="
@@ -166,8 +169,9 @@ function updatePlaylistUI() {
                 <span style="color:${isPlaying ? '#da70d6' : (isActive ? '#e6e6fa' : '#9370db')};">
                     ${isPlaying ? '▶️' : (isActive ? '⏸️' : (isDemo ? '☁️' : '🎵'))} 
                     ${track.name}
+                    ${isLocal ? '' : ' ☁️'}
                 </span>
-                <span style="font-size:10px;color:#6a0dad;">${isDemo ? 'demo' : index + 1}</span>
+                <span style="font-size:10px;color:#6a0dad;">${isDemo ? 'demo' : '📁'}</span>
             </div>
         `;
     });
@@ -198,7 +202,9 @@ function selectTrack(index) {
     const track = musicPlayer.playlist[index];
     const info = document.getElementById('music-info');
     
-    console.log(`🎵 Seleccionando: ${track.name} (${track.url})`);
+    console.log(`🎵 Seleccionando: ${track.name}`);
+    console.log(`   URL: ${track.url}`);
+    console.log(`   Tipo: ${track.isDemo ? 'Demo' : 'Local'}`);
     
     if (info) {
         info.textContent = `⏳ Cargando: ${track.name}...`;
@@ -209,7 +215,7 @@ function selectTrack(index) {
     const audio = new Audio();
     audio.src = track.url;
     audio.volume = musicPlayer.volume / 100;
-    audio.crossOrigin = 'anonymous'; // Para evitar CORS en algunos servidores
+    audio.crossOrigin = 'anonymous';
     musicPlayer.audio = audio;
 
     // ═══ EVENTOS DEL AUDIO ═══
@@ -244,7 +250,6 @@ function selectTrack(index) {
             info.textContent = `⏸️ ${track.name} (listo)`;
             info.style.color = '#d8bfd8';
         }
-        // Auto-reproducir (con manejo de error)
         audio.play()
             .then(() => {
                 musicPlayer.isPlaying = true;
@@ -269,18 +274,38 @@ function selectTrack(index) {
     audio.addEventListener('error', function(e) {
         const errorCode = this.error ? this.error.code : 'desconocido';
         const errorMsg = this.error ? this.error.message : 'Error desconocido';
-        console.error('❌ Error reproduciendo:', errorCode, errorMsg);
-        console.error('   URL:', this.src);
         
+        // DIAGNÓSTICO COMPLETO
+        console.error('❌ ERROR DE AUDIO:');
+        console.error('   Código:', errorCode);
+        console.error('   Mensaje:', errorMsg);
+        console.error('   URL:', this.src);
+        console.error('   Canción:', track.name);
+        console.error('   Es demo:', track.isDemo);
+        
+        // Mostrar en la UI
         if (info) {
-            info.textContent = `❌ Error: ${track.name}`;
+            info.textContent = `❌ Error: ${track.name} (${errorMsg || 'Archivo no encontrado'})`;
             info.style.color = '#ff4444';
         }
+        
         musicPlayer.isPlaying = false;
         updatePlaylistUI();
         
-        // Si es un error 404, intentar con la siguiente canción después de 3 segundos
-        if (errorCode === 4) {
+        // Si es un error 404 (MEDIA_ERR_SRC_NOT_SUPPORTED = 4)
+        // y la canción NO es demo, mostrar sugerencia
+        if (errorCode === 4 && !track.isDemo) {
+            const status = document.getElementById('music-status');
+            if (status) {
+                status.textContent = `❌ Archivo no encontrado: ${track.name}`;
+                status.style.color = '#ff4444';
+            }
+            console.warn('💡 Sugerencia: El archivo no existe en D/Music/');
+            console.warn(`   Buscado: ${track.url}`);
+        }
+        
+        // Saltar a la siguiente canción después de 3 segundos (solo si es local y da error)
+        if (!track.isDemo) {
             setTimeout(() => {
                 console.log('⏭️ Saltando a la siguiente canción...');
                 musicNext();
