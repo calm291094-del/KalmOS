@@ -17,23 +17,12 @@ IS_CLOUD = os.environ.get("RENDER") == "true" or os.environ.get("KALM_CLOUD") ==
 
 # ═══ Rutas base ═══
 BASE_DIR = Path(__file__).parent.parent.resolve()
-DATA_DIR = BASE_DIR / "kalm_data"
-DRIVE_D = BASE_DIR / "D"
+DATA_DIR = BASE_DIR / "kalm_data"  # <-- Siempre dentro del proyecto
+DRIVE_D = BASE_DIR / "D"            # <-- Carpeta D en la raíz
 SYSTEM_DIR = BASE_DIR / "system"
-# ═══ IMPORTANTE: Usar "Program" con P mayúscula ═══
-PROGRAM_DIR = SYSTEM_DIR / "Program"  # <-- CORREGIDO: Program con P mayúscula
+PROGRAM_DIR = SYSTEM_DIR / "Program"  # <-- Mantener con P mayúscula para compatibilidad
 VIEWS_DIR = BASE_DIR / "views"
 STATIC_DIR = BASE_DIR / "static"
-
-# ═══ En cloud, usar directorio temporal para datos ═══
-if IS_CLOUD:
-    CLOUD_DATA_DIR = Path("/tmp/kalm_os_data")
-    DATA_DIR = CLOUD_DATA_DIR
-    DRIVE_D = CLOUD_DATA_DIR / "D"
-    SYSTEM_DIR = BASE_DIR / "system"
-    PROGRAM_DIR = SYSTEM_DIR / "Program"  # <-- CORREGIDO: Program con P mayúscula
-    VIEWS_DIR = BASE_DIR / "views"
-    STATIC_DIR = BASE_DIR / "static"
 
 # ═══ Archivos de datos ═══
 DNS_FILE = DATA_DIR / "dns_rules.json"
@@ -42,7 +31,7 @@ BG_FILE = DATA_DIR / "background.jpg"
 ENV_FILE = BASE_DIR / ".env"
 SESSIONS_FILE = DATA_DIR / "sessions.json"
 RUNNING_PROCS_FILE = DATA_DIR / "running_procs.json"
-PROGRAMS_CACHE = DATA_DIR / "programs_cache.json"  # Este puede quedar igual
+PROGRAMS_CACHE = DATA_DIR / "programs_cache.json"
 
 # ═══ Funciones de utilidad ═══
 def load_env():
@@ -95,15 +84,30 @@ def get_file_icon(ext):
 # ═══ Verificar estructura ═══
 def ensure_structure():
     log("🔍 Verificando estructura de carpetas...")
+    
+    # Directorios base - TODOS dentro del proyecto
     dirs = [
-        DATA_DIR, DRIVE_D,
-        DRIVE_D / "Apps", DRIVE_D / "Projects", DRIVE_D / "Scripts",
-        DRIVE_D / "Documents", DRIVE_D / "Media", DRIVE_D / "Servers",
-        DRIVE_D / "Downloads", DRIVE_D / "Desktop",
-        DATA_DIR / "logs", DATA_DIR / "temp",
-        SYSTEM_DIR, PROGRAM_DIR,  # PROGRAM_DIR ahora es system/Program
-        VIEWS_DIR, STATIC_DIR / "css", STATIC_DIR / "js", STATIC_DIR / "img"
+        DATA_DIR,
+        DRIVE_D,
+        DRIVE_D / "Documentos",
+        DRIVE_D / "Apps", 
+        DRIVE_D / "Projects", 
+        DRIVE_D / "Scripts",
+        DRIVE_D / "Documents", 
+        DRIVE_D / "Media", 
+        DRIVE_D / "Servers",
+        DRIVE_D / "Downloads", 
+        DRIVE_D / "Desktop",
+        DATA_DIR / "logs", 
+        DATA_DIR / "temp",
+        SYSTEM_DIR, 
+        PROGRAM_DIR,
+        VIEWS_DIR, 
+        STATIC_DIR / "css", 
+        STATIC_DIR / "js", 
+        STATIC_DIR / "img"
     ]
+    
     for d in dirs:
         try:
             d.mkdir(parents=True, exist_ok=True)
@@ -111,6 +115,7 @@ def ensure_structure():
         except Exception as e:
             log(f"   ⚠️ Error creando {d}: {e}", "WARN")
     
+    # Crear archivo .env si no existe
     if not ENV_FILE.exists():
         ENV_FILE.write_text("""# KALM OS v4.3 - Configuración
 ROOT_USER=root
@@ -124,9 +129,25 @@ SESSION_TIMEOUT=3600
 """, encoding="utf-8")
         log("   ✅ .env creado")
     
+    # Archivos de datos
     for f, default in [(SESSIONS_FILE, {}), (RUNNING_PROCS_FILE, []), (PROGRAMS_CACHE, [])]:
         if not f.exists():
             save_json(f, default)
+    
+    # Verificar que la carpeta D/ existe
+    if DRIVE_D.exists():
+        log(f"   ✅ Disco D: {DRIVE_D}")
+        # Listar contenido
+        try:
+            items = list(DRIVE_D.iterdir())
+            if items:
+                log(f"   📂 Contenido de D/: {[i.name for i in items[:5]]}{'...' if len(items) > 5 else ''}")
+            else:
+                log(f"   📂 D/ está vacía")
+        except Exception as e:
+            log(f"   ⚠️ Error listando D/: {e}")
+    else:
+        log(f"   ⚠️ D/ no existe en {DRIVE_D}", "WARN")
     
     log("✅ Estructura lista\n")
 
@@ -147,3 +168,4 @@ ensure_structure()
 log(f"🌍 Entorno: {'Cloud' if IS_CLOUD else 'Local'}")
 log(f"📁 Datos: {DATA_DIR}")
 log(f"📁 Programas: {PROGRAM_DIR}")
+log(f"📁 Disco D: {DRIVE_D}")

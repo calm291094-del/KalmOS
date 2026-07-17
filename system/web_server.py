@@ -1,16 +1,18 @@
-"""Servidor web principal de Kalm OS v4.3 - VERSIÓN COMPLETA CON BOOKMARKS"""
+"""Servidor web principal de Kalm OS v4.3 - VERSIÓN COMPLETA CON PERSISTENCIA"""
 import json
 import mimetypes
 import urllib.parse
 import threading
 import time
 import os
+import shutil
 from pathlib import Path
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 
 from system.config import (
-    BASE_DIR, VIEWS_DIR, STATIC_DIR, BG_FILE, DRIVE_D, log
+    BASE_DIR, VIEWS_DIR, STATIC_DIR, BG_FILE, DRIVE_D, DATA_DIR, log,
+    DNS_FILE, PROXY_FILE, SESSIONS_FILE, RUNNING_PROCS_FILE, PROGRAMS_CACHE
 )
 from system.auth import auth_system
 from system.task_manager import TaskManager, network_monitor
@@ -106,7 +108,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         
         # ═══ PAC ═══
         if p.startswith("/static/pac/"):
-            pac_file = BASE_DIR / "kalm_data" / "pac" / p[12:]
+            pac_file = DATA_DIR / "pac" / p[12:]
             if pac_file.exists():
                 self.send_response(200)
                 self.send_header("Content-Type", "application/x-ns-proxy-autoconfig")
@@ -117,6 +119,25 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.send_response(404)
                 self.end_headers()
             return
+        
+        # ═══ SERVIR ARCHIVOS DESDE D: (PDF, imágenes, etc) ═══
+        if p.startswith("/D/"):
+            rel_path = p[3:]  # Quita "/D/"
+            file_path = DRIVE_D / rel_path
+            if file_path.exists() and file_path.is_file():
+                mime, _ = mimetypes.guess_type(str(file_path))
+                self.send_response(200)
+                self.send_header("Content-Type", mime or "application/octet-stream")
+                self.send_header("Content-Disposition", f"inline; filename=\"{file_path.name}\"")
+                self.send_header("Cache-Control", "public, max-age=3600")
+                self.end_headers()
+                with open(file_path, "rb") as f:
+                    self.wfile.write(f.read())
+                return
+            else:
+                self.send_response(404)
+                self.end_headers()
+                return
         
         # ═══ PÚBLICAS ═══
         if p in ["/", "/index.html", "/login"]:
@@ -163,7 +184,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.end_headers()
             return
         
-        # ═══ BROWSER BOOKMARKS - ENDPOINT PRINCIPAL ═══
+        # ═══ BROWSER BOOKMARKS ═══
         if p == "/api/browser/bookmarks":
             log("📖 Solicitando bookmarks", "DEBUG")
             try:
@@ -346,7 +367,11 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         
         # ═══ LOGIN ═══
         if p == "/api/login":
-            d = json.loads(body)
+            try:
+                d = json.loads(body)
+            except:
+                self._json({"ok": False, "error": "JSON inválido"})
+                return
             sid = auth_system.authenticate(d.get("username"), d.get("password"))
             if sid:
                 self._json({"ok": True, "session_id": sid})
@@ -409,9 +434,12 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         if p == "/api/dns":
             dns = get_dns_server()
             if dns:
-                d = json.loads(body)
-                dns.add_rule(d["domain"], d["ip"])
-                self._json({"ok": True})
+                try:
+                    d = json.loads(body)
+                    dns.add_rule(d["domain"], d["ip"])
+                    self._json({"ok": True})
+                except Exception as e:
+                    self._json({"ok": False, "error": str(e)})
             else:
                 self._json({"ok": False, "error": "DNS no disponible"})
             return
@@ -429,16 +457,19 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         if p == "/api/proxy":
             proxy = get_proxy_server()
             if proxy:
-                d = json.loads(body)
-                domain = d.get("domain", "").strip()
-                backend = d.get("backend", "").strip()
-                if not domain or not backend:
-                    self._json({"ok": False, "error": "Dominio y backend requeridos"})
-                    return
-                if not backend.startswith("http://") and not backend.startswith("https://"):
-                    backend = "http://" + backend
-                proxy.add_rule(domain, backend)
-                self._json({"ok": True})
+                try:
+                    d = json.loads(body)
+                    domain = d.get("domain", "").strip()
+                    backend = d.get("backend", "").strip()
+                    if not domain or not backend:
+                        self._json({"ok": False, "error": "Dominio y backend requeridos"})
+                        return
+                    if not backend.startswith("http://") and not backend.startswith("https://"):
+                        backend = "http://" + backend
+                    proxy.add_rule(domain, backend)
+                    self._json({"ok": True})
+                except Exception as e:
+                    self._json({"ok": False, "error": str(e)})
             else:
                 self._json({"ok": False, "error": "Proxy no disponible"})
             return
@@ -472,7 +503,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ RUN SCRIPT ═══ (CON LOGS DE DEPURACIÓN)
+        # ═══ RUN SCRIPT ═══
         if p == "/api/run":
             try:
                 data = json.loads(body)
@@ -483,21 +514,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": "Ruta requerida"})
                     return
                 
-                # Log para depuración
                 log(f"📂 Ejecutando desde frontend: {path}", "DEBUG")
-                
-                # Resolver la ruta
-                if path.startswith("/D/"):
-                    path = str(DRIVE_D) + path[2:]
-                elif path.startswith("D:/Scripts/") or path.startswith("D:\\Scripts\\"):
-                    # Intentar buscar en system/program/
-                    filename = Path(path).name
-                    alt_path = BASE_DIR / "system" / "program" / filename
-                    if alt_path.exists():
-                        path = str(alt_path)
-                        log(f"📂 Ruta redirigida a: {path}", "DEBUG")
-                
-                log(f"📂 Ejecutando final: {path}", "DEBUG")
                 
                 result = ScriptRunner.run(path, args)
                 
@@ -514,13 +531,19 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         
         # ═══ FILES ═══
         if p == "/api/files/folder":
-            d = json.loads(body)
-            self._json(FileManager.create_folder(d["path"], d["name"]))
+            try:
+                d = json.loads(body)
+                self._json(FileManager.create_folder(d["path"], d["name"]))
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
             return
         
         if p == "/api/files/delete":
-            d = json.loads(body)
-            self._json(FileManager.delete(d["path"]))
+            try:
+                d = json.loads(body)
+                self._json(FileManager.delete(d["path"]))
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
             return
         
         if p == "/api/files/upload":
@@ -533,6 +556,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 fd, fn = self._parse_mp(body, boundary)
                 if fd and fn:
                     sp = Path(dp) / fn
+                    sp.parent.mkdir(parents=True, exist_ok=True)
                     with open(sp, "wb") as f:
                         f.write(fd)
                     self._json({"ok": True, "path": str(sp)})
@@ -556,6 +580,88 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": "No file"})
             else:
                 self._json({"ok": False, "error": "Invalid"})
+            return
+        
+        # ═══ PERSISTENCIA - Guardar datos ═══
+        if p == "/api/persistence/save":
+            try:
+                data = json.loads(body)
+                name = data.get("name", "default")
+                content = data.get("data", "")
+                # Guardar en archivo dentro de DATA_DIR
+                save_file = DATA_DIR / "persistence" / f"{name}.json"
+                save_file.parent.mkdir(parents=True, exist_ok=True)
+                save_file.write_text(json.dumps({"data": content, "updated": time.time()}), encoding="utf-8")
+                self._json({"ok": True})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+            return
+        
+        # ═══ PERSISTENCIA - Cargar datos ═══
+        if p == "/api/persistence/load":
+            try:
+                data = json.loads(body)
+                name = data.get("name", "default")
+                load_file = DATA_DIR / "persistence" / f"{name}.json"
+                if load_file.exists():
+                    content = json.loads(load_file.read_text(encoding="utf-8"))
+                    self._json({"ok": True, "data": content.get("data", "")})
+                else:
+                    self._json({"ok": True, "data": ""})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+            return
+        
+        # ═══ PERSISTENCIA - Listar backups ═══
+        if p == "/api/persistence/backups":
+            try:
+                backup_dir = DATA_DIR / "persistence" / "backups"
+                if backup_dir.exists():
+                    backups = [f.name for f in backup_dir.iterdir() if f.is_dir()]
+                    self._json({"ok": True, "backups": sorted(backups, reverse=True)})
+                else:
+                    self._json({"ok": True, "backups": []})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+            return
+        
+        # ═══ PERSISTENCIA - Crear backup ═══
+        if p == "/api/persistence/backup":
+            try:
+                backup_dir = DATA_DIR / "persistence" / "backups" / f"backup_{int(time.time())}"
+                backup_dir.mkdir(parents=True, exist_ok=True)
+                
+                # Copiar archivos de persistencia
+                source_dir = DATA_DIR / "persistence"
+                for item in source_dir.iterdir():
+                    if item.name != "backups" and item.is_file():
+                        shutil.copy2(item, backup_dir / item.name)
+                
+                self._json({"ok": True, "backup": backup_dir.name})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+            return
+        
+        # ═══ PERSISTENCIA - Restaurar backup ═══
+        if p == "/api/persistence/restore":
+            try:
+                data = json.loads(body)
+                backup_name = data.get("name", "")
+                backup_dir = DATA_DIR / "persistence" / "backups" / backup_name
+                
+                if not backup_dir.exists():
+                    self._json({"ok": False, "error": "Backup no encontrado"})
+                    return
+                
+                # Restaurar archivos
+                dest_dir = DATA_DIR / "persistence"
+                for item in backup_dir.iterdir():
+                    if item.is_file():
+                        shutil.copy2(item, dest_dir / item.name)
+                
+                self._json({"ok": True})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
             return
         
         # ═══ SHUTDOWN ═══

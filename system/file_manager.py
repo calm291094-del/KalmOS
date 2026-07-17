@@ -57,7 +57,7 @@ class FileManager:
                 return {"error": "Acceso denegado", "items": [], "path": str(path_obj)}
             
             if not path_obj.exists():
-                return {"error": "No existe", "items": [], "path": str(path_obj)}
+                return {"error": f"No existe: {path_obj}", "items": [], "path": str(path_obj)}
             
             if not path_obj.is_dir():
                 return {"error": "No es un directorio", "items": [], "path": str(path_obj)}
@@ -90,6 +90,8 @@ class FileManager:
             if str(path_obj) != str(DRIVE_D):
                 parent_rel = str(path_obj.parent).replace(str(DRIVE_D), "/D").replace("\\", "/")
                 parent = parent_rel if parent_rel != "/D" else "/D"
+            
+            log(f"📂 Listando {path_obj}: {len(items)} items")
             
             return {
                 "path": str(path_obj),

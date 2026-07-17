@@ -1,4 +1,4 @@
-"""Sistema de persistencia para entornos cloud"""
+"""Sistema de persistencia para entornos cloud - Guarda en archivos locales"""
 import json
 import shutil
 from pathlib import Path
@@ -6,10 +6,9 @@ from datetime import datetime
 from system.config import BASE_DIR, DATA_DIR, log
 
 class PersistenceManager:
-    """Maneja la persistencia de datos entre sesiones"""
+    """Maneja la persistencia de datos - Los datos se guardan en DATA_DIR"""
     
-    # En Render, usar /tmp o /data
-    PERSISTENCE_DIR = Path("/data/kalm_os") if Path("/data").exists() else (BASE_DIR / "kalm_data")
+    PERSISTENCE_DIR = DATA_DIR / "persistence"
     BACKUP_DIR = PERSISTENCE_DIR / "backups"
     
     @classmethod
@@ -25,6 +24,7 @@ class PersistenceManager:
         cls.init()
         file_path = cls.PERSISTENCE_DIR / f"{name}.json"
         file_path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+        log(f"💾 Datos guardados: {name}")
         return True
     
     @classmethod
@@ -46,6 +46,7 @@ class PersistenceManager:
         dest = cls.PERSISTENCE_DIR / "files" / name
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(file_path, dest)
+        log(f"💾 Archivo guardado: {name}")
         return str(dest)
     
     @classmethod
