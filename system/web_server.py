@@ -124,29 +124,41 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         
         # ═══ SERVIR MÚSICA DESDE D:/Music/ ═══
         if p.startswith("/D/Music/"):
-            # Obtener el nombre del archivo
-            rel_path = p[8:]
-            decoded_path = urllib.parse.unquote(rel_path)
-            filename = os.path.basename(decoded_path)
+            rel_path = urllib.parse.unquote(p[8:])
+            filename = os.path.basename(rel_path)
             music_dir = DRIVE_D / "Music"
-    
-            log(f"🎵 Buscando: {filename}", "DEBUG")
-    
-            # Buscar el archivo (ignorando mayúsculas/minúsculas)
+            
+            log(f"🎵 Buscando: {filename} en {music_dir}", "DEBUG")
+            
+            # Buscar el archivo
             found_file = None
             if music_dir.exists():
                 for f in music_dir.iterdir():
                     if f.is_file() and f.name.lower() == filename.lower():
                         found_file = f
                         break
-    
+            
             if not found_file:
                 log(f"❌ Archivo no encontrado: {filename}", "WARN")
                 self.send_response(404)
                 self.end_headers()
                 return
-    
-            # ⚠️ FORZAR Content-Type correcto para MP3
+            
+            # LEER EL ARCHIVO
+            try:
+                with open(found_file, "rb") as f:
+                    file_content = f.read()
+            except Exception as e:
+                log(f"❌ Error leyendo archivo: {e}", "ERROR")
+                self.send_response(500)
+                self.end_headers()
+                return
+            
+            # VERIFICAR QUE EL ARCHIVO NO ESTÉ VACÍO
+            if len(file_content) < 100:
+                log(f"⚠️ Archivo sospechosamente pequeño: {len(file_content)} bytes - {found_file.name}", "WARN")
+            
+            # Determinar Content-Type
             ext = found_file.suffix.lower()
             if ext == '.mp3':
                 content_type = 'audio/mpeg'
@@ -154,29 +166,41 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 content_type = 'audio/wav'
             elif ext == '.ogg':
                 content_type = 'audio/ogg'
+            elif ext == '.flac':
+                content_type = 'audio/flac'
             else:
                 content_type = 'application/octet-stream'
-    
-            log(f"✅ Sirviendo: {found_file.name} ({content_type})", "DEBUG")
-    
-            # Abrir y servir el archivo
-            try:
-                with open(found_file, "rb") as f:
-                    file_content = f.read()
+            
+            log(f"✅ Sirviendo: {found_file.name} ({content_type}, {len(file_content)} bytes)", "DEBUG")
+            
+            self.send_response(200)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(file_content)))
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Cache-Control", "public, max-age=3600")
+            self.send_header("Content-Disposition", f"inline; filename=\"{found_file.name}\"")
+            self.end_headers()
+            self.wfile.write(file_content)
+            return
         
+        # ═══ SERVIR ARCHIVOS DESDE D: ═══
+        if p.startswith("/D/"):
+            rel_path = p[3:]
+            file_path = DRIVE_D / rel_path
+            if file_path.exists() and file_path.is_file():
+                mime, _ = mimetypes.guess_type(str(file_path))
                 self.send_response(200)
-                self.send_header("Content-Type", content_type)
-                self.send_header("Content-Length", str(len(file_content)))
-                self.send_header("Accept-Ranges", "bytes")
+                self.send_header("Content-Type", mime or "application/octet-stream")
+                self.send_header("Content-Disposition", f"inline; filename=\"{file_path.name}\"")
                 self.send_header("Cache-Control", "public, max-age=3600")
                 self.end_headers()
-                self.wfile.write(file_content)
-                log(f"✅ Música servida: {found_file.name} ({len(file_content)} bytes)", "DEBUG")
-            except Exception as e:
-                log(f"❌ Error sirviendo música: {e}", "ERROR")
-                self.send_response(500)
+                with open(file_path, "rb") as f:
+                    self.wfile.write(f.read())
+                return
+            else:
+                self.send_response(404)
                 self.end_headers()
-            return
+                return
         
         # ═══ PÚBLICAS ═══
         if p in ["/", "/index.html", "/login"]:
@@ -288,12 +312,16 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 if music_dir.exists():
                     for f in music_dir.iterdir():
                         if f.is_file() and f.suffix.lower() in ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac']:
+                            # Verificar tamaño del archivo
+                            file_size = f.stat().st_size
                             url_path = "/D/Music/" + urllib.parse.quote(f.name)
                             files.append({
                                 "name": f.name,
                                 "path": str(f),
-                                "url": url_path
+                                "url": url_path,
+                                "size": file_size
                             })
+                            log(f"   📁 {f.name} ({file_size} bytes)", "DEBUG")
                 files.sort(key=lambda x: x["name"].lower())
                 self._json({"ok": True, "files": files, "count": len(files)})
             except Exception as e:
