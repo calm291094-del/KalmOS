@@ -169,3 +169,34 @@ log(f"🌍 Entorno: {'Cloud' if IS_CLOUD else 'Local'}")
 log(f"📁 Datos: {DATA_DIR}")
 log(f"📁 Programas: {PROGRAM_DIR}")
 log(f"📁 Disco D: {DRIVE_D}")
+
+# ═══ Persistencia con GitHub ═══
+try:
+    from system.github_persistence import GitHubPersistence
+    GITHUB_AVAILABLE = GitHubPersistence.is_available()
+except:
+    GITHUB_AVAILABLE = False
+
+def save_persistent_data(name, data):
+    """Guarda datos de forma persistente (usa GitHub si está disponible)"""
+    if GITHUB_AVAILABLE:
+        return GitHubPersistence.save_data(name, data)
+    else:
+        # Guardar local
+        file_path = DATA_DIR / "persistence" / f"{name}.json"
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+        return True
+
+def load_persistent_data(name, default=None):
+    """Carga datos persistentes"""
+    if GITHUB_AVAILABLE:
+        return GitHubPersistence.load_data(name, default)
+    else:
+        file_path = DATA_DIR / "persistence" / f"{name}.json"
+        if file_path.exists():
+            try:
+                return json.loads(file_path.read_text(encoding="utf-8"))
+            except:
+                return default
+        return default
