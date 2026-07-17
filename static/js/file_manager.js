@@ -1,16 +1,26 @@
 // KALM OS v4.3 - File Manager (CORREGIDO)
 
 let currentPath = '/D';
+let fileManagerInitialized = false;
 
 // ═══ Cargar archivos ═══
 function loadFiles(path) {
     const grid = document.getElementById('file-grid');
     const pathInput = document.getElementById('file-path');
     
-    if (!grid) return;
+    if (!grid) {
+        console.warn('⚠️ file-grid no encontrado');
+        return;
+    }
     
+    // Normalizar ruta
     if (!path || path === '' || path === 'D:' || path === 'D:/' || path === 'D:\\') {
         path = '/D';
+    }
+    
+    // Asegurar formato correcto
+    if (path.startsWith('D:/') || path.startsWith('D:\\')) {
+        path = path.replace(/^D:[/\\]/, '/D/');
     }
     
     currentPath = path;
@@ -18,10 +28,17 @@ function loadFiles(path) {
     
     grid.innerHTML = '<div style="text-align:center;padding:40px;color:#9370db">⏳ Cargando...</div>';
     
-    fetch(`/api/files?path=${encodeURIComponent(path)}`)
-        .then(r => r.json())
+    const url = `/api/files?path=${encodeURIComponent(path)}`;
+    console.log('📂 Cargando:', url);
+    
+    fetch(url)
+        .then(r => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+        })
         .then(data => renderFiles(data))
         .catch(err => {
+            console.error('❌ Error cargando archivos:', err);
             grid.innerHTML = `<div style="color:#ff6b6b;padding:20px">❌ Error: ${err.message}</div>`;
         });
 }
@@ -50,9 +67,12 @@ function renderFiles(data) {
         const isDoc = ['.pdf', '.txt', '.md', '.log', '.json', '.xml', '.yaml', '.yml', '.csv', 
                       '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.ico'].includes(ext);
         
+        // Escapar nombre para evitar XSS
+        const safeName = item.name.replace(/[<>"']/g, '');
+        
         html += `<div class="file-item" ${item.is_dir ? 'ondblclick="openFolder(\'' + item.path + '\')"' : ''}>
             <div class="file-icon">${item.icon || '📄'}</div>
-            <div class="file-name">${item.name}</div>
+            <div class="file-name" title="${safeName}">${safeName}</div>
             <div class="file-size">${item.size_fmt || '-'}</div>
             <div class="file-actions">
                 ${item.is_dir ? `<button class="act small" onclick="openFolder('${item.path}')">📂 Abrir</button>` : ''}
@@ -68,25 +88,41 @@ function renderFiles(data) {
 
 // ═══ Navegación ═══
 function openFolder(path) {
+    console.log('📂 Abriendo carpeta:', path);
     loadFiles(path);
 }
 
 function fileUp() {
     if (!currentPath) return;
-    if (currentPath === '/D') return;
+    if (currentPath === '/D' || currentPath === '/D/') {
+        console.log('📂 Ya estás en la raíz');
+        return;
+    }
     
-    const parts = currentPath.split('/');
-    parts.pop();
-    const parent = parts.join('/') || '/D';
+    // Quitar el último segmento
+    let parent = currentPath.replace(/\/$/, ''); // Quitar trailing slash
+    const parts = parent.split('/');
+    parts.pop(); // Quitar último segmento
+    parent = parts.join('/');
+    
+    if (!parent || parent === '' || parent === '/D') {
+        parent = '/D';
+    }
+    
+    console.log('📂 Subiendo a:', parent);
     loadFiles(parent);
 }
 
 function refreshFiles() {
-    if (currentPath) loadFiles(currentPath);
+    if (currentPath) {
+        console.log('🔄 Refrescando:', currentPath);
+        loadFiles(currentPath);
+    }
 }
 
 // ═══ Ejecutar programa ═══
 function runProgram(path) {
+    console.log('▶️ Ejecutando:', path);
     showNotification(`⏳ Ejecutando ${path.split('/').pop()}...`, 'info');
     
     fetch('/api/run', {
@@ -96,6 +132,7 @@ function runProgram(path) {
     })
     .then(r => r.json())
     .then(data => {
+        console.log('📤 Respuesta ejecución:', data);
         if (data.ok) {
             if (data.viewer_url) {
                 window.open(data.viewer_url, '_blank');
@@ -114,12 +151,14 @@ function runProgram(path) {
         }
     })
     .catch(err => {
+        console.error('❌ Error ejecutando:', err);
         showNotification(`❌ Error: ${err.message}`, 'error');
     });
 }
 
 // ═══ Abrir documento ═══
 function openDocument(path) {
+    console.log('📄 Abriendo documento:', path);
     showNotification(`📄 Abriendo ${path.split('/').pop()}...`, 'info');
     
     fetch('/api/run', {
@@ -137,13 +176,15 @@ function openDocument(path) {
         }
     })
     .catch(err => {
+        console.error('❌ Error abriendo documento:', err);
         showNotification(`❌ Error: ${err.message}`, 'error');
     });
 }
 
 // ═══ Eliminar ═══
 function deleteFile(path) {
-    if (!confirm(`¿Eliminar "${path.split('/').pop()}"?`)) return;
+    const name = path.split('/').pop();
+    if (!confirm(`¿Eliminar "${name}"?`)) return;
     
     fetch('/api/files/delete', {
         method: 'POST',
@@ -158,6 +199,10 @@ function deleteFile(path) {
         } else {
             showNotification(`❌ Error: ${data.error || 'desconocido'}`, 'error');
         }
+    })
+    .catch(err => {
+        console.error('❌ Error eliminando:', err);
+        showNotification(`❌ Error: ${err.message}`, 'error');
     });
 }
 
@@ -179,12 +224,16 @@ function createFolderPrompt() {
         } else {
             showNotification(`❌ Error: ${data.error || 'desconocido'}`, 'error');
         }
+    })
+    .catch(err => {
+        console.error('❌ Error creando carpeta:', err);
+        showNotification(`❌ Error: ${err.message}`, 'error');
     });
 }
 
 // ═══ Buscar ═══
 function searchFiles() {
-    const query = document.getElementById('file-search').value.trim();
+    const query = document.getElementById('file-search')?.value.trim();
     if (!query) {
         refreshFiles();
         return;
@@ -209,15 +258,17 @@ function searchFiles() {
             
             let html = '';
             results.forEach(item => {
+                const safeName = item.name.replace(/[<>"']/g, '');
                 html += `<div class="file-item" onclick="openDocument('${item.path}')">
                     <div class="file-icon">${item.icon || '📄'}</div>
-                    <div class="file-name">${item.name}</div>
+                    <div class="file-name" title="${safeName}">${safeName}</div>
                     <div class="file-size">${item.size_fmt || '-'}</div>
                 </div>`;
             });
             grid.innerHTML = html;
         })
         .catch(err => {
+            console.error('❌ Error buscando:', err);
             grid.innerHTML = `<div style="color:#ff6b6b;padding:20px">❌ Error: ${err.message}</div>`;
         });
 }
@@ -465,34 +516,43 @@ window.startTerminalStream = startTerminalStream;
 window.sendTerminalInput = sendTerminalInput;
 window.showNotification = showNotification;
 
-// ═══ INICIALIZAR ═══
-document.addEventListener('DOMContentLoaded', function() {
+// ═══ INICIALIZAR - UNA SOLA VEZ ═══
+if (!fileManagerInitialized) {
+    fileManagerInitialized = true;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cargar archivos cuando se abre el explorador
+        setTimeout(() => {
+            const win = document.getElementById('win-explorer');
+            if (win && win.style.display !== 'none') {
+                console.log('📂 Inicializando explorador - cargando /D');
+                loadFiles('/D');
+            }
+        }, 500);
+    });
+    
+    // Observador para cuando se abra la ventana - usando MutationObserver solo una vez
     const observer = new MutationObserver(() => {
         const win = document.getElementById('win-explorer');
-        if (win && win.style.display !== 'none') {
+        if (win && win.style.display !== 'none' && win.style.display !== '') {
             const grid = document.getElementById('file-grid');
             if (grid && grid.children.length === 0) {
+                console.log('📂 Observador: cargando /D');
                 loadFiles('/D');
             }
         }
     });
     observer.observe(document.body, { childList: true, subtree: true });
     
-    setTimeout(() => {
-        const win = document.getElementById('win-explorer');
-        if (win && win.style.display !== 'none') {
-            loadFiles('/D');
+    // Estilos de notificaciones
+    const styleNotif = document.createElement('style');
+    styleNotif.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
-    }, 500);
-});
-
-const styleNotif = document.createElement('style');
-styleNotif.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100px); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-`;
-document.head.appendChild(styleNotif);
+    `;
+    document.head.appendChild(styleNotif);
+}
 
 console.log('📁 File Manager cargado - Terminal disponible globalmente');

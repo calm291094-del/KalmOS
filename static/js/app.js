@@ -1,4 +1,4 @@
-// Kalm OS v4.3 - Aplicación Principal (VERSIÓN FINAL)
+// Kalm OS v4.3 - Aplicación Principal (VERSIÓN OPTIMIZADA)
 
 // ═══════════════════════════════════════════════════════════
 // VARIABLES GLOBALES
@@ -6,6 +6,9 @@
 
 let bookmarksLoadedFlag = false;
 let bookmarksLoading = false;
+let resourceUpdateInterval = null;
+let clockUpdateInterval = null;
+let windowZIndex = 1000;
 
 // ═══════════════════════════════════════════════════════════
 // CONSTANTES - MAPAS GLOBALES
@@ -44,6 +47,7 @@ window.GAME_MAP = {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🏰 Kalm OS v4.3 iniciado');
     
+    // Cargar wallpaper
     fetch('/api/background-check')
         .then(r => r.json())
         .then(data => {
@@ -53,14 +57,20 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(() => {});
     
+    // Iniciar monitor de recursos (intervalo más largo para rendimiento)
     updateResourceMonitor();
-    setInterval(updateResourceMonitor, 3000);
+    if (resourceUpdateInterval) clearInterval(resourceUpdateInterval);
+    resourceUpdateInterval = setInterval(updateResourceMonitor, 5000);
     
+    // Iniciar reloj
     updateClock();
-    setInterval(updateClock, 1000);
+    if (clockUpdateInterval) clearInterval(clockUpdateInterval);
+    clockUpdateInterval = setInterval(updateClock, 1000);
     
+    // Cargar menú de programas
     loadProgramMenu();
     
+    // Cerrar menú al hacer clic fuera
     document.addEventListener('click', function(e) {
         const menu = document.getElementById('start-menu');
         const startBtn = document.getElementById('start-btn');
@@ -93,7 +103,7 @@ function toggleStart() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MONITOR DE RECURSOS
+// MONITOR DE RECURSOS (OPTIMIZADO)
 // ═══════════════════════════════════════════════════════════
 
 let isUpdating = false;
@@ -110,24 +120,29 @@ async function updateResourceMonitor() {
         }
         const data = await response.json();
         
+        // CPU
         const cpuVal = document.getElementById('rm-cpu-val');
         const cpuBar = document.getElementById('rm-cpu-bar');
         if (cpuVal) cpuVal.textContent = data.cpu + '%';
         if (cpuBar) cpuBar.style.width = Math.min(data.cpu, 100) + '%';
         
+        // RAM
         const ramVal = document.getElementById('rm-ram-val');
         const ramBar = document.getElementById('rm-ram-bar');
         if (ramVal) ramVal.textContent = `${data.ram_used} / ${data.ram_total}`;
         if (ramBar) ramBar.style.width = Math.min(data.ram_percent, 100) + '%';
         
+        // Disco
         const diskVal = document.getElementById('rm-disk-val');
         const diskBar = document.getElementById('rm-disk-bar');
         if (diskVal) diskVal.textContent = `${data.disk_used} / ${data.disk_total}`;
         if (diskBar) diskBar.style.width = Math.min(data.disk_percent, 100) + '%';
         
+        // Procesos
         const procs = document.getElementById('rm-procs');
         if (procs) procs.textContent = data.processes || 0;
         
+        // Red
         const netUp = document.getElementById('rm-net-up');
         const netDown = document.getElementById('rm-net-down');
         const netSent = document.getElementById('rm-net-total-sent');
@@ -150,6 +165,7 @@ async function updateResourceMonitor() {
             netDownBar.style.width = downPercent + '%';
         }
         
+        // Servidores
         try {
             const sr = await fetch('/api/running-procs');
             if (sr.ok) {
@@ -581,8 +597,8 @@ async function loadProgramMenu() {
         submenu.dataset.loaded = 'true';
         
         if (!programs || programs.length === 0) {
-            submenu.innerHTML = '<div class="item" style="color:#9370db;font-style:italic">📂 No hay programas en system/Program/</div>';
-            console.warn('⚠️ No hay programas en system/Program/');
+            submenu.innerHTML = '<div class="item" style="color:#9370db;font-style:italic">📂 No hay programas en system/program/</div>';
+            console.warn('⚠️ No hay programas en system/program/');
             return;
         }
         
@@ -648,7 +664,7 @@ function toggleProgramMenu() {
     }
 }
 
-// ═══ EJECUTAR PROGRAMA DESDE EL MENÚ (OPTIMIZADO) ═══
+// ═══ EJECUTAR PROGRAMA DESDE EL MENÚ ═══
 function executeProgramFromMenu(path, name) {
     toggleStart();
     
