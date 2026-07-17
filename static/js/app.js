@@ -732,34 +732,65 @@ function executeProgramFromMenu(path, name) {
 // ═══════════════════════════════════════════════════════════
 // KrootCorp
 // ═══════════════════════════════════════════════════════════
-// ═══ KROOT CORP - VERSIÓN PARA RENDER ═══
+// ═══ KROOT CORP - CORREGIDO PARA RENDER ═══
 function openKrootCorp() {
     console.log('🏢 Abriendo Kroot Corp IA...');
     
     if (typeof showNotification === 'function') {
-        showNotification('🏢 Kroot Corp IA - Abriendo en nueva pestaña...', 'info');
+        showNotification('🏢 Abriendo Kroot Corp IA...', 'info');
     }
     
-    // En Render, abrir en nueva pestaña con la URL correcta
-    // Kroot Corp debe estar integrado en el mismo servidor
-    const url = '/api/kroot/dashboard';
+    // Usar el proxy de Kalm OS en lugar de localhost:8000
+    const krootUrl = '/api/kroot/dashboard';
     
-    // Intentar abrir en el navegador interno
+    // Abrir el navegador interno
     openWin('browser');
+    
     setTimeout(() => {
         const urlInput = document.getElementById('browser-url');
         if (urlInput) {
-            urlInput.value = url;
+            urlInput.value = krootUrl;
             if (typeof browserNavigate === 'function') {
                 browserNavigate();
             }
         }
-    }, 1000);
+    }, 1500);
     
-    // También abrir en nueva pestaña como fallback
-    setTimeout(() => {
-        window.open(url, '_blank');
-    }, 2000);
+    // Intentar iniciar Kroot Corp en segundo plano
+    fetch('/api/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            path: 'system/Program/kroot_corp/run.py',
+            args: ['--no-browser']
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        console.log('📤 Respuesta Kroot Corp:', data);
+        if (data.ok) {
+            if (typeof showNotification === 'function') {
+                showNotification('✅ Kroot Corp IA iniciado', 'success');
+            }
+        }
+    })
+    .catch(err => {
+        console.warn('⚠️ Error iniciando Kroot Corp:', err);
+        // Si no se puede iniciar, mostrar mensaje
+        if (typeof showNotification === 'function') {
+            showNotification('⚠️ Kroot Corp no disponible. Usando proxy.', 'warning');
+        }
+        // Intentar cargar desde el proxy de todos modos
+        setTimeout(() => {
+            const urlInput = document.getElementById('browser-url');
+            if (urlInput) {
+                urlInput.value = '/api/kroot/dashboard';
+                if (typeof browserNavigate === 'function') {
+                    browserNavigate();
+                }
+            }
+        }, 1000);
+    });
 }
 
 // Exportar función globalmente
