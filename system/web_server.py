@@ -254,7 +254,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.send_response(503)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
-                self.wfile.write(b"""
+                html_content = """
                 <!DOCTYPE html>
                 <html>
                 <head><title>Kroot Corp - No disponible</title>
@@ -265,18 +265,22 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     .icon { font-size: 64px; margin-bottom: 20px; }
                     h1 { font-size: 28px; }
                     p { color: #9370db; }
+                    .btn { background: #4b0082; color: #fff; border: 1px solid #9370db; padding: 10px 24px; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-block; margin-top: 10px; }
+                    .btn:hover { background: #6a0dad; }
                 </style>
                 </head>
                 <body>
                 <div class="box">
                     <div class="icon">🏢</div>
                     <h1>Kroot Corp IA</h1>
-                    <p>El servidor de Kroot Corp no está disponible.<br>
-                    Inicia el servicio desde el menú "Program" de Kalm OS.</p>
+                    <p>El servidor de Kroot Corp no está disponible.</p>
+                    <p style="font-size:12px;color:#6a0dad;">Ejecuta Kroot Corp desde el menú Program de Kalm OS.</p>
+                    <a href="/desktop" class="btn">⬅ Volver al Escritorio</a>
                 </div>
                 </body>
                 </html>
-                """)
+                """
+                self.wfile.write(html_content.encode('utf-8'))
             return
             
         # ═══ LISTAR MÚSICA DESDE D:/Music/ ═══
