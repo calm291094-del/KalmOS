@@ -648,13 +648,16 @@ function toggleProgramMenu() {
     }
 }
 
-// ═══ EJECUTAR PROGRAMA DESDE EL MENÚ ═══
+// ═══ EJECUTAR PROGRAMA DESDE EL MENÚ (OPTIMIZADO) ═══
 function executeProgramFromMenu(path, name) {
     toggleStart();
     
     if (typeof showNotification === 'function') {
         showNotification(`⏳ Ejecutando ${name}...`, 'info');
     }
+    
+    // Abrir terminal inmediatamente para feedback visual
+    let terminalOpened = false;
     
     fetch('/api/run', {
         method: 'POST',
@@ -666,6 +669,7 @@ function executeProgramFromMenu(path, name) {
         console.log('📤 Respuesta de /api/run:', data);
         
         if (data.ok && data.stdout) {
+            // Script terminó rápido, mostrar salida
             if (typeof showNotification === 'function') {
                 showNotification(`✅ ${name} ejecutado correctamente`, 'success');
             }
@@ -673,16 +677,17 @@ function executeProgramFromMenu(path, name) {
             if (output) output.textContent = data.stdout;
             openWin('runner');
         } else if (data.ok && data.session_id) {
+            // Script en ejecución - abrir terminal
             if (typeof showNotification === 'function') {
                 showNotification(`✅ ${name} ejecutado (PID ${data.pid})`, 'success');
             }
-            if (typeof openTerminalForProcess === 'function') {
+            
+            // Abrir terminal solo una vez
+            if (!terminalOpened && typeof openTerminalForProcess === 'function') {
+                terminalOpened = true;
                 openTerminalForProcess(data.session_id, name);
-            } else {
-                openWin('runner');
-                const output = document.getElementById('script-out');
-                if (output) output.textContent = `✅ ${name} ejecutado (PID ${data.pid})`;
             }
+            
             if (typeof loadServers === 'function') loadServers();
         } else if (data.ok && data.viewer_url) {
             window.open(data.viewer_url, '_blank');
