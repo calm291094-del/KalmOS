@@ -124,12 +124,11 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         
         # ═══ SERVIR MÚSICA DESDE D:/Music/ ═══
         if p.startswith("/D/Music/"):
-            # Decodificar la URL (manejar espacios y caracteres especiales)
-            rel_path = urllib.parse.unquote(p[8:])  # Quita "/D/Music/" y decodifica
+            rel_path = urllib.parse.unquote(p[8:])
             file_path = DRIVE_D / "Music" / rel_path
-    
+            
             log(f"🎵 Solicitando música: {file_path}", "DEBUG")
-    
+            
             if file_path.exists() and file_path.is_file():
                 mime, _ = mimetypes.guess_type(str(file_path))
                 self.send_response(200)
@@ -148,9 +147,9 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 return
         
-        # ═══ SERVIR ARCHIVOS DESDE D: (PDF, imágenes, etc) ═══
+        # ═══ SERVIR ARCHIVOS DESDE D: ═══
         if p.startswith("/D/"):
-            rel_path = p[3:]  # Quita "/D/"
+            rel_path = p[3:]
             file_path = DRIVE_D / rel_path
             if file_path.exists() and file_path.is_file():
                 mime, _ = mimetypes.guess_type(str(file_path))
@@ -197,59 +196,45 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         if p == "/api/background-check":
             self._json({"exists": BG_FILE.exists()})
             return
-
-
+        
         # ═══ PROXY PARA KROOT CORP ═══
         if p.startswith("/api/kroot/"):
-            # Redirigir a Kroot Corp (puerto 8000)
-            import urllib.request
-            import urllib.error
-    
-            # Obtener la ruta después de /api/kroot/
-            kroot_path = p[10:]  # Quita "/api/kroot/"
-            if not kroot_path:
+            kroot_path = p[10:]
+            if not kroot_path or kroot_path == "/":
                 kroot_path = "/dashboard"
-    
-            # Construir la URL de destino
-            if IS_CLOUD:
-                # En Render, Kroot Corp corre en el mismo host pero puerto 8000
-                # Como no podemos acceder a otro puerto, intentamos localhost
-                target_url = f"http://localhost:8000{kroot_path}"
-            else:
-                target_url = f"http://localhost:8000{kroot_path}"
-    
-            # Si es una petición con query string
+            
+            query_string = ""
             if parsed.query:
-                target_url += "?" + parsed.query
-    
+                query_string = "?" + parsed.query
+            
+            target_url = f"http://localhost:8000{kroot_path}{query_string}"
+            
             log(f"🔄 Proxy Kroot: {self.path} -> {target_url}", "DEBUG")
-    
+            
             try:
-                # Hacer la petición a Kroot Corp
-                req = urllib.request.Request(target_url)
-                for header in ["User-Agent", "Accept", "Accept-Language"]:
+                req = urllib.request.Request(target_url, method="GET")
+                for header in ["User-Agent", "Accept", "Accept-Language", "Content-Type"]:
                     if header in self.headers:
                         req.add_header(header, self.headers[header])
-        
+                
                 with urllib.request.urlopen(req, timeout=10) as resp:
                     content = resp.read()
                     content_type = resp.headers.get("Content-Type", "text/html")
-            
+                    
                     self.send_response(resp.status)
                     self.send_header("Content-Type", content_type)
-                    # Copiar otras cabeceras importantes
-                    for header in ["Content-Length", "Cache-Control"]:
-                        if header in resp.headers:
-                            self.send_header(header, resp.headers[header])
+                    if "Cache-Control" in resp.headers:
+                        self.send_header("Cache-Control", resp.headers["Cache-Control"])
                     self.end_headers()
                     self.wfile.write(content)
                     log(f"✅ Proxy Kroot: {resp.status} OK", "DEBUG")
+                    
             except urllib.error.HTTPError as e:
                 self.send_response(e.code)
                 self.end_headers()
-                log(f"❌ Proxy Kroot error: {e.code}", "WARN")
+                log(f"❌ Proxy Kroot error HTTP: {e.code}", "WARN")
+                
             except Exception as e:
-                # Si Kroot Corp no está corriendo, mostrar mensaje
                 log(f"❌ Proxy Kroot: {e}", "WARN")
                 self.send_response(503)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -282,8 +267,8 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 """
                 self.wfile.write(html_content.encode('utf-8'))
             return
-            
-        # ═══ LISTAR MÚSICA DESDE D:/Music/ ═══
+        
+        # ═══ LISTAR MÚSICA ═══
         if p == "/api/music/list":
             try:
                 music_dir = DRIVE_D / "Music"
@@ -291,14 +276,12 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 if music_dir.exists():
                     for f in music_dir.iterdir():
                         if f.is_file() and f.suffix.lower() in ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac']:
-                            # Crear URL para servir el archivo (codificar caracteres especiales)
                             url_path = "/D/Music/" + urllib.parse.quote(f.name)
                             files.append({
                                 "name": f.name,
                                 "path": str(f),
                                 "url": url_path
                             })
-                # Ordenar por nombre
                 files.sort(key=lambda x: x["name"].lower())
                 self._json({"ok": True, "files": files, "count": len(files)})
             except Exception as e:
