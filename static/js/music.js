@@ -1,4 +1,4 @@
-// KALM OS v4.3 - Reproductor de Música REAL (CORREGIDO)
+// KALM OS v4.3 - Reproductor de Música REAL (CON MODO DEMO POR DEFECTO)
 
 let musicPlayer = {
     isPlaying: false,
@@ -16,12 +16,35 @@ let musicPlayer = {
 // ═══ FORMATOS SOPORTADOS ═══
 const SUPPORTED_FORMATS = ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac', '.webm'];
 
-// ═══ CARGAR CANCIONES DESDE D:/Music/ ═══
+// ═══ PLAYLIST DE DEMOSTRACIÓN (SIEMPRE DISPONIBLE) ═══
+const DEMO_PLAYLIST = [
+    { 
+        name: '🎵 SoundHelix - Song 1', 
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        isDemo: true
+    },
+    { 
+        name: '🎵 SoundHelix - Song 2', 
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+        isDemo: true
+    },
+    { 
+        name: '🎵 SoundHelix - Song 3', 
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+        isDemo: true
+    },
+    { 
+        name: '🎵 SoundHelix - Song 4', 
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+        isDemo: true
+    }
+];
+
+// ═══ CARGAR CANCIONES DESDE D:/Music/ + DEMO ═══
 function loadMusicFiles() {
     const status = document.getElementById('music-status');
     const playlistDiv = document.getElementById('music-playlist');
     
-    // Evitar recargas múltiples
     if (musicPlayer.isLoading) return;
     musicPlayer.isLoading = true;
     
@@ -33,11 +56,15 @@ function loadMusicFiles() {
     if (playlistDiv) {
         playlistDiv.innerHTML = `
             <div style="color:#9370db;text-align:center;padding:20px;">
-                ⏳ Buscando archivos de música en D:/Music/...
+                ⏳ Buscando archivos de música...
             </div>
         `;
     }
 
+    // Primero, establecer la playlist de demostración como base
+    musicPlayer.playlist = DEMO_PLAYLIST.map(track => ({ ...track }));
+    
+    // Luego intentar cargar archivos locales
     fetch('/api/music/list')
         .then(r => {
             if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -47,95 +74,58 @@ function loadMusicFiles() {
             console.log('📥 Respuesta /api/music/list:', data);
             
             if (data.ok && data.files && data.files.length > 0) {
-                musicPlayer.playlist = data.files.map(f => ({
+                // Agregar archivos locales a la playlist (al principio)
+                const localFiles = data.files.map(f => ({
                     name: f.name,
                     path: f.path,
-                    url: f.url
+                    url: f.url,
+                    isDemo: false
                 }));
-                musicPlayer.isLoaded = true;
-                musicPlayer.isLoading = false;
                 
-                console.log(`🎵 ${musicPlayer.playlist.length} canciones cargadas:`, 
-                           musicPlayer.playlist.map(f => f.name));
+                // Combinar: locales primero, luego demos
+                musicPlayer.playlist = [...localFiles, ...DEMO_PLAYLIST];
                 
-                updatePlaylistUI();
+                console.log(`🎵 ${localFiles.length} locales + ${DEMO_PLAYLIST.length} demo = ${musicPlayer.playlist.length} canciones`);
+                
                 if (status) {
-                    status.textContent = `🎵 ${musicPlayer.playlist.length} canciones cargadas`;
+                    status.textContent = `🎵 ${localFiles.length} canciones locales + ${DEMO_PLAYLIST.length} demo`;
                     status.style.color = '#00cc66';
                 }
-                
-                // Seleccionar primera canción automáticamente
-                if (musicPlayer.playlist.length > 0) {
-                    selectTrack(0);
-                }
             } else {
-                // No hay archivos - mostrar mensaje y usar modo demo
-                musicPlayer.isLoaded = true;
-                musicPlayer.isLoading = false;
-                
                 if (status) {
-                    status.textContent = '📂 No hay canciones en D:/Music/';
-                    status.style.color = '#9370db';
+                    status.textContent = '🎵 Modo Demo - Sin archivos locales';
+                    status.style.color = '#ffaa00';
                 }
-                
-                // Crear playlist de demostración con canciones online
-                createDemoPlaylist();
+                console.log('🎵 Usando solo playlist de demostración');
+            }
+            
+            musicPlayer.isLoaded = true;
+            musicPlayer.isLoading = false;
+            updatePlaylistUI();
+            
+            // Seleccionar primera canción
+            if (musicPlayer.playlist.length > 0) {
+                selectTrack(0);
             }
         })
         .catch(err => {
             console.error('❌ Error cargando música:', err);
             musicPlayer.isLoading = false;
             
+            // Usar solo la playlist de demostración
+            musicPlayer.playlist = DEMO_PLAYLIST.map(track => ({ ...track }));
+            musicPlayer.isLoaded = true;
+            updatePlaylistUI();
+            
             if (status) {
-                status.textContent = '❌ Error cargando canciones';
-                status.style.color = '#ff4444';
+                status.textContent = '🎵 Modo Demo (error de conexión)';
+                status.style.color = '#ffaa00';
             }
             
-            // Si falla la carga, usar modo demo
-            createDemoPlaylist();
+            if (musicPlayer.playlist.length > 0) {
+                selectTrack(0);
+            }
         });
-}
-
-// ═══ PLAYLIST DE DEMOSTRACIÓN (SI NO HAY ARCHIVOS) ═══
-function createDemoPlaylist() {
-    console.log('🎵 Usando playlist de demostración...');
-    
-    // Canciones de muestra (dominios públicos / libres)
-    musicPlayer.playlist = [
-        { 
-            name: '🎵 SoundHelix - Song 1', 
-            url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-            isDemo: true
-        },
-        { 
-            name: '🎵 SoundHelix - Song 2', 
-            url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-            isDemo: true
-        },
-        { 
-            name: '🎵 SoundHelix - Song 3', 
-            url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-            isDemo: true
-        },
-        { 
-            name: '🎵 SoundHelix - Song 4', 
-            url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
-            isDemo: true
-        }
-    ];
-    
-    musicPlayer.isLoaded = true;
-    updatePlaylistUI();
-    
-    const status = document.getElementById('music-status');
-    if (status) {
-        status.textContent = '🎵 Modo Demo - Archivos de ejemplo';
-        status.style.color = '#ffaa00';
-    }
-    
-    if (musicPlayer.playlist.length > 0) {
-        selectTrack(0);
-    }
 }
 
 // ═══ ACTUALIZAR PLAYLIST UI ═══
@@ -146,8 +136,7 @@ function updatePlaylistUI() {
     if (musicPlayer.playlist.length === 0) {
         playlistDiv.innerHTML = `
             <div style="color:#9370db;text-align:center;padding:20px;">
-                🎵 No hay canciones disponibles<br>
-                <span style="font-size:11px;">Sube archivos .mp3, .wav, .ogg a D:/Music/</span>
+                🎵 No hay canciones disponibles
             </div>
         `;
         return;
@@ -171,13 +160,14 @@ function updatePlaylistUI() {
                 background: ${isActive ? 'rgba(106,13,173,0.35)' : 'transparent'};
                 border-left: 3px solid ${isActive ? '#da70d6' : 'transparent'};
                 transition: all 0.2s;
-                hover: background: rgba(75,0,130,0.2);
-            " onclick="selectTrack(${index})">
+            " onclick="selectTrack(${index})"
+            onmouseover="this.style.background='rgba(75,0,130,0.2)'"
+            onmouseout="this.style.background='${isActive ? 'rgba(106,13,173,0.35)' : 'transparent'}'">
                 <span style="color:${isPlaying ? '#da70d6' : (isActive ? '#e6e6fa' : '#9370db')};">
                     ${isPlaying ? '▶️' : (isActive ? '⏸️' : (isDemo ? '☁️' : '🎵'))} 
                     ${track.name}
                 </span>
-                <span style="font-size:10px;color:#6a0dad;">${index + 1}</span>
+                <span style="font-size:10px;color:#6a0dad;">${isDemo ? 'demo' : index + 1}</span>
             </div>
         `;
     });
@@ -207,7 +197,6 @@ function selectTrack(index) {
 
     const track = musicPlayer.playlist[index];
     const info = document.getElementById('music-info');
-    const status = document.getElementById('music-status');
     
     console.log(`🎵 Seleccionando: ${track.name} (${track.url})`);
     
@@ -220,17 +209,10 @@ function selectTrack(index) {
     const audio = new Audio();
     audio.src = track.url;
     audio.volume = musicPlayer.volume / 100;
+    audio.crossOrigin = 'anonymous'; // Para evitar CORS en algunos servidores
     musicPlayer.audio = audio;
 
     // ═══ EVENTOS DEL AUDIO ═══
-    audio.addEventListener('loadstart', function() {
-        console.log('🔄 Cargando audio...');
-        if (info) {
-            info.textContent = `⏳ Cargando: ${track.name}...`;
-            info.style.color = '#ffaa00';
-        }
-    });
-
     audio.addEventListener('loadedmetadata', function() {
         musicPlayer.duration = this.duration;
         updateDurationUI();
@@ -239,7 +221,6 @@ function selectTrack(index) {
             info.textContent = `⏸️ ${track.name} (${formatTime(this.duration)})`;
             info.style.color = '#d8bfd8';
         }
-        // Actualizar barra de progreso
         const progressBar = document.getElementById('music-progress');
         if (progressBar) progressBar.style.width = '0%';
     });
@@ -263,7 +244,7 @@ function selectTrack(index) {
             info.textContent = `⏸️ ${track.name} (listo)`;
             info.style.color = '#d8bfd8';
         }
-        // Auto-reproducir
+        // Auto-reproducir (con manejo de error)
         audio.play()
             .then(() => {
                 musicPlayer.isPlaying = true;
@@ -275,9 +256,9 @@ function selectTrack(index) {
                 console.log('▶️ Reproduciendo:', track.name);
             })
             .catch(err => {
-                console.warn('⚠️ Autoplay bloqueado:', err);
+                console.warn('⚠️ Autoplay bloqueado:', err.message);
                 if (info) {
-                    info.textContent = `⏸️ ${track.name} (click play para reproducir)`;
+                    info.textContent = `⏸️ ${track.name} (click ▶️ para reproducir)`;
                     info.style.color = '#9370db';
                 }
                 musicPlayer.isPlaying = false;
@@ -292,18 +273,18 @@ function selectTrack(index) {
         console.error('   URL:', this.src);
         
         if (info) {
-            info.textContent = `❌ Error: ${track.name} (${errorMsg})`;
+            info.textContent = `❌ Error: ${track.name}`;
             info.style.color = '#ff4444';
         }
         musicPlayer.isPlaying = false;
         updatePlaylistUI();
         
-        // Si es un error 404, sugerir que el archivo no existe
-        if (errorCode === 4) { // MEDIA_ERR_SRC_NOT_SUPPORTED
-            if (status) {
-                status.textContent = '❌ Archivo no encontrado o formato no soportado';
-                status.style.color = '#ff4444';
-            }
+        // Si es un error 404, intentar con la siguiente canción después de 3 segundos
+        if (errorCode === 4) {
+            setTimeout(() => {
+                console.log('⏭️ Saltando a la siguiente canción...');
+                musicNext();
+            }, 3000);
         }
     });
 
@@ -318,7 +299,6 @@ function selectTrack(index) {
             info.textContent = `⏹️ ${track.name} - Terminado`;
             info.style.color = '#9370db';
         }
-        // Auto-siguiente después de 1 segundo
         setTimeout(() => musicNext(), 1000);
     });
 
@@ -451,7 +431,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const win = document.getElementById('win-music');
     if (win) {
-        // Cargar canciones al abrir la ventana
         const observer = new MutationObserver(() => {
             if (win.style.display !== 'none') {
                 if (!musicPlayer.isLoaded && !musicPlayer.isLoading) {
@@ -462,7 +441,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         observer.observe(win, { attributes: true, attributeFilter: ['style'] });
 
-        // Si la ventana ya está visible, cargar
         setTimeout(() => {
             if (win.style.display !== 'none' && !musicPlayer.isLoaded && !musicPlayer.isLoading) {
                 loadMusicFiles();
@@ -481,4 +459,5 @@ window.musicVolumeDown = musicVolumeDown;
 window.selectTrack = selectTrack;
 window.loadMusicFiles = loadMusicFiles;
 
-console.log('🎵 Reproductor de música real cargado correctamente');
+console.log('🎵 Reproductor de música cargado correctamente');
+console.log('📌 Modo: Demo + Archivos locales');

@@ -1,7 +1,13 @@
-// KALM OS v4.3 - File Manager (CORREGIDO)
+// KALM OS v4.3 - File Manager (CON SOPORTE PARA TXT Y MÚSICA)
 
 let currentPath = '/D';
 let fileManagerInitialized = false;
+
+// ═══ EXTENSIONES SOPORTADAS ═══
+const TEXT_EXTENSIONS = ['.txt', '.md', '.log', '.json', '.xml', '.yaml', '.yml', '.csv', '.py', '.js', '.html', '.css'];
+const MUSIC_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac'];
+const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.ico'];
+const PDF_EXTENSIONS = ['.pdf'];
 
 // ═══ Cargar archivos ═══
 function loadFiles(path) {
@@ -18,7 +24,6 @@ function loadFiles(path) {
         path = '/D';
     }
     
-    // Asegurar formato correcto
     if (path.startsWith('D:/') || path.startsWith('D:\\')) {
         path = path.replace(/^D:[/\\]/, '/D/');
     }
@@ -63,27 +68,107 @@ function renderFiles(data) {
     let html = '';
     items.forEach(item => {
         const ext = item.ext || '';
+        const isDir = item.is_dir || false;
+        const isText = TEXT_EXTENSIONS.includes(ext);
+        const isMusic = MUSIC_EXTENSIONS.includes(ext);
+        const isImage = IMAGE_EXTENSIONS.includes(ext);
+        const isPdf = PDF_EXTENSIONS.includes(ext);
         const isExecutable = ['.py', '.sh', '.js', '.bat', '.cmd', '.exe'].includes(ext);
-        const isDoc = ['.pdf', '.txt', '.md', '.log', '.json', '.xml', '.yaml', '.yml', '.csv', 
-                      '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.ico'].includes(ext);
         
         // Escapar nombre para evitar XSS
         const safeName = item.name.replace(/[<>"']/g, '');
         
-        html += `<div class="file-item" ${item.is_dir ? 'ondblclick="openFolder(\'' + item.path + '\')"' : ''}>
+        // Determinar qué botones mostrar
+        let actionButtons = '';
+        
+        if (isDir) {
+            actionButtons = `<button class="act small" onclick="openFolder('${item.path}')">📂 Abrir</button>`;
+        } else if (isMusic) {
+            actionButtons = `
+                <button class="act small success" onclick="playMusicFile('${item.path}', '${safeName}')">🎵 Reproducir</button>
+                <button class="act small" onclick="openMusicPlayer()">📋 Ver Playlist</button>
+            `;
+        } else if (isText || isPdf || isImage) {
+            actionButtons = `<button class="act small" onclick="openDocument('${item.path}')">👁️ Ver</button>`;
+        } else if (isExecutable) {
+            actionButtons = `<button class="act small success" onclick="runProgram('${item.path}')">▶️ Ejecutar</button>`;
+        }
+        
+        // Siempre agregar botón de eliminar
+        actionButtons += ` <button class="act small danger" onclick="deleteFile('${item.path}')">🗑️</button>`;
+        
+        html += `<div class="file-item" ${isDir ? 'ondblclick="openFolder(\'' + item.path + '\')"' : ''}>
             <div class="file-icon">${item.icon || '📄'}</div>
             <div class="file-name" title="${safeName}">${safeName}</div>
             <div class="file-size">${item.size_fmt || '-'}</div>
-            <div class="file-actions">
-                ${item.is_dir ? `<button class="act small" onclick="openFolder('${item.path}')">📂 Abrir</button>` : ''}
-                ${isExecutable ? `<button class="act small success" onclick="runProgram('${item.path}')">▶️ Ejecutar</button>` : ''}
-                ${isDoc ? `<button class="act small" onclick="openDocument('${item.path}')">👁️ Ver</button>` : ''}
-                <button class="act small danger" onclick="deleteFile('${item.path}')">🗑️</button>
-            </div>
+            <div class="file-actions">${actionButtons}</div>
         </div>`;
     });
     
     grid.innerHTML = html;
+}
+
+// ═══ REPRODUCIR ARCHIVO DE MÚSICA DESDE EL EXPLORADOR ═══
+function playMusicFile(path, name) {
+    console.log('🎵 Reproduciendo:', path);
+    
+    // Mostrar notificación
+    showNotification(`🎵 Reproduciendo: ${name}`, 'info');
+    
+    // Abrir el reproductor
+    openWin('music');
+    
+    // Esperar a que se cargue el reproductor y seleccionar la canción
+    setTimeout(() => {
+        // Buscar la canción en la playlist
+        if (typeof musicPlayer !== 'undefined' && musicPlayer) {
+            // Crear URL para el archivo
+            const url = path;
+            
+            // Buscar si ya está en la playlist
+            let foundIndex = -1;
+            for (let i = 0; i < musicPlayer.playlist.length; i++) {
+                if (musicPlayer.playlist[i].path === path) {
+                    foundIndex = i;
+                    break;
+                }
+            }
+            
+            if (foundIndex >= 0) {
+                // Seleccionar la canción existente
+                if (typeof selectTrack === 'function') {
+                    selectTrack(foundIndex);
+                }
+            } else {
+                // Agregar a la playlist y reproducir
+                const newTrack = {
+                    name: name,
+                    path: path,
+                    url: path,
+                    isDemo: false
+                };
+                musicPlayer.playlist.push(newTrack);
+                const newIndex = musicPlayer.playlist.length - 1;
+                if (typeof selectTrack === 'function') {
+                    selectTrack(newIndex);
+                }
+                if (typeof updatePlaylistUI === 'function') {
+                    updatePlaylistUI();
+                }
+            }
+        }
+    }, 500);
+}
+
+// ═══ ABRIR REPRODUCTOR DE MÚSICA ═══
+function openMusicPlayer() {
+    openWin('music');
+    // Cargar canciones si no están cargadas
+    setTimeout(() => {
+        if (typeof musicPlayer !== 'undefined' && !musicPlayer.isLoaded && typeof loadMusicFiles === 'function') {
+            loadMusicFiles();
+        }
+    }, 500);
 }
 
 // ═══ Navegación ═══
@@ -99,10 +184,9 @@ function fileUp() {
         return;
     }
     
-    // Quitar el último segmento
-    let parent = currentPath.replace(/\/$/, ''); // Quitar trailing slash
+    let parent = currentPath.replace(/\/$/, '');
     const parts = parent.split('/');
-    parts.pop(); // Quitar último segmento
+    parts.pop();
     parent = parts.join('/');
     
     if (!parent || parent === '' || parent === '/D') {
@@ -156,7 +240,7 @@ function runProgram(path) {
     });
 }
 
-// ═══ Abrir documento ═══
+// ═══ Abrir documento (TXT, PDF, imágenes) ═══
 function openDocument(path) {
     console.log('📄 Abriendo documento:', path);
     showNotification(`📄 Abriendo ${path.split('/').pop()}...`, 'info');
@@ -259,7 +343,10 @@ function searchFiles() {
             let html = '';
             results.forEach(item => {
                 const safeName = item.name.replace(/[<>"']/g, '');
-                html += `<div class="file-item" onclick="openDocument('${item.path}')">
+                const ext = item.name.split('.').pop().toLowerCase();
+                const isMusic = MUSIC_EXTENSIONS.includes('.' + ext);
+                
+                html += `<div class="file-item" onclick="${isMusic ? `playMusicFile('${item.path}', '${safeName}')` : `openDocument('${item.path}')`}">
                     <div class="file-icon">${item.icon || '📄'}</div>
                     <div class="file-name" title="${safeName}">${safeName}</div>
                     <div class="file-size">${item.size_fmt || '-'}</div>
@@ -303,11 +390,10 @@ function uploadFiles(input) {
     });
 }
 
-// ═══ TERMINAL VIRTUAL (OPTIMIZADA) ═══
+// ═══ TERMINAL VIRTUAL ═══
 function openTerminalForProcess(sessionId, programName) {
     let win = document.getElementById('win-terminal');
     
-    // Si ya existe, traer al frente
     if (win) {
         win.style.display = 'flex';
         win.classList.add('active');
@@ -319,7 +405,6 @@ function openTerminalForProcess(sessionId, programName) {
         return win;
     }
     
-    // Crear nueva terminal
     win = document.createElement('div');
     win.id = 'win-terminal';
     win.className = 'window resizable';
@@ -351,7 +436,6 @@ function openTerminalForProcess(sessionId, programName) {
     updateTaskbar('terminal');
     startTerminalStream(sessionId);
     
-    // Configurar input
     const input = document.getElementById('term-input');
     if (input) {
         input.onkeydown = function(e) {
@@ -388,13 +472,11 @@ function startTerminalStream(sessionId) {
     const output = document.getElementById('term-output');
     if (!output) return;
     
-    // Cerrar conexión anterior
     if (window.termEventSource) {
         window.termEventSource.close();
         window.termEventSource = null;
     }
     
-    // Usar EventSource con límite de tiempo
     const url = `/api/process/stream/${sessionId}`;
     const eventSource = new EventSource(url);
     window.termEventSource = eventSource;
@@ -403,7 +485,6 @@ function startTerminalStream(sessionId) {
     const maxReconnectAttempts = 2;
     let timeoutId = null;
     
-    // Timeout para cerrar la conexión si no hay actividad
     const resetTimeout = () => {
         if (timeoutId) clearTimeout(timeoutId);
         timeoutId = setTimeout(() => {
@@ -412,7 +493,7 @@ function startTerminalStream(sessionId) {
                 window.termEventSource = null;
                 output.textContent += '\n\x1b[33m⏱️ Tiempo de espera agotado\x1b[0m\n';
             }
-        }, 30000); // 30 segundos sin actividad
+        }, 30000);
     };
     
     eventSource.onmessage = function(event) {
@@ -515,13 +596,25 @@ window.closeTerminalWindow = closeTerminalWindow;
 window.startTerminalStream = startTerminalStream;
 window.sendTerminalInput = sendTerminalInput;
 window.showNotification = showNotification;
+window.loadFiles = loadFiles;
+window.renderFiles = renderFiles;
+window.openFolder = openFolder;
+window.fileUp = fileUp;
+window.refreshFiles = refreshFiles;
+window.runProgram = runProgram;
+window.openDocument = openDocument;
+window.deleteFile = deleteFile;
+window.createFolderPrompt = createFolderPrompt;
+window.searchFiles = searchFiles;
+window.uploadFiles = uploadFiles;
+window.playMusicFile = playMusicFile;
+window.openMusicPlayer = openMusicPlayer;
 
-// ═══ INICIALIZAR - UNA SOLA VEZ ═══
+// ═══ INICIALIZAR ═══
 if (!fileManagerInitialized) {
     fileManagerInitialized = true;
     
     document.addEventListener('DOMContentLoaded', function() {
-        // Cargar archivos cuando se abre el explorador
         setTimeout(() => {
             const win = document.getElementById('win-explorer');
             if (win && win.style.display !== 'none') {
@@ -531,7 +624,6 @@ if (!fileManagerInitialized) {
         }, 500);
     });
     
-    // Observador para cuando se abra la ventana - usando MutationObserver solo una vez
     const observer = new MutationObserver(() => {
         const win = document.getElementById('win-explorer');
         if (win && win.style.display !== 'none' && win.style.display !== '') {
@@ -544,7 +636,6 @@ if (!fileManagerInitialized) {
     });
     observer.observe(document.body, { childList: true, subtree: true });
     
-    // Estilos de notificaciones
     const styleNotif = document.createElement('style');
     styleNotif.textContent = `
         @keyframes slideIn {
@@ -555,4 +646,4 @@ if (!fileManagerInitialized) {
     document.head.appendChild(styleNotif);
 }
 
-console.log('📁 File Manager cargado - Terminal disponible globalmente');
+console.log('📁 File Manager cargado con soporte para TXT y Música');
