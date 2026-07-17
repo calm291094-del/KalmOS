@@ -616,12 +616,10 @@
 <script>
 // ═══ FONDO DE PANTALLA POR DEFECTO ═══
 (function setDefaultWallpaper() {
-    // Si no hay wallpaper guardado, usar la imagen por defecto
     if (!localStorage.getItem('kalm_wallpaper')) {
-        // Usar la imagen PNG de static/img/kalm.png
-        document.body.style.backgroundImage = "url('/KalmOS.png')";
-        // Opcional: guardar para futuras sesiones
-        localStorage.setItem('kalm_wallpaper', '/static/img/kalm.png');
+        document.body.style.backgroundImage = "url('/static/img/KalmOS.png')";
+        // Guardar para futuras sesiones (opcional)
+        localStorage.setItem('kalm_wallpaper', '/static/img/KalmOS.png');
     }
 })();
     
