@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="/static/css/windows.css">
     <link rel="stylesheet" href="/static/css/themes.css">
     <style>
-        /* ═══ Estilos adicionales ═══ */
         .desktop-icon {
             width: 85px;
             text-align: center;
@@ -37,8 +36,6 @@
             font-weight: 500;
             line-height: 1.2;
         }
-
-        /* ═══ Responsive para iconos ═══ */
         @media (max-width: 768px) {
             .desktop-icon { width: 70px; padding: 6px 2px; }
             .desktop-icon .ico { font-size: 32px; }
@@ -93,7 +90,6 @@
 
 <!-- ═══ DESKTOP ICONOS ═══ -->
 <div id="desktop">
-    <!-- Fila 1 -->
     <div class="desktop-icon" style="top:20px;left:20px" ondblclick="openWin('explorer')">
         <div class="ico">💾</div><div class="lbl">Este equipo</div>
     </div>
@@ -109,8 +105,6 @@
     <div class="desktop-icon" style="top:460px;left:20px" ondblclick="openWin('music')">
         <div class="ico">🎵</div><div class="lbl">Reproductor</div>
     </div>
-
-    <!-- Fila 2 -->
     <div class="desktop-icon" style="top:20px;left:130px" ondblclick="openWin('console')">
         <div class="ico">💻</div><div class="lbl">Terminal</div>
     </div>
@@ -126,8 +120,6 @@
     <div class="desktop-icon" style="top:460px;left:130px" ondblclick="openWin('notepad')">
         <div class="ico">📝</div><div class="lbl">Bloc de notas</div>
     </div>
-
-    <!-- Fila 3 -->
     <div class="desktop-icon" style="top:20px;left:240px" ondblclick="openWin('calc')">
         <div class="ico">🧮</div><div class="lbl">Calculadora</div>
     </div>
@@ -143,8 +135,6 @@
     <div class="desktop-icon" style="top:460px;left:240px" ondblclick="openWin('proxy')">
         <div class="ico">🔒</div><div class="lbl">Proxy</div>
     </div>
-
-    <!-- Fila 4 (extra) -->
     <div class="desktop-icon" style="top:20px;left:350px" ondblclick="openWin('runner')">
         <div class="ico">⚙️</div><div class="lbl">Script Runner</div>
     </div>
@@ -529,9 +519,7 @@
         </div>
     </div>
     <div class="window-body">
-        <div id="tool-buttons" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:10px">
-            <!-- Los botones se cargan dinámicamente desde system/Program -->
-        </div>
+        <div id="tool-buttons" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:10px"></div>
         <div id="tool-output" class="console" style="height:250px;margin-top:10px">Selecciona una herramienta...</div>
     </div>
 </div>
@@ -547,9 +535,7 @@
         </div>
     </div>
     <div class="window-body">
-        <div id="game-buttons" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:10px">
-            <!-- Los botones se cargan dinámicamente desde system/Program -->
-        </div>
+        <div id="game-buttons" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:10px"></div>
         <div id="game-output" class="console" style="height:250px;margin-top:10px;font-size:12px">Selecciona un juego...</div>
     </div>
 </div>
@@ -646,17 +632,13 @@
 
 <script>
     // ═══════════════════════════════════════════════════════════
-    // FONDO DE PANTALLA POR DEFECTO (KalmOS.png)
+    // FONDO DE PANTALLA POR DEFECTO
     // ═══════════════════════════════════════════════════════════
     (function setDefaultWallpaper() {
-        // Si no hay wallpaper guardado, usar la imagen por defecto
         if (!localStorage.getItem('kalm_wallpaper')) {
-            // Usar la imagen PNG de static/img/KalmOS.png
             document.body.style.backgroundImage = "url('/static/img/KalmOS.png')";
-            // Guardar para futuras sesiones
             localStorage.setItem('kalm_wallpaper', '/static/img/KalmOS.png');
         } else {
-            // Si hay wallpaper guardado, usarlo
             const savedBg = localStorage.getItem('kalm_wallpaper');
             if (savedBg) {
                 document.body.style.backgroundImage = `url(${savedBg})`;
@@ -687,15 +669,12 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Cargar tamaño de iconos guardado
         const saved = localStorage.getItem('kalm_icon_size') || 'medium';
         const iconSelect = document.getElementById('icon-size');
         if (iconSelect) {
             iconSelect.value = saved;
             changeIconSize(saved);
         }
-
-        // Cargar tema guardado
         const theme = localStorage.getItem('kalm_theme') || 'dark';
         const themeSelect = document.getElementById('theme-select');
         if (themeSelect) {
@@ -717,9 +696,6 @@
     }
 
     function resetBg() {
-        document.body.style.backgroundImage = '';
-        localStorage.removeItem('kalm_wallpaper');
-        // Restaurar la imagen por defecto
         document.body.style.backgroundImage = "url('/static/img/KalmOS.png')";
         localStorage.setItem('kalm_wallpaper', '/static/img/KalmOS.png');
         alert('✅ Wallpaper restaurado');
@@ -832,26 +808,7 @@
     // CARGA DINÁMICA DE JUEGOS Y HERRAMIENTAS
     // ═══════════════════════════════════════════════════════════
 
-    // Cuando se abre la ventana de juegos, cargar juegos
     document.addEventListener('DOMContentLoaded', function() {
-        const gamesObserver = new MutationObserver(() => {
-            const win = document.getElementById('win-games');
-            if (win && win.style.display !== 'none') {
-                if (typeof loadGames === 'function') loadGames();
-            }
-        });
-        gamesObserver.observe(document.body, { childList: true, subtree: true });
-
-        // Cuando se abre la ventana de herramientas, cargar herramientas
-        const toolsObserver = new MutationObserver(() => {
-            const win = document.getElementById('win-tools');
-            if (win && win.style.display !== 'none') {
-                if (typeof loadTools === 'function') loadTools();
-            }
-        });
-        toolsObserver.observe(document.body, { childList: true, subtree: true });
-
-        // Si las ventanas ya están abiertas, cargar contenido
         setTimeout(() => {
             const gamesWin = document.getElementById('win-games');
             if (gamesWin && gamesWin.style.display !== 'none' && typeof loadGames === 'function') {
@@ -861,7 +818,7 @@
             if (toolsWin && toolsWin.style.display !== 'none' && typeof loadTools === 'function') {
                 loadTools();
             }
-        }, 500);
+        }, 300);
     });
 
     console.log('🏰 Kalm OS v4.3 - Desktop Moderno cargado');
