@@ -168,6 +168,28 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         if p == "/api/background-check":
             self._json({"exists": BG_FILE.exists()})
             return
+
+        # ═══ LISTAR MÚSICA DESDE D:/Music/ ═══
+        if p == "/api/music/list":
+            try:
+                music_dir = DRIVE_D / "Music"
+                files = []
+                if music_dir.exists():
+                    for f in music_dir.iterdir():
+                        if f.is_file() and f.suffix.lower() in ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac']:
+                            # Crear URL para servir el archivo
+                            rel_path = str(f).replace(str(DRIVE_D), "/D").replace("\\", "/")
+                            files.append({
+                                "name": f.name,
+                                "path": str(f),
+                                "url": rel_path
+                            })
+                # Ordenar por nombre
+                files.sort(key=lambda x: x["name"].lower())
+                self._json({"ok": True, "files": files, "count": len(files)})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+            return
         
         # ═══ VISOR DE DOCUMENTOS ═══
         if p == "/api/viewer":
