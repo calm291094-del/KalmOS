@@ -1,4 +1,4 @@
-"""Servidor web principal de Kalm OS v4.3 - VERSIÓN COMPLETA CON PERSISTENCIA"""
+"""Servidor web principal de Kalm OS v4.3 - CON PERSISTENCIA"""
 import json
 import mimetypes
 import urllib.parse
@@ -11,8 +11,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 
 from system.config import (
-    BASE_DIR, VIEWS_DIR, STATIC_DIR, BG_FILE, DRIVE_D, DATA_DIR, log,
-    DNS_FILE, PROXY_FILE, SESSIONS_FILE, RUNNING_PROCS_FILE, PROGRAMS_CACHE
+    BASE_DIR, VIEWS_DIR, STATIC_DIR, BG_FILE, DRIVE_D, DATA_DIR, log
 )
 from system.auth import auth_system
 from system.task_manager import TaskManager, network_monitor
@@ -120,9 +119,9 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.end_headers()
             return
         
-        # ═══ SERVIR ARCHIVOS DESDE D: (PDF, imágenes, etc) ═══
+        # ═══ SERVIR ARCHIVOS DESDE D: ═══
         if p.startswith("/D/"):
-            rel_path = p[3:]  # Quita "/D/"
+            rel_path = p[3:]
             file_path = DRIVE_D / rel_path
             if file_path.exists() and file_path.is_file():
                 mime, _ = mimetypes.guess_type(str(file_path))
@@ -186,13 +185,11 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         
         # ═══ BROWSER BOOKMARKS ═══
         if p == "/api/browser/bookmarks":
-            log("📖 Solicitando bookmarks", "DEBUG")
             try:
                 from system.internal_browser import InternalBrowser
                 bookmarks = InternalBrowser.get_bookmarks()
                 self._json(bookmarks)
             except Exception as e:
-                log(f"Error en bookmarks: {e}", "ERROR")
                 self._json([])
             return
         
@@ -354,7 +351,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": "No hay logs"})
             return
         
-        # ═══ 404 ═══
         self.send_response(404)
         self.end_headers()
     
@@ -365,7 +361,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         p = parsed.path
         q = urllib.parse.parse_qs(parsed.query)
         
-        # ═══ LOGIN ═══
+        # ═══ LOGIN (SIN AUTENTICACIÓN) ═══
         if p == "/api/login":
             try:
                 d = json.loads(body)
@@ -514,8 +510,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": "Ruta requerida"})
                     return
                 
-                log(f"📂 Ejecutando desde frontend: {path}", "DEBUG")
-                
                 result = ScriptRunner.run(path, args)
                 
                 if result.get("ok") and result.get("viewer_path"):
@@ -525,7 +519,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 
                 self._json(result)
             except Exception as e:
-                log(f"Error en /api/run: {e}", "ERROR")
                 self._json({"ok": False, "error": str(e)})
             return
         
@@ -581,129 +574,14 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             else:
                 self._json({"ok": False, "error": "Invalid"})
             return
-
-        # ═══ PERSISTENCIA CON GITHUB ═══
-        if p == "/api/persistence/save":
-            try:
-                data = json.loads(body)
-                name = data.get("name", "default")
-                content = data.get("data", {})
-        
-                from system.config import save_persistent_data
-                result = save_persistent_data(name, content)
-                self._json({"ok": result})
-            except Exception as e:
-                self._json({"ok": False, "error": str(e)})
-            return
-
-        if p == "/api/persistence/load":
-            try:
-                data = json.loads(body)
-                name = data.get("name", "default")
-        
-                from system.config import load_persistent_data
-                content = load_persistent_data(name, {})
-                self._json({"ok": True, "data": content})
-            except Exception as e:
-                self._json({"ok": False, "error": str(e)})
-            return
         
         # ═══ PERSISTENCIA - Guardar datos ═══
         if p == "/api/persistence/save":
             try:
                 data = json.loads(body)
                 name = data.get("name", "default")
-                content = data.get("data", "")
-                # Guardar en archivo dentro de DATA_DIR
-                save_file = DATA_DIR / "persistence" / f"{name}.json"
-                save_file.parent.mkdir(parents=True, exist_ok=True)
-                save_file.write_text(json.dumps({"data": content, "updated": time.time()}), encoding="utf-8")
-                self._json({"ok": True})
-            except Exception as e:
-                self._json({"ok": False, "error": str(e)})
-            return
-        
-        # ═══ PERSISTENCIA - Cargar datos ═══
-        if p == "/api/persistence/load":
-            try:
-                data = json.loads(body)
-                name = data.get("name", "default")
-                load_file = DATA_DIR / "persistence" / f"{name}.json"
-                if load_file.exists():
-                    content = json.loads(load_file.read_text(encoding="utf-8"))
-                    self._json({"ok": True, "data": content.get("data", "")})
-                else:
-                    self._json({"ok": True, "data": ""})
-            except Exception as e:
-                self._json({"ok": False, "error": str(e)})
-            return
-        
-        # ═══ PERSISTENCIA - Listar backups ═══
-        if p == "/api/persistence/backups":
-            try:
-                backup_dir = DATA_DIR / "persistence" / "backups"
-                if backup_dir.exists():
-                    backups = [f.name for f in backup_dir.iterdir() if f.is_dir()]
-                    self._json({"ok": True, "backups": sorted(backups, reverse=True)})
-                else:
-                    self._json({"ok": True, "backups": []})
-            except Exception as e:
-                self._json({"ok": False, "error": str(e)})
-            return
-        
-        # ═══ PERSISTENCIA - Crear backup ═══
-        if p == "/api/persistence/backup":
-            try:
-                backup_dir = DATA_DIR / "persistence" / "backups" / f"backup_{int(time.time())}"
-                backup_dir.mkdir(parents=True, exist_ok=True)
-                
-                # Copiar archivos de persistencia
-                source_dir = DATA_DIR / "persistence"
-                for item in source_dir.iterdir():
-                    if item.name != "backups" and item.is_file():
-                        shutil.copy2(item, backup_dir / item.name)
-                
-                self._json({"ok": True, "backup": backup_dir.name})
-            except Exception as e:
-                self._json({"ok": False, "error": str(e)})
-            return
-        
-        # ═══ PERSISTENCIA - Restaurar backup ═══
-        if p == "/api/persistence/restore":
-            try:
-                data = json.loads(body)
-                backup_name = data.get("name", "")
-                backup_dir = DATA_DIR / "persistence" / "backups" / backup_name
-                
-                if not backup_dir.exists():
-                    self._json({"ok": False, "error": "Backup no encontrado"})
-                    return
-                
-                # Restaurar archivos
-                dest_dir = DATA_DIR / "persistence"
-                for item in backup_dir.iterdir():
-                    if item.is_file():
-                        shutil.copy2(item, dest_dir / item.name)
-                
-                self._json({"ok": True})
-            except Exception as e:
-                self._json({"ok": False, "error": str(e)})
-            return
-        
-        # ═══ SHUTDOWN ═══
-        if p == "/api/shutdown":
-            self._json({"ok": True})
-            threading.Thread(target=lambda: (time.sleep(1), os._exit(0)), daemon=True).start()
-            return
-
-        # ═══ PERSISTENCIA - Guardar datos ═══
-        if p == "/api/persistence/save":
-            try:
-                data = json.loads(body)
-                name = data.get("name", "default")
                 content = data.get("data", {})
-        
-                # Guardar en archivo
+                
                 save_file = DATA_DIR / "persistence" / f"{name}.json"
                 save_file.parent.mkdir(parents=True, exist_ok=True)
                 save_file.write_text(json.dumps(content, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -711,7 +589,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
             return
-
+        
         # ═══ PERSISTENCIA - Cargar datos ═══
         if p == "/api/persistence/load":
             try:
@@ -726,7 +604,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
             return
-
+        
         # ═══ PERSISTENCIA - Listar backups ═══
         if p == "/api/persistence/backups":
             try:
@@ -739,26 +617,25 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
             return
-
+        
         # ═══ PERSISTENCIA - Crear backup ═══
         if p == "/api/persistence/backup":
             try:
                 import shutil
                 backup_dir = DATA_DIR / "persistence" / "backups" / f"backup_{int(time.time())}"
                 backup_dir.mkdir(parents=True, exist_ok=True)
-        
-                # Copiar archivos de persistencia
+                
                 source_dir = DATA_DIR / "persistence"
                 if source_dir.exists():
                     for item in source_dir.iterdir():
                         if item.name != "backups" and item.is_file():
                             shutil.copy2(item, backup_dir / item.name)
-        
+                
                 self._json({"ok": True, "backup": backup_dir.name})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
             return
-
+        
         # ═══ PERSISTENCIA - Restaurar backup ═══
         if p == "/api/persistence/restore":
             try:
@@ -766,21 +643,26 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 data = json.loads(body)
                 backup_name = data.get("name", "")
                 backup_dir = DATA_DIR / "persistence" / "backups" / backup_name
-        
+                
                 if not backup_dir.exists():
                     self._json({"ok": False, "error": "Backup no encontrado"})
                     return
-        
-                # Restaurar archivos
+                
                 dest_dir = DATA_DIR / "persistence"
                 dest_dir.mkdir(parents=True, exist_ok=True)
                 for item in backup_dir.iterdir():
                     if item.is_file():
                         shutil.copy2(item, dest_dir / item.name)
-        
+                
                 self._json({"ok": True})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
+            return
+        
+        # ═══ SHUTDOWN ═══
+        if p == "/api/shutdown":
+            self._json({"ok": True})
+            threading.Thread(target=lambda: (time.sleep(1), os._exit(0)), daemon=True).start()
             return
         
         self.send_response(404)
