@@ -164,6 +164,86 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.send_response(404)
                 self.end_headers()
                 return
+
+        # ═══ PROXY PARA KROOT CORP ═══
+        if p.startswith("/api/kroot/"):
+            # Redirigir a Kroot Corp (puerto 8000)
+            import urllib.request
+            import urllib.error
+    
+            # Obtener la ruta después de /api/kroot/
+            kroot_path = p[10:]  # Quita "/api/kroot/"
+            if not kroot_path:
+                kroot_path = "/dashboard"
+    
+            # Construir la URL de destino
+            if IS_CLOUD:
+                # En Render, Kroot Corp corre en el mismo host pero puerto 8000
+                # Como no podemos acceder a otro puerto, intentamos localhost
+                target_url = f"http://localhost:8000{kroot_path}"
+            else:
+                target_url = f"http://localhost:8000{kroot_path}"
+    
+            # Si es una petición con query string
+            if parsed.query:
+                target_url += "?" + parsed.query
+    
+            log(f"🔄 Proxy Kroot: {self.path} -> {target_url}", "DEBUG")
+    
+            try:
+                # Hacer la petición a Kroot Corp
+                req = urllib.request.Request(target_url)
+                for header in ["User-Agent", "Accept", "Accept-Language"]:
+                    if header in self.headers:
+                        req.add_header(header, self.headers[header])
+        
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    content = resp.read()
+                    content_type = resp.headers.get("Content-Type", "text/html")
+            
+                    self.send_response(resp.status)
+                    self.send_header("Content-Type", content_type)
+                    # Copiar otras cabeceras importantes
+                    for header in ["Content-Length", "Cache-Control"]:
+                        if header in resp.headers:
+                            self.send_header(header, resp.headers[header])
+                    self.end_headers()
+                    self.wfile.write(content)
+                    log(f"✅ Proxy Kroot: {resp.status} OK", "DEBUG")
+            except urllib.error.HTTPError as e:
+                self.send_response(e.code)
+                self.end_headers()
+                log(f"❌ Proxy Kroot error: {e.code}", "WARN")
+            except Exception as e:
+                # Si Kroot Corp no está corriendo, mostrar mensaje
+                log(f"❌ Proxy Kroot: {e}", "WARN")
+                self.send_response(503)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(b"""
+                <!DOCTYPE html>
+                <html>
+                <head><title>Kroot Corp - No disponible</title>
+                <style>
+                    body { background: #0a0514; color: #da70d6; font-family: 'Segoe UI', sans-serif;
+                           display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; }
+                    .box { background: rgba(75,0,130,0.3); padding: 40px; border-radius: 16px; border: 1px solid #6a0dad; max-width: 500px; text-align: center; }
+                    .icon { font-size: 64px; margin-bottom: 20px; }
+                    h1 { font-size: 28px; }
+                    p { color: #9370db; }
+                </style>
+                </head>
+                <body>
+                <div class="box">
+                    <div class="icon">🏢</div>
+                    <h1>Kroot Corp IA</h1>
+                    <p>El servidor de Kroot Corp no está disponible.<br>
+                    Inicia el servicio desde el menú "Program" de Kalm OS.</p>
+                </div>
+                </body>
+                </html>
+                """)
+            return
         
         # ═══ PÚBLICAS ═══
         if p in ["/", "/index.html", "/login"]:
