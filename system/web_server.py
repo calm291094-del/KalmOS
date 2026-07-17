@@ -124,16 +124,15 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         
         # ═══ SERVIR MÚSICA DESDE D:/Music/ ═══
         if p.startswith("/D/Music/"):
+            # Obtener el nombre del archivo
             rel_path = p[8:]
             decoded_path = urllib.parse.unquote(rel_path)
-    
-            # Extraer solo el nombre del archivo para buscar
             filename = os.path.basename(decoded_path)
             music_dir = DRIVE_D / "Music"
     
-            log(f"🎵 Buscando música: {filename}", "DEBUG")
+            log(f"🎵 Buscando: {filename}", "DEBUG")
     
-            # Buscar el archivo por nombre (ignorando mayúsculas/minúsculas)
+            # Buscar el archivo (ignorando mayúsculas/minúsculas)
             found_file = None
             if music_dir.exists():
                 for f in music_dir.iterdir():
@@ -142,35 +141,41 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                         break
     
             if not found_file:
-                log(f"❌ Música no encontrada: {filename}", "WARN")
-                self.send_response(404)        
+                log(f"❌ Archivo no encontrado: {filename}", "WARN")
+                self.send_response(404)
                 self.end_headers()
                 return
     
-            # Determinar el Content-Type correcto según la extensión
+            # ⚠️ FORZAR Content-Type correcto para MP3
             ext = found_file.suffix.lower()
-            content_type_map = {
-                '.mp3': 'audio/mpeg',
-                '.wav': 'audio/wav',
-                '.ogg': 'audio/ogg',
-                '.flac': 'audio/flac',
-                '.m4a': 'audio/mp4',
-                '.aac': 'audio/aac',
-                '.webm': 'audio/webm'
-            }
-            content_type = content_type_map.get(ext, 'audio/mpeg')
+            if ext == '.mp3':
+                content_type = 'audio/mpeg'
+            elif ext == '.wav':
+                content_type = 'audio/wav'
+            elif ext == '.ogg':
+                content_type = 'audio/ogg'
+            else:
+                content_type = 'application/octet-stream'
     
-            log(f"✅ Sirviendo música: {found_file.name} ({content_type})", "DEBUG")
+            log(f"✅ Sirviendo: {found_file.name} ({content_type})", "DEBUG")
     
-            self.send_response(200)
-            self.send_header("Content-Type", content_type)
-            self.send_header("Content-Disposition", f"inline; filename=\"{found_file.name}\"")
-            self.send_header("Cache-Control", "public, max-age=3600")
-            self.send_header("Accept-Ranges", "bytes")
-            self.end_headers()
-    
-            with open(found_file, "rb") as f:
-                self.wfile.write(f.read())
+            # Abrir y servir el archivo
+            try:
+                with open(found_file, "rb") as f:
+                    file_content = f.read()
+        
+                self.send_response(200)
+                self.send_header("Content-Type", content_type)
+                self.send_header("Content-Length", str(len(file_content)))
+                self.send_header("Accept-Ranges", "bytes")
+                self.send_header("Cache-Control", "public, max-age=3600")
+                self.end_headers()
+                self.wfile.write(file_content)
+                log(f"✅ Música servida: {found_file.name} ({len(file_content)} bytes)", "DEBUG")
+            except Exception as e:
+                log(f"❌ Error sirviendo música: {e}", "ERROR")
+                self.send_response(500)
+                self.end_headers()
             return
         
         # ═══ PÚBLICAS ═══
