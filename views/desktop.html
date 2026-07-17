@@ -134,6 +134,9 @@
     <div class="desktop-icon" style="top:240px;left:350px" data-win="clock">
         <div class="ico">🕐</div><div class="lbl">Reloj mundial</div>
     </div>
+    <div class="desktop-icon" style="top:350px;left:240px" data-win="persistence">
+        <div class="ico">💾</div><div class="lbl">Persistencia</div>
+    </div>
 </div>
 
 <!-- ═══ VENTANA: EXPLORADOR ═══ -->
@@ -569,6 +572,36 @@
     </div>
 </div>
 
+<!-- ═══ VENTANA: PERSISTENCIA ═══ -->
+<div id="win-persistence" class="window resizable" data-title="💾 Persistencia" style="top:100px;left:400px;width:600px;height:450px;display:none">
+    <div class="title-bar" onmousedown="startDrag(event,'persistence')">
+        <span>💾 Persistencia - Notas Guardadas</span>
+        <div class="controls">
+            <button class="btn btn-min" onclick="minimizeWin('persistence')">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('persistence')">▢</button>
+            <button class="btn btn-close" onclick="closeWin('persistence')">✕</button>
+        </div>
+    </div>
+    <div class="window-body" style="display:flex;flex-direction:column;height:100%">
+        <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+            <button class="act" onclick="saveNotes()">💾 Guardar Notas</button>
+            <button class="act" onclick="loadNotes()">📂 Cargar Notas</button>
+            <button class="act" onclick="createBackup()">📦 Crear Backup</button>
+            <button class="act" onclick="loadBackups()">🔄 Ver Backups</button>
+            <span id="persistence-status" style="color:#9370db;font-size:12px;padding:4px">📝 Listo</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column">
+            <label style="color:#d8bfd8;font-size:12px;margin-bottom:5px">📝 Notas (se guardan automáticamente):</label>
+            <textarea id="persistence-notes" style="flex:1;padding:10px;background:#0a0a1a;color:#e6e6fa;border:1px solid #4b0082;border-radius:4px;resize:none;font-family:monospace;font-size:14px;min-height:200px" placeholder="Escribe tus notas aquí..."></textarea>
+        </div>
+        <div style="margin-top:10px;border-top:1px solid #4b0082;padding-top:10px">
+            <div id="backup-list" style="max-height:120px;overflow-y:auto;font-size:12px;color:#9370db">
+                📋 No hay backups disponibles
+            </div>
+        </div>
+    </div>
+</div>
+    
 <!-- ═══ MENÚ INICIO ═══ -->
 <div id="start-menu">
     <div class="menu-header">
@@ -624,6 +657,7 @@
 <script src="/static/js/music.js"></script>
 <script src="/static/js/tools.js"></script>
 <script src="/static/js/games.js"></script>
+<script src="/static/js/persistence.js"></script>
 <script src="/static/js/app.js"></script>
 
 <script>
