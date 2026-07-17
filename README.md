@@ -3,11 +3,7 @@
 <div align="center">
   <img src="https://github.com/calm291094-del/KalmOS/blob/main/KalmOS.png" alt="KrootCorp Logo" width="200">
   <br>
-  <strong>
-> **KALM OS** es un mini sistema operativo web que puedes ejecutar en la nube o localmente. 
-> Combina un escritorio con explorador de archivos, gestor de tareas, DNS, proxy inverso, 
-> juegos, herramientas profesionales y un entorno sandbox.
-  </strong>
+  <strong> > KALM OS es un mini sistema operativo web que puedes ejecutar en la nube o localmente. Combina un escritorio con explorador de archivos, gestor de tareas, DNS, proxy inverso, juegos, herramientas profesionales y un entorno sandbox. </strong>
   <br>
   <em>Inspirado en Tensei Shitara Slime Datta Ken y Overlord, ademas de windows</em>
 </div>
