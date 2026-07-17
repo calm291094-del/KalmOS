@@ -46,6 +46,11 @@
             .desktop-icon .ico { font-size: 28px; }
             .desktop-icon .lbl { font-size: 8px; }
         }
+        /* Optimización: evitar selección de texto */
+        .desktop-icon, .desktop-icon * {
+            user-select: none;
+            -webkit-user-select: none;
+        }
     </style>
 </head>
 <body>
@@ -88,60 +93,51 @@
     </div>
 </div>
 
-<!-- ═══ DESKTOP ICONOS ═══ -->
+<!-- ═══ DESKTOP ICONOS - REDUCIDO A 12 ICONOS ═══ -->
 <div id="desktop">
-    <div class="desktop-icon" style="top:20px;left:20px" ondblclick="openWin('explorer')">
+    <!-- Fila 1 -->
+    <div class="desktop-icon" style="top:20px;left:20px" data-win="explorer">
         <div class="ico">💾</div><div class="lbl">Este equipo</div>
     </div>
-    <div class="desktop-icon" style="top:130px;left:20px" ondblclick="openWin('taskmgr')">
-        <div class="ico">📊</div><div class="lbl">Task Manager</div>
-    </div>
-    <div class="desktop-icon" style="top:240px;left:20px" ondblclick="openWin('tools')">
-        <div class="ico">🛠️</div><div class="lbl">Herramientas</div>
-    </div>
-    <div class="desktop-icon" style="top:350px;left:20px" ondblclick="openWin('games')">
-        <div class="ico">🎮</div><div class="lbl">Juegos</div>
-    </div>
-    <div class="desktop-icon" style="top:460px;left:20px" ondblclick="openWin('music')">
-        <div class="ico">🎵</div><div class="lbl">Reproductor</div>
-    </div>
-    <div class="desktop-icon" style="top:20px;left:130px" ondblclick="openWin('console')">
+    <div class="desktop-icon" style="top:20px;left:130px" data-win="console">
         <div class="ico">💻</div><div class="lbl">Terminal</div>
     </div>
-    <div class="desktop-icon" style="top:130px;left:130px" ondblclick="openWin('settings')">
-        <div class="ico">⚙️</div><div class="lbl">Configuración</div>
-    </div>
-    <div class="desktop-icon" style="top:240px;left:130px" ondblclick="openWin('servers')">
-        <div class="ico">🚀</div><div class="lbl">Servidores</div>
-    </div>
-    <div class="desktop-icon" style="top:350px;left:130px" ondblclick="openWin('browser')">
+    <div class="desktop-icon" style="top:20px;left:240px" data-win="browser">
         <div class="ico">🌐</div><div class="lbl">Navegador</div>
     </div>
-    <div class="desktop-icon" style="top:460px;left:130px" ondblclick="openWin('notepad')">
+    <div class="desktop-icon" style="top:20px;left:350px" data-win="notepad">
         <div class="ico">📝</div><div class="lbl">Bloc de notas</div>
     </div>
-    <div class="desktop-icon" style="top:20px;left:240px" ondblclick="openWin('calc')">
+    <!-- Fila 2 -->
+    <div class="desktop-icon" style="top:130px;left:20px" data-win="taskmgr">
+        <div class="ico">📊</div><div class="lbl">Task Manager</div>
+    </div>
+    <div class="desktop-icon" style="top:130px;left:130px" data-win="tools">
+        <div class="ico">🛠️</div><div class="lbl">Herramientas</div>
+    </div>
+    <div class="desktop-icon" style="top:130px;left:240px" data-win="games">
+        <div class="ico">🎮</div><div class="lbl">Juegos</div>
+    </div>
+    <div class="desktop-icon" style="top:130px;left:350px" data-win="music">
+        <div class="ico">🎵</div><div class="lbl">Reproductor</div>
+    </div>
+    <!-- Fila 3 -->
+    <div class="desktop-icon" style="top:240px;left:20px" data-win="settings">
+        <div class="ico">⚙️</div><div class="lbl">Configuración</div>
+    </div>
+    <div class="desktop-icon" style="top:240px;left:130px" data-win="servers">
+        <div class="ico">🚀</div><div class="lbl">Servidores</div>
+    </div>
+    <div class="desktop-icon" style="top:240px;left:240px" data-win="calc">
         <div class="ico">🧮</div><div class="lbl">Calculadora</div>
     </div>
-    <div class="desktop-icon" style="top:130px;left:240px" ondblclick="openWin('clock')">
+    <div class="desktop-icon" style="top:240px;left:350px" data-win="clock">
         <div class="ico">🕐</div><div class="lbl">Reloj mundial</div>
-    </div>
-    <div class="desktop-icon" style="top:240px;left:240px" ondblclick="openWin('pac')">
-        <div class="ico">📄</div><div class="lbl">Config Proxy</div>
-    </div>
-    <div class="desktop-icon" style="top:350px;left:240px" ondblclick="openWin('dns')">
-        <div class="ico">🌐</div><div class="lbl">DNS Admin</div>
-    </div>
-    <div class="desktop-icon" style="top:460px;left:240px" ondblclick="openWin('proxy')">
-        <div class="ico">🔒</div><div class="lbl">Proxy</div>
-    </div>
-    <div class="desktop-icon" style="top:20px;left:350px" ondblclick="openWin('runner')">
-        <div class="ico">⚙️</div><div class="lbl">Script Runner</div>
     </div>
 </div>
 
 <!-- ═══ VENTANA: EXPLORADOR ═══ -->
-<div id="win-explorer" class="window resizable" data-title="💾 Este equipo" style="top:30px;left:200px;width:850px;height:580px">
+<div id="win-explorer" class="window resizable" data-title="💾 Este equipo" style="top:30px;left:200px;width:850px;height:580px;display:none">
     <div class="title-bar" onmousedown="startDrag(event,'explorer')">
         <span>💾 Este equipo - D:</span>
         <div class="controls">
@@ -165,7 +161,7 @@
 </div>
 
 <!-- ═══ VENTANA: TASK MANAGER ═══ -->
-<div id="win-taskmgr" class="window resizable" data-title="📊 Task Manager" style="top:50px;left:250px;width:700px;height:500px">
+<div id="win-taskmgr" class="window resizable" data-title="📊 Task Manager" style="top:50px;left:250px;width:700px;height:500px;display:none">
     <div class="title-bar" onmousedown="startDrag(event,'taskmgr')">
         <span>⚔️ Kalm Task Manager</span>
         <div class="controls">
@@ -187,7 +183,7 @@
 </div>
 
 <!-- ═══ VENTANA: DNS ═══ -->
-<div id="win-dns" class="window resizable" data-title="🌐 DNS Admin" style="top:70px;left:300px;width:550px;height:420px">
+<div id="win-dns" class="window resizable" data-title="🌐 DNS Admin" style="top:70px;left:300px;width:550px;height:420px;display:none">
     <div class="title-bar" onmousedown="startDrag(event,'dns')">
         <span>🌐 Kalm DNS Admin</span>
         <div class="controls">
@@ -211,7 +207,7 @@
 </div>
 
 <!-- ═══ VENTANA: PROXY ═══ -->
-<div id="win-proxy" class="window resizable" data-title="🔒 Proxy" style="top:90px;left:350px;width:600px;height:450px">
+<div id="win-proxy" class="window resizable" data-title="🔒 Proxy" style="top:90px;left:350px;width:600px;height:450px;display:none">
     <div class="title-bar" onmousedown="startDrag(event,'proxy')">
         <span>🔒 Kalm Reverse Proxy</span>
         <div class="controls">
@@ -235,7 +231,7 @@
 </div>
 
 <!-- ═══ VENTANA: SCRIPT RUNNER ═══ -->
-<div id="win-runner" class="window resizable" data-title="⚙️ Script Runner" style="top:110px;left:400px;width:700px;height:600px">
+<div id="win-runner" class="window resizable" data-title="⚙️ Script Runner" style="top:110px;left:400px;width:700px;height:600px;display:none">
     <div class="title-bar" onmousedown="startDrag(event,'runner')">
         <span>⚙️ Script Runner</span>
         <div class="controls">
@@ -246,7 +242,7 @@
     </div>
     <div class="window-body">
         <h4 style="color:#da70d6;margin-bottom:5px">Ruta del archivo</h4>
-        <input id="script-path" placeholder="Ej: system/Program/mi_script.py">
+        <input id="script-path" placeholder="Ej: system/program/mi_script.py">
         <div style="display:flex;gap:10px;margin:10px 0;flex-wrap:wrap;align-items:center">
             <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#d8bfd8">
                 <input type="checkbox" id="opt-sandbox" checked> 🔒 Sandbox
@@ -266,7 +262,7 @@
 </div>
 
 <!-- ═══ VENTANA: SERVIDORES ═══ -->
-<div id="win-servers" class="window resizable" data-title="🚀 Servidores" style="top:130px;left:450px;width:750px;height:500px">
+<div id="win-servers" class="window resizable" data-title="🚀 Servidores" style="top:130px;left:450px;width:750px;height:500px;display:none">
     <div class="title-bar" onmousedown="startDrag(event,'servers')">
         <span>🚀 Servidores Activos</span>
         <div class="controls">
@@ -292,7 +288,7 @@
 </div>
 
 <!-- ═══ VENTANA: TERMINAL ═══ -->
-<div id="win-console" class="window resizable" data-title="💻 Terminal" style="top:150px;left:500px;width:650px;height:450px">
+<div id="win-console" class="window resizable" data-title="💻 Terminal" style="top:150px;left:500px;width:650px;height:450px;display:none">
     <div class="title-bar" onmousedown="startDrag(event,'console')">
         <span>💻 Kalm Terminal</span>
         <div class="controls">
@@ -311,7 +307,7 @@
 </div>
 
 <!-- ═══ VENTANA: SETTINGS ═══ -->
-<div id="win-settings" class="window resizable" data-title="⚙️ Configuración" style="top:170px;left:550px;width:550px;height:420px">
+<div id="win-settings" class="window resizable" data-title="⚙️ Configuración" style="top:170px;left:550px;width:550px;height:420px;display:none">
     <div class="title-bar" onmousedown="startDrag(event,'settings')">
         <span>⚙️ Configuración</span>
         <div class="controls">
@@ -358,7 +354,7 @@
 </div>
 
 <!-- ═══ VENTANA: NAVEGADOR ═══ -->
-<div id="win-browser" class="window resizable" data-title="🌐 Navegador Kalm" style="top:30px;left:200px;width:1000px;height:650px">
+<div id="win-browser" class="window resizable" data-title="🌐 Navegador Kalm" style="top:30px;left:200px;width:1000px;height:650px;display:none">
     <div class="title-bar" onmousedown="startDrag(event,'browser')">
         <span>🌐 Navegador Interno</span>
         <div class="controls">
@@ -389,7 +385,7 @@
 </div>
 
 <!-- ═══ VENTANA: PAC ═══ -->
-<div id="win-pac" class="window resizable" data-title="📄 Configuración PAC" style="top:80px;left:250px;width:700px;height:550px">
+<div id="win-pac" class="window resizable" data-title="📄 Configuración PAC" style="top:80px;left:250px;width:700px;height:550px;display:none">
     <div class="title-bar" onmousedown="startDrag(event,'pac')">
         <span>📄 Configuración Proxy Automático (PAC)</span>
         <div class="controls">
@@ -418,7 +414,7 @@
 </div>
 
 <!-- ═══ VENTANA: CALCULADORA ═══ -->
-<div id="win-calc" class="window resizable" data-title="🧮 Calculadora" style="top:50px;left:300px;width:320px;height:420px">
+<div id="win-calc" class="window resizable" data-title="🧮 Calculadora" style="top:50px;left:300px;width:320px;height:420px;display:none">
     <div class="title-bar" onmousedown="startDrag(event,'calc')">
         <span>🧮 Calculadora</span>
         <div class="controls">
@@ -454,7 +450,7 @@
 </div>
 
 <!-- ═══ VENTANA: RELOJ MUNDIAL ═══ -->
-<div id="win-clock" class="window resizable" data-title="🕐 Reloj Mundial" style="top:70px;left:320px;width:400px;height:300px">
+<div id="win-clock" class="window resizable" data-title="🕐 Reloj Mundial" style="top:70px;left:320px;width:400px;height:300px;display:none">
     <div class="title-bar" onmousedown="startDrag(event,'clock')">
         <span>🕐 Reloj Mundial</span>
         <div class="controls">
@@ -487,7 +483,7 @@
 </div>
 
 <!-- ═══ VENTANA: NOTEPAD ═══ -->
-<div id="win-notepad" class="window resizable" data-title="📝 Bloc de notas" style="top:40px;left:220px;width:700px;height:500px">
+<div id="win-notepad" class="window resizable" data-title="📝 Bloc de notas" style="top:40px;left:220px;width:700px;height:500px;display:none">
     <div class="title-bar" onmousedown="startDrag(event,'notepad')">
         <span>📝 Bloc de notas</span>
         <div class="controls">
@@ -508,8 +504,8 @@
     </div>
 </div>
 
-<!-- ═══ VENTANA: HERRAMIENTAS (dinámica) ═══ -->
-<div id="win-tools" class="window resizable" data-title="🛠️ Herramientas" style="top:60px;left:280px;width:650px;height:480px">
+<!-- ═══ VENTANA: HERRAMIENTAS ═══ -->
+<div id="win-tools" class="window resizable" data-title="🛠️ Herramientas" style="top:60px;left:280px;width:650px;height:480px;display:none">
     <div class="title-bar" onmousedown="startDrag(event,'tools')">
         <span>🛠️ Herramientas Profesionales</span>
         <div class="controls">
@@ -524,8 +520,8 @@
     </div>
 </div>
 
-<!-- ═══ VENTANA: JUEGOS (dinámica) ═══ -->
-<div id="win-games" class="window resizable" data-title="🎮 Juegos" style="top:70px;left:300px;width:650px;height:480px">
+<!-- ═══ VENTANA: JUEGOS ═══ -->
+<div id="win-games" class="window resizable" data-title="🎮 Juegos" style="top:70px;left:300px;width:650px;height:480px;display:none">
     <div class="title-bar" onmousedown="startDrag(event,'games')">
         <span>🎮 Juegos</span>
         <div class="controls">
@@ -541,7 +537,7 @@
 </div>
 
 <!-- ═══ VENTANA: REPRODUCTOR ═══ -->
-<div id="win-music" class="window resizable" data-title="🎵 Reproductor" style="top:80px;left:320px;width:600px;height:400px">
+<div id="win-music" class="window resizable" data-title="🎵 Reproductor" style="top:80px;left:320px;width:600px;height:400px;display:none">
     <div class="title-bar" onmousedown="startDrag(event,'music')">
         <span>🎵 Reproductor de Música</span>
         <div class="controls">
@@ -669,6 +665,18 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // ═══ ICONOS DE ESCRITORIO - Event delegation ═══
+        document.getElementById('desktop').addEventListener('dblclick', function(e) {
+            const icon = e.target.closest('.desktop-icon');
+            if (icon) {
+                const winId = icon.dataset.win;
+                if (winId) {
+                    console.log('📂 Abriendo ventana:', winId);
+                    openWin(winId);
+                }
+            }
+        });
+
         const saved = localStorage.getItem('kalm_icon_size') || 'medium';
         const iconSelect = document.getElementById('icon-size');
         if (iconSelect) {
