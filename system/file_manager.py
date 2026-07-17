@@ -9,11 +9,9 @@ class FileManager:
     @staticmethod
     def clean_path(path):
         """Limpia y normaliza una ruta - SIEMPRE retorna string"""
-        # Si es None o vacío
         if not path:
             return str(DRIVE_D)
         
-        # Si es un objeto Path, convertirlo a string
         if isinstance(path, Path):
             path = str(path)
         
@@ -23,7 +21,8 @@ class FileManager:
         
         # Si empieza con /D/, reemplazar
         if path.startswith("/D/"):
-            return str(DRIVE_D) + path[2:]
+            rel_path = path[3:]  # Quita "/D/"
+            return str(DRIVE_D / rel_path)
         
         # Si es D: o D:/ o D:\, convertir a DRIVE_D
         if path in ["D:", "D:/", "D:\\"]:
@@ -33,26 +32,15 @@ class FileManager:
         if path.startswith("D:") and not path.startswith("D:\\"):
             path = path.replace("D:", str(DRIVE_D))
         
-        # Si el path es relativo (no empieza con D: ni con /D)
-        if not path.startswith(str(DRIVE_D)) and not path.startswith("/D"):
-            # Si es un nombre de carpeta, buscar en DRIVE_D
-            test_path = Path(DRIVE_D) / path
-            if test_path.exists():
-                return str(test_path)
-        
         return path
     
     @staticmethod
     def is_safe_path(path):
         """Verifica si una ruta está dentro de DRIVE_D"""
         try:
-            # Asegurar que path es string
             clean = FileManager.clean_path(path)
-            
-            # Normalizar
             path_str = str(Path(clean).resolve()).lower().replace('/', '\\')
             drive_str = str(DRIVE_D.resolve()).lower().replace('/', '\\')
-            
             return path_str.startswith(drive_str)
         except Exception as e:
             log(f"Error en is_safe_path: {e}", "ERROR")
@@ -62,7 +50,6 @@ class FileManager:
     def list_directory(path):
         """Lista el contenido de un directorio"""
         try:
-            # Limpiar path
             clean_path = FileManager.clean_path(path)
             path_obj = Path(clean_path).resolve()
             

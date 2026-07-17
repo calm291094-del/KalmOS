@@ -7,6 +7,41 @@ import os
 class ProgramDetector:
     EXECUTABLE_EXTS = {'.exe', '.bat', '.cmd', '.py', '.sh', '.com', '.msi', '.pif', '.scr', '.jar', '.js'}
     
+    # Mapeo de nombres de archivo a categorías
+    CATEGORY_MAP = {
+        # Juegos
+        'snake': 'game',
+        'buscaminas': 'game',
+        'sokoban': 'game',
+        'blackjack': 'game',
+        'ajedrez': 'game',
+        'ajedrez-ia-basica': 'game',
+        'cartas': 'game',
+        'gato': 'game',
+        'memoria': 'game',
+        'piedra_papel_tijera': 'game',
+        'ahorcado': 'game',
+        # Herramientas
+        'herramientas': 'utility',
+        'calculadora': 'utility',
+        'calculadora_cientifica': 'utility',
+        'conversor_unidades': 'utility',
+        'generador_passwords': 'utility',
+        'analizador_texto': 'utility',
+        'editor_texto': 'utility',
+        'gestor_archivos': 'utility',
+        'ordenar_archivos': 'utility',
+        'tareas': 'utility',
+        'temporizador': 'utility',
+        'reloj': 'utility',
+        'lector_rss': 'utility',
+        'explorador_red': 'utility',
+        'clima': 'utility',
+        'reproductor_musica': 'media',
+        # Otros
+        'prueba': 'other'
+    }
+    
     def __init__(self):
         self.program_dir = PROGRAM_DIR
         self.cache_file = PROGRAMS_CACHE
@@ -31,7 +66,6 @@ class ProgramDetector:
         try:
             all_items = list(self.program_dir.iterdir())
             log(f"📂 Archivos en {self.program_dir}: {[f.name for f in all_items if f.is_file()]}")
-            log(f"📂 Carpetas en {self.program_dir}: {[f.name for f in all_items if f.is_dir()]}")
         except Exception as e:
             log(f"❌ Error listando directorio: {e}", "ERROR")
         
@@ -44,6 +78,18 @@ class ProgramDetector:
                     if ext in self.EXECUTABLE_EXTS:
                         try:
                             stat = item.stat()
+                            stem = item.stem.lower()
+                            
+                            # Determinar categoría
+                            category = self.CATEGORY_MAP.get(stem, 'other')
+                            
+                            # Si es un juego, asegurar categoría game
+                            if 'game' in stem or 'juego' in stem:
+                                category = 'game'
+                            # Si es una herramienta
+                            if any(key in stem for key in ['calculadora', 'conversor', 'generador', 'analizador', 'editor', 'gestor', 'ordenar', 'tareas', 'temporizador', 'reloj', 'lector', 'explorador', 'clima', 'herramientas']):
+                                category = 'utility'
+                            
                             programs.append({
                                 "name": item.stem,
                                 "filename": item.name,
@@ -54,10 +100,10 @@ class ProgramDetector:
                                 "size_fmt": self._format_size(stat.st_size),
                                 "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
                                 "type": self._detect_type(ext, item),
-                                "category": self._categorize(item),
+                                "category": category,
                                 "icon": self._get_icon(ext)
                             })
-                            log(f"   ✅ Detectado: {item.name}")
+                            log(f"   ✅ Detectado: {item.name} (categoría: {category})")
                         except Exception as e:
                             log(f"⚠️ Error escaneando {item}: {e}", "WARN")
             
@@ -98,23 +144,6 @@ class ProgramDetector:
             return "java"
         else:
             return "other"
-    
-    def _categorize(self, path):
-        name_lower = path.stem.lower()
-        categories = {
-            "browser": ['firefox', 'chrome', 'brave', 'edge', 'opera', 'vivaldi'],
-            "editor": ['code', 'notepad', 'sublime', 'atom', 'vim', 'nano', 'edit'],
-            "media": ['vlc', 'mpv', 'audacity', 'obs', 'ffmpeg', 'media'],
-            "dev": ['python', 'node', 'git', 'docker', 'gcc', 'java', 'maven'],
-            "server": ['apache', 'nginx', 'mysql', 'postgres', 'mongo', 'redis'],
-            "office": ['libreoffice', 'word', 'excel', 'powerpoint', 'pdf'],
-            "utility": ['7zip', 'winrar', 'ccleaner', 'defrag', 'disk', 'backup'],
-            "game": ['game', 'play', 'steam', 'epic', 'minecraft']
-        }
-        for cat, keywords in categories.items():
-            if any(k in name_lower for k in keywords):
-                return cat
-        return "other"
     
     def _get_icon(self, ext):
         icons = {
