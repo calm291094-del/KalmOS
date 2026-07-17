@@ -124,92 +124,54 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         
         # ═══ SERVIR MÚSICA DESDE D:/Music/ ═══
         if p.startswith("/D/Music/"):
-            # Obtener la ruta completa después de /D/Music/
-            rel_path = p[8:]  # Quita "/D/Music/"
-    
-            # Decodificar la URL (convierte %20 en espacios, %26 en &, etc.)
+            rel_path = p[8:]
             decoded_path = urllib.parse.unquote(rel_path)
     
-            # Construir la ruta completa
+            # Extraer solo el nombre del archivo para buscar
+            filename = os.path.basename(decoded_path)
             music_dir = DRIVE_D / "Music"
-            file_path = music_dir / decoded_path
     
-            log(f"🎵 Solicitando música:", "DEBUG")
-            log(f"   URL original: {p}", "DEBUG")
-            log(f"   Ruta decodificada: {decoded_path}", "DEBUG")
-            log(f"   Ruta completa: {file_path}", "DEBUG")
+            log(f"🎵 Buscando música: {filename}", "DEBUG")
     
-            # Verificar si el archivo existe
-            if file_path.exists() and file_path.is_file():
-                mime, _ = mimetypes.guess_type(str(file_path))
-                self.send_response(200)
-                self.send_header("Content-Type", mime or "audio/mpeg")
-                self.send_header("Content-Disposition", f"inline; filename=\"{file_path.name}\"")
-                self.send_header("Cache-Control", "public, max-age=3600")
-                self.send_header("Accept-Ranges", "bytes")
-                self.end_headers()
-                with open(file_path, "rb") as f:
-                    self.wfile.write(f.read())
-                log(f"✅ Música servida: {file_path.name}", "DEBUG")
-                return
-            else:
-                # 🔍 DIAGNÓSTICO: Listar archivos en D/Music/ para depuración
-                log(f"❌ Música NO encontrada en: {file_path}", "WARN")
-        
-                # Intentar buscar el archivo por nombre en el directorio
-                filename = os.path.basename(decoded_path)
-                log(f"   Buscando por nombre: {filename}", "DEBUG")
-        
-                found_file = None
-                if music_dir.exists():
-                    for f in music_dir.iterdir():
-                        if f.is_file() and f.name == filename:
-                            found_file = f
-                            log(f"   ✅ Archivo encontrado por nombre: {f}", "DEBUG")
-                            break
-        
-                if found_file:
-                    mime, _ = mimetypes.guess_type(str(found_file))
-                    self.send_response(200)
-                    self.send_header("Content-Type", mime or "audio/mpeg")
-                    self.send_header("Content-Disposition", f"inline; filename=\"{found_file.name}\"")
-                    self.send_header("Cache-Control", "public, max-age=3600")
-                    self.send_header("Accept-Ranges", "bytes")
-                    self.end_headers()
-                    with open(found_file, "rb") as f:
-                        self.wfile.write(f.read())
-                    log(f"✅ Música servida (por nombre): {found_file.name}", "DEBUG")
-                    return
-        
-                # Si no se encuentra, listar archivos disponibles para depuración
-                log(f"   Archivos en D/Music/:", "DEBUG")
-                if music_dir.exists():
-                    for f in music_dir.iterdir():
-                        if f.is_file():
-                            log(f"      - {f.name}", "DEBUG")
-        
-                self.send_response(404)
+            # Buscar el archivo por nombre (ignorando mayúsculas/minúsculas)
+            found_file = None
+            if music_dir.exists():
+                for f in music_dir.iterdir():
+                    if f.is_file() and f.name.lower() == filename.lower():
+                        found_file = f
+                        break
+    
+            if not found_file:
+                log(f"❌ Música no encontrada: {filename}", "WARN")
+                self.send_response(404)        
                 self.end_headers()
                 return
-        
-                # ═══ SERVIR ARCHIVOS DESDE D: ═══
-                if p.startswith("/D/"):
-                    rel_path = p[3:]
-                    file_path = DRIVE_D / rel_path
-                    if file_path.exists() and file_path.is_file():
-                        mime, _ = mimetypes.guess_type(str(file_path))
-                        self.send_response(200)
-                        self.send_header("Content-Type", mime or "application/octet-stream")
-                        self.send_header("Content-Disposition", f"inline; filename=\"{file_path.name}\"")
-                        self.send_header("Cache-Control", "public, max-age=3600")
-                        self.end_headers()
-                        with open(file_path, "rb") as f:
-                            self.wfile.write(f.read())
-                        return
-                    else:
-                        self.send_response(404)
-                        self.end_headers()
-                        return
+    
+            # Determinar el Content-Type correcto según la extensión
+            ext = found_file.suffix.lower()
+            content_type_map = {
+                '.mp3': 'audio/mpeg',
+                '.wav': 'audio/wav',
+                '.ogg': 'audio/ogg',
+                '.flac': 'audio/flac',
+                '.m4a': 'audio/mp4',
+                '.aac': 'audio/aac',
+                '.webm': 'audio/webm'
+            }
+            content_type = content_type_map.get(ext, 'audio/mpeg')
+    
+            log(f"✅ Sirviendo música: {found_file.name} ({content_type})", "DEBUG")
+    
+            self.send_response(200)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Disposition", f"inline; filename=\"{found_file.name}\"")
+            self.send_header("Cache-Control", "public, max-age=3600")
+            self.send_header("Accept-Ranges", "bytes")
+            self.end_headers()
+    
+            with open(found_file, "rb") as f:
+                self.wfile.write(f.read())
+            return
         
         # ═══ PÚBLICAS ═══
         if p in ["/", "/index.html", "/login"]:
