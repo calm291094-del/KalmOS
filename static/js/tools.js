@@ -1,56 +1,60 @@
-// KALM OS v4.3 - Herramientas Profesionales (CON TERMINAL AUTOMÁTICA)
-
+// KALM OS v4.3 - Herramientas (Carga dinámica desde system/Program)
 let toolProcessId = null;
 
-// Usar el TOOL_MAP de window (definido en app.js)
-// NO redeclarar const TOOL_MAP aquí
+function loadTools() {
+    const container = document.getElementById('tool-buttons');
+    if (!container) return;
+
+    fetch('/api/programs')
+        .then(r => r.json())
+        .then(programs => {
+            // Filtrar herramientas (categoría 'utility' o 'dev' o 'office')
+            const tools = programs.filter(p => 
+                p.category === 'utility' || p.category === 'dev' || p.category === 'office' || p.type === 'tool'
+            );
+            if (tools.length === 0) {
+                container.innerHTML = '<p style="color:#9370db;text-align:center;padding:10px;">No hay herramientas disponibles</p>';
+                return;
+            }
+            container.innerHTML = '';
+            tools.forEach(tool => {
+                const btn = document.createElement('button');
+                btn.className = 'act';
+                btn.textContent = `${tool.icon || '🛠️'} ${tool.name}`;
+                btn.onclick = () => runTool(tool.filename.replace(/\.[^.]+$/, ''));
+                container.appendChild(btn);
+            });
+        })
+        .catch(() => {
+            container.innerHTML = '<p style="color:#ff6b6b;text-align:center;padding:10px;">Error cargando herramientas</p>';
+        });
+}
 
 function runTool(tool) {
     const output = document.getElementById('tool-output');
     if (!output) return;
-    
     output.textContent = `⏳ Ejecutando ${tool}...\n`;
     
-    // Usar el TOOL_MAP global de window
     const toolMap = window.TOOL_MAP || {};
-    const script = toolMap[tool] || 'herramientas.py';
-    // Ruta CORRECTA: system/program/
-    const path = `system/program/${script}`;
+    const script = toolMap[tool] || `${tool}.py`;
+    const path = `system/Program/${script}`;
     
     fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            path: path,
-            args: [tool]
-        })
+        body: JSON.stringify({ path: path, args: [tool] })
     })
     .then(r => r.json())
     .then(data => {
         if (data.ok && data.stdout) {
-            // Si el script terminó rápido y devolvió salida
             output.textContent = data.stdout;
         } else if (data.ok && data.session_id) {
             toolProcessId = data.session_id;
-            
-            // Mostrar mensaje en la ventana de herramientas
-            output.textContent = `✅ ${tool} ejecutado (PID ${data.pid})\n\n`;
-            output.textContent += `📋 Abriendo TERMINAL para ver la salida...\n`;
-            output.textContent += `💡 La herramienta se está ejecutando en segundo plano.\n\n`;
-            output.textContent += `📤 La salida se mostrará en la terminal.`;
-            
-            // ═══ ABRIR TERMINAL AUTOMÁTICAMENTE ═══
+            output.textContent = `✅ ${tool} ejecutado (PID ${data.pid})\n\n📋 Abriendo TERMINAL...\n`;
             if (typeof openTerminalForProcess === 'function') {
                 openTerminalForProcess(data.session_id, tool);
-            } else {
-                output.textContent += `\n\n⚠️ No se pudo abrir la terminal automáticamente.\n`;
-                output.textContent += `Abre la Terminal manualmente desde el menú inicio.`;
             }
-            
-            // Actualizar lista de servidores
-            if (typeof loadServers === 'function') {
-                loadServers();
-            }
+            if (typeof loadServers === 'function') loadServers();
         } else {
             output.textContent = `❌ Error: ${data.error || 'desconocido'}`;
         }
@@ -61,11 +65,7 @@ function runTool(tool) {
 }
 
 function stopTool() {
-    if (!toolProcessId) {
-        alert('No hay herramienta ejecutándose');
-        return;
-    }
-    
+    if (!toolProcessId) { alert('No hay herramienta ejecutándose'); return; }
     fetch(`/api/process/stop/${toolProcessId}`, { method: 'POST' })
         .then(r => r.json())
         .then(data => {
@@ -73,65 +73,18 @@ function stopTool() {
                 const output = document.getElementById('tool-output');
                 if (output) output.textContent += '\n\n⏹️ Herramienta detenida';
                 toolProcessId = null;
-                // Cerrar terminal si está abierta
-                if (typeof closeTerminalWindow === 'function') {
-                    closeTerminalWindow();
-                }
+                if (typeof closeTerminalWindow === 'function') closeTerminalWindow();
             }
         });
 }
 
-// Herramientas rápidas en la terminal
-function runQuickTool(tool, args) {
-    const output = document.getElementById('tool-output');
-    if (!output) return;
-    
-    output.textContent = `⏳ Ejecutando ${tool}...\n`;
-    
-    const path = `system/program/${tool}.py`;
-    
-    fetch('/api/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            path: path,
-            args: args || []
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.ok && data.stdout) {
-            output.textContent = data.stdout;
-        } else if (data.ok && data.session_id) {
-            output.textContent = `✅ ${tool} ejecutado (PID ${data.pid})\n📋 Abriendo terminal...`;
-            if (typeof openTerminalForProcess === 'function') {
-                openTerminalForProcess(data.session_id, tool);
-            }
-        } else {
-            output.textContent = `❌ Error: ${data.error || 'desconocido'}`;
+// Cuando se abre la ventana de herramientas, cargar herramientas
+document.addEventListener('DOMContentLoaded', function() {
+    const observer = new MutationObserver(() => {
+        const win = document.getElementById('win-tools');
+        if (win && win.style.display !== 'none') {
+            loadTools();
         }
-    })
-    .catch(err => {
-        output.textContent = `❌ Error: ${err.message}`;
     });
-}
-
-// Generar contraseña (directo en JS)
-function generatePassword() {
-    const output = document.getElementById('tool-output');
-    if (!output) return;
-    
-    const length = parseInt(prompt('Longitud de la contraseña (8-32):', '16')) || 16;
-    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
-    let password = '';
-    for (let i = 0; i < length; i++) {
-        password += charset.charAt(Math.floor(Math.random() * charset.length));
-    }
-    
-    output.textContent = `🔑 CONTRASEÑA GENERADA\n`;
-    output.textContent += `═`.repeat(40) + '\n\n';
-    output.textContent += `  ${password}\n\n`;
-    output.textContent += `═`.repeat(40) + '\n';
-    output.textContent += `📊 Longitud: ${password.length} caracteres\n`;
-    output.textContent += `📊 Fuerza: ${password.length >= 16 ? 'Alta' : password.length >= 10 ? 'Media' : 'Baja'}`;
-}
+    observer.observe(document.body, { childList: true, subtree: true });
+});
