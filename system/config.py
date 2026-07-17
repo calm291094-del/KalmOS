@@ -89,6 +89,7 @@ def ensure_structure():
     dirs = [
         DATA_DIR,
         DRIVE_D,
+        # ═══ CARPETAS DE D: ═══
         DRIVE_D / "Documentos",
         DRIVE_D / "Apps", 
         DRIVE_D / "Projects", 
@@ -98,8 +99,13 @@ def ensure_structure():
         DRIVE_D / "Servers",
         DRIVE_D / "Downloads", 
         DRIVE_D / "Desktop",
+        DRIVE_D / "Music",           # <-- AGREGADO: Carpeta de música
+        # ═══ DATOS ═══
         DATA_DIR / "logs", 
         DATA_DIR / "temp",
+        DATA_DIR / "persistence",    # <-- AGREGADO: Para persistencia
+        DATA_DIR / "persistence" / "backups",
+        # ═══ SISTEMA ═══
         SYSTEM_DIR, 
         PROGRAM_DIR,
         VIEWS_DIR, 
