@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/static/css/windows.css">
     <link rel="stylesheet" href="/static/css/themes.css">
     <style>
+        /* ═══ Estilos adicionales ═══ */
         .desktop-icon {
             width: 85px;
             text-align: center;
@@ -16,6 +17,8 @@
             border-radius: 8px;
             transition: all 0.2s;
             touch-action: manipulation;
+            position: absolute;
+            z-index: 1;
         }
         .desktop-icon:hover {
             background: rgba(106, 13, 173, 0.25);
@@ -32,6 +35,19 @@
             text-shadow: 0 1px 4px rgba(0,0,0,0.9);
             margin-top: 4px;
             font-weight: 500;
+            line-height: 1.2;
+        }
+
+        /* ═══ Responsive para iconos ═══ */
+        @media (max-width: 768px) {
+            .desktop-icon { width: 70px; padding: 6px 2px; }
+            .desktop-icon .ico { font-size: 32px; }
+            .desktop-icon .lbl { font-size: 9px; }
+        }
+        @media (max-width: 480px) {
+            .desktop-icon { width: 60px; padding: 4px 2px; }
+            .desktop-icon .ico { font-size: 28px; }
+            .desktop-icon .lbl { font-size: 8px; }
         }
     </style>
 </head>
@@ -77,6 +93,7 @@
 
 <!-- ═══ DESKTOP ICONOS ═══ -->
 <div id="desktop">
+    <!-- Fila 1 -->
     <div class="desktop-icon" style="top:20px;left:20px" ondblclick="openWin('explorer')">
         <div class="ico">💾</div><div class="lbl">Este equipo</div>
     </div>
@@ -92,6 +109,8 @@
     <div class="desktop-icon" style="top:460px;left:20px" ondblclick="openWin('music')">
         <div class="ico">🎵</div><div class="lbl">Reproductor</div>
     </div>
+
+    <!-- Fila 2 -->
     <div class="desktop-icon" style="top:20px;left:130px" ondblclick="openWin('console')">
         <div class="ico">💻</div><div class="lbl">Terminal</div>
     </div>
@@ -107,6 +126,8 @@
     <div class="desktop-icon" style="top:460px;left:130px" ondblclick="openWin('notepad')">
         <div class="ico">📝</div><div class="lbl">Bloc de notas</div>
     </div>
+
+    <!-- Fila 3 -->
     <div class="desktop-icon" style="top:20px;left:240px" ondblclick="openWin('calc')">
         <div class="ico">🧮</div><div class="lbl">Calculadora</div>
     </div>
@@ -122,6 +143,8 @@
     <div class="desktop-icon" style="top:460px;left:240px" ondblclick="openWin('proxy')">
         <div class="ico">🔒</div><div class="lbl">Proxy</div>
     </div>
+
+    <!-- Fila 4 (extra) -->
     <div class="desktop-icon" style="top:20px;left:350px" ondblclick="openWin('runner')">
         <div class="ico">⚙️</div><div class="lbl">Script Runner</div>
     </div>
@@ -132,9 +155,9 @@
     <div class="title-bar" onmousedown="startDrag(event,'explorer')">
         <span>💾 Este equipo - D:</span>
         <div class="controls">
-            <button class="btn btn-min" onclick="minimizeWin('explorer')">─</button>
-            <button class="btn btn-max" onclick="maximizeWin('explorer')">▢</button>
-            <button class="btn btn-close" onclick="closeWin('explorer')">✕</button>
+            <button class="btn btn-min" onclick="minimizeWin('explorer')" title="Minimizar">─</button>
+            <button class="btn btn-max" onclick="maximizeWin('explorer')" title="Maximizar">▢</button>
+            <button class="btn btn-close" onclick="closeWin('explorer')" title="Cerrar">✕</button>
         </div>
     </div>
     <div class="window-body">
@@ -162,11 +185,14 @@
         </div>
     </div>
     <div class="window-body">
+        <div style="display:flex;gap:10px;margin-bottom:10px">
+            <button class="act" onclick="loadProcs()">🔄 Refrescar</button>
+            <span style="color:#9370db;font-size:12px;padding:5px" id="task-info">Cargando...</span>
+        </div>
         <table id="proc-table">
             <thead><tr><th>PID</th><th>Nombre</th><th>CPU%</th><th>MEM%</th><th>Estado</th><th>Acción</th></tr></thead>
             <tbody></tbody>
         </table>
-        <div style="margin-top:10px"><button class="act" onclick="loadProcs()">🔄 Refrescar</button></div>
     </div>
 </div>
 
@@ -221,7 +247,7 @@
 <!-- ═══ VENTANA: SCRIPT RUNNER ═══ -->
 <div id="win-runner" class="window resizable" data-title="⚙️ Script Runner" style="top:110px;left:400px;width:700px;height:600px">
     <div class="title-bar" onmousedown="startDrag(event,'runner')">
-        <span>⚙️ Script Runner (Kalm Environment)</span>
+        <span>⚙️ Script Runner</span>
         <div class="controls">
             <button class="btn btn-min" onclick="minimizeWin('runner')">─</button>
             <button class="btn btn-max" onclick="maximizeWin('runner')">▢</button>
@@ -229,8 +255,8 @@
         </div>
     </div>
     <div class="window-body">
-        <h4 style="color:#da70d6;margin-bottom:5px">Ruta del archivo (en D:)</h4>
-        <input id="script-path" placeholder="Ej: D:\Projects\miweb\start.bat">
+        <h4 style="color:#da70d6;margin-bottom:5px">Ruta del archivo</h4>
+        <input id="script-path" placeholder="Ej: system/Program/mi_script.py">
         <div style="display:flex;gap:10px;margin:10px 0;flex-wrap:wrap;align-items:center">
             <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#d8bfd8">
                 <input type="checkbox" id="opt-sandbox" checked> 🔒 Sandbox
@@ -238,22 +264,11 @@
             <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#d8bfd8">
                 <input type="checkbox" id="opt-preserve-path" checked> 🛣️ Preservar PATH
             </label>
-            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#d8bfd8">
-                <input type="checkbox" id="opt-direct"> ⚡ Modo Directo
-            </label>
         </div>
-        <div style="display:flex;gap:5px;margin-bottom:10px">
+        <div style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap">
             <button class="act" onclick="runScript()">▶️ Ejecutar</button>
-            <button class="act" onclick="runScriptDirect()">⚡ Ejecutar Directo</button>
-            <button class="act" onclick="viewLastLog()">📋 Ver Último Log</button>
-        </div>
-        <div style="background:rgba(0,100,0,0.15);border:1px solid #0f0;padding:8px;border-radius:5px;margin-bottom:10px;font-size:11px">
-            <b style="color:#0f0">💡 Tips:</b>
-            <ul style="margin:5px 0 0 20px;color:#d8bfd8">
-                <li><b>Sandbox</b>: Aísla el proceso con Job Object de Windows</li>
-                <li><b>Modo Directo</b>: Ejecuta igual que Windows (si sandbox falla)</li>
-                <li><b>Ver Log</b>: Muestra la salida del último programa</li>
-            </ul>
+            <button class="act" onclick="runScriptDirect()">⚡ Directo</button>
+            <button class="act" onclick="viewLastLog()">📋 Ver Log</button>
         </div>
         <h4 style="color:#da70d6;margin:10px 0 5px">📤 Salida</h4>
         <div id="script-out" class="console" style="height:280px">Esperando...</div>
@@ -263,7 +278,7 @@
 <!-- ═══ VENTANA: SERVIDORES ═══ -->
 <div id="win-servers" class="window resizable" data-title="🚀 Servidores" style="top:130px;left:450px;width:750px;height:500px">
     <div class="title-bar" onmousedown="startDrag(event,'servers')">
-        <span>🚀 Servidores Activos (Kalm)</span>
+        <span>🚀 Servidores Activos</span>
         <div class="controls">
             <button class="btn btn-min" onclick="minimizeWin('servers')">─</button>
             <button class="btn btn-max" onclick="maximizeWin('servers')">▢</button>
@@ -271,15 +286,15 @@
         </div>
     </div>
     <div class="window-body">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <p style="color:#9370db;font-size:12px;margin:0">Procesos corriendo dentro del entorno virtual Kalm OS</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+            <p style="color:#9370db;font-size:12px;margin:0">Procesos corriendo</p>
             <button class="act danger" onclick="stopAllServers()" style="margin:0">⏹ Detener TODO</button>
         </div>
         <table id="srv-table">
             <thead><tr><th>PID</th><th>Nombre</th><th>Tipo</th><th>Aislado</th><th>Hijos</th><th>Iniciado</th><th>Acción</th></tr></thead>
             <tbody></tbody>
         </table>
-        <div style="margin-top:10px;display:flex;gap:5px">
+        <div style="margin-top:10px;display:flex;gap:5px;flex-wrap:wrap">
             <button class="act" onclick="loadServers()">🔄 Refrescar</button>
             <span id="srv-info" style="color:#9370db;font-size:11px;padding:8px"></span>
         </div>
@@ -287,7 +302,7 @@
 </div>
 
 <!-- ═══ VENTANA: TERMINAL ═══ -->
-<div id="win-console" class="window resizable" data-title="💻 Terminal" style="top:150px;left:500px;width:600px;height:400px">
+<div id="win-console" class="window resizable" data-title="💻 Terminal" style="top:150px;left:500px;width:650px;height:450px">
     <div class="title-bar" onmousedown="startDrag(event,'console')">
         <span>💻 Kalm Terminal</span>
         <div class="controls">
@@ -296,19 +311,19 @@
             <button class="btn btn-close" onclick="closeWin('console')">✕</button>
         </div>
     </div>
-    <div class="window-body">
-        <div id="term-out" class="console" style="height:300px">Kalm OS v4.3 - Escribe 'help'<br><br></div>
-        <div style="display:flex;margin-top:8px">
-            <span style="color:#0f0;margin-right:5px">kalm@os:~$</span>
-            <input id="term-in" style="flex:1;background:#000;color:#0f0;border:1px solid #0f0" onkeydown="if(event.key==='Enter')termExec()">
+    <div class="window-body" style="padding:0;display:flex;flex-direction:column;height:100%">
+        <div id="term-out" class="console" style="flex:1;margin:0;padding:10px;border-radius:0;border:none;height:100%;font-size:13px">Kalm OS v4.3 - Escribe 'help'<br><br></div>
+        <div style="display:flex;padding:8px;background:#0a0a1a;border-top:1px solid #4b0082">
+            <span style="color:#0f0;margin-right:8px;font-family:monospace">kalm@os:~$</span>
+            <input id="term-in" style="flex:1;background:transparent;color:#0f0;border:none;outline:none;font-family:monospace;font-size:13px" onkeydown="if(event.key==='Enter')termExec()">
         </div>
     </div>
 </div>
 
 <!-- ═══ VENTANA: SETTINGS ═══ -->
-<div id="win-settings" class="window resizable" data-title="🎨 Configuración" style="top:170px;left:550px;width:500px;height:350px">
+<div id="win-settings" class="window resizable" data-title="⚙️ Configuración" style="top:170px;left:550px;width:550px;height:420px">
     <div class="title-bar" onmousedown="startDrag(event,'settings')">
-        <span>🎨 Configuración</span>
+        <span>⚙️ Configuración</span>
         <div class="controls">
             <button class="btn btn-min" onclick="minimizeWin('settings')">─</button>
             <button class="btn btn-max" onclick="maximizeWin('settings')">▢</button>
@@ -316,16 +331,46 @@
         </div>
     </div>
     <div class="window-body">
-        <h3 style="color:#da70d6;margin-bottom:8px">Wallpaper</h3>
-        <input type="file" id="bg-file" accept="image/*">
-        <button class="act" onclick="uploadBg()">🖼️ Aplicar</button>
+        <h3 style="color:#da70d6;margin-bottom:10px">🎨 Personalización</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+                <label style="color:#d8bfd8;font-size:12px">Tema</label>
+                <select id="theme-select" style="width:100%;padding:6px;background:#1a0033;color:#e6e6fa;border:1px solid #6a0dad;border-radius:4px">
+                    <option value="dark">🌙 Oscuro</option>
+                    <option value="light">☀️ Claro</option>
+                    <option value="purple">💜 Morado</option>
+                    <option value="blue">💙 Azul</option>
+                    <option value="green">💚 Verde</option>
+                    <option value="red">❤️ Rojo</option>
+                </select>
+            </div>
+            <div>
+                <label style="color:#d8bfd8;font-size:12px">Tamaño iconos</label>
+                <select id="icon-size" style="width:100%;padding:6px;background:#1a0033;color:#e6e6fa;border:1px solid #6a0dad;border-radius:4px" onchange="changeIconSize(this.value)">
+                    <option value="small">Pequeño</option>
+                    <option value="medium" selected>Mediano</option>
+                    <option value="large">Grande</option>
+                </select>
+            </div>
+        </div>
+        <div style="margin-top:15px;border-top:1px solid #4b0082;padding-top:15px">
+            <h3 style="color:#da70d6;margin-bottom:10px">🖼️ Wallpaper</h3>
+            <input type="file" id="bg-file" accept="image/*" style="margin-bottom:10px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="act" onclick="uploadBg()">🖼️ Aplicar</button>
+                <button class="act" onclick="resetBg()">↩️ Restaurar</button>
+            </div>
+        </div>
+        <div style="margin-top:15px;border-top:1px solid #4b0082;padding-top:15px">
+            <button class="act danger" onclick="shutdown()" style="width:100%">⏻ Apagar Sistema</button>
+        </div>
     </div>
 </div>
 
 <!-- ═══ VENTANA: NAVEGADOR ═══ -->
 <div id="win-browser" class="window resizable" data-title="🌐 Navegador Kalm" style="top:30px;left:200px;width:1000px;height:650px">
     <div class="title-bar" onmousedown="startDrag(event,'browser')">
-        <span>🌐 Navegador Interno Kalm</span>
+        <span>🌐 Navegador Interno</span>
         <div class="controls">
             <button class="btn btn-min" onclick="minimizeWin('browser')">─</button>
             <button class="btn btn-max" onclick="maximizeWin('browser')">▢</button>
@@ -365,7 +410,7 @@
     </div>
     <div class="window-body">
         <div style="background:rgba(0,100,0,0.2);border:1px solid #0f0;padding:10px;border-radius:5px;margin-bottom:15px">
-            <h3 style="color:#0f0;margin-bottom:5px">✅ Modo Seguro para Entorno de Trabajo</h3>
+            <h3 style="color:#0f0;margin-bottom:5px">✅ Modo Seguro</h3>
             <p style="font-size:12px;color:#d8bfd8">Esta configuración <b>NO modifica</b> el sistema host.</p>
         </div>
         <h3 style="color:#da70d6;margin-bottom:10px">📄 Archivo PAC</h3>
@@ -374,7 +419,7 @@
         <h3 style="color:#da70d6;margin:20px 0 10px">🌐 Instrucciones por Navegador</h3>
         <div id="pac-instructions"></div>
         <h3 style="color:#da70d6;margin:20px 0 10px">📊 Log del Proxy</h3>
-        <div style="display:flex;gap:5px;margin-bottom:5px">
+        <div style="display:flex;gap:5px;margin-bottom:5px;flex-wrap:wrap">
             <button class="act small" onclick="loadProxyLog()">🔄 Refrescar</button>
             <button class="act small" onclick="clearProxyLog()">🗑️ Limpiar</button>
         </div>
@@ -462,7 +507,7 @@
         </div>
     </div>
     <div class="window-body" style="padding:0;display:flex;flex-direction:column;height:100%">
-        <div style="padding:8px;background:#1a0033;border-bottom:1px solid #4b0082;display:flex;gap:5px">
+        <div style="padding:8px;background:#1a0033;border-bottom:1px solid #4b0082;display:flex;gap:5px;flex-wrap:wrap">
             <button class="act small" onclick="notepadSave()">💾 Guardar</button>
             <button class="act small" onclick="notepadLoad()">📂 Cargar</button>
             <button class="act small" onclick="notepadClear()">🗑️ Limpiar</button>
@@ -473,7 +518,7 @@
     </div>
 </div>
 
-<!-- ═══ VENTANA: HERRAMIENTAS ═══ -->
+<!-- ═══ VENTANA: HERRAMIENTAS (dinámica) ═══ -->
 <div id="win-tools" class="window resizable" data-title="🛠️ Herramientas" style="top:60px;left:280px;width:650px;height:480px">
     <div class="title-bar" onmousedown="startDrag(event,'tools')">
         <span>🛠️ Herramientas Profesionales</span>
@@ -484,21 +529,14 @@
         </div>
     </div>
     <div class="window-body">
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
-            <button class="act" onclick="runTool('info_sistema')">🖥️ Info Sistema</button>
-            <button class="act" onclick="runTool('analisis_disco')">💿 Análisis Disco</button>
-            <button class="act" onclick="runTool('generar_hash')">🔐 Generador Hash</button>
-            <button class="act" onclick="runTool('escanear_puertos')">🌐 Escáner Puertos</button>
-            <button class="act" onclick="runTool('monitor_procesos')">📊 Monitor Procesos</button>
-            <button class="act" onclick="runTool('limpiar_temporales')">🧹 Limpiar Temp</button>
-            <button class="act" onclick="runTool('convertir_unidades')">🔄 Conversor</button>
-            <button class="act" onclick="runTool('generar_password')">🔑 Generar Pass</button>
+        <div id="tool-buttons" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:10px">
+            <!-- Los botones se cargan dinámicamente desde system/Program -->
         </div>
         <div id="tool-output" class="console" style="height:250px;margin-top:10px">Selecciona una herramienta...</div>
     </div>
 </div>
 
-<!-- ═══ VENTANA: JUEGOS ═══ -->
+<!-- ═══ VENTANA: JUEGOS (dinámica) ═══ -->
 <div id="win-games" class="window resizable" data-title="🎮 Juegos" style="top:70px;left:300px;width:650px;height:480px">
     <div class="title-bar" onmousedown="startDrag(event,'games')">
         <span>🎮 Juegos</span>
@@ -509,17 +547,10 @@
         </div>
     </div>
     <div class="window-body">
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">
-            <button class="act success" onclick="runGame('snake')">🐍 Snake</button>
-            <button class="act success" onclick="runGame('buscaminas')">💣 Buscaminas</button>
-            <button class="act success" onclick="runGame('sokoban')">📦 Sokoban</button>
-            <button class="act success" onclick="runGame('blackjack')">♠️ Blackjack</button>
-            <button class="act success" onclick="runGame('ajedrez')">♛ Ajedrez</button>
-            <button class="act success" onclick="runGame('tetris')">🧱 Tetris</button>
-            <button class="act success" onclick="runGame('conecta4')">🟡 Conecta 4</button>
-            <button class="act success" onclick="runGame('batalla_naval')">⚓ Batalla Naval</button>
+        <div id="game-buttons" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:10px">
+            <!-- Los botones se cargan dinámicamente desde system/Program -->
         </div>
-        <div id="game-output" class="console" style="height:250px;margin-top:10px;font-size:12px">Selecciona un juego para jugar en la terminal...</div>
+        <div id="game-output" class="console" style="height:250px;margin-top:10px;font-size:12px">Selecciona un juego...</div>
     </div>
 </div>
 
@@ -551,7 +582,7 @@
             </div>
         </div>
         <div id="music-playlist" style="background:#0a0a1a;padding:8px;border-radius:5px;border:1px solid #4b0082;height:120px;overflow-y:auto;font-size:11px;color:#9370db">
-            📋 Playlist vacía. Usa "Escanear música" en la terminal.
+            📋 Playlist vacía
         </div>
     </div>
 </div>
@@ -614,16 +645,29 @@
 <script src="/static/js/app.js"></script>
 
 <script>
-// ═══ FONDO DE PANTALLA POR DEFECTO ═══
-(function setDefaultWallpaper() {
-    if (!localStorage.getItem('kalm_wallpaper')) {
-        document.body.style.backgroundImage = "url('/static/img/KalmOS.png')";
-        // Guardar para futuras sesiones (opcional)
-        localStorage.setItem('kalm_wallpaper', '/static/img/KalmOS.png');
-    }
-})();
-    
-    // ═══ FUNCIONES DE CONFIGURACIÓN ═══
+    // ═══════════════════════════════════════════════════════════
+    // FONDO DE PANTALLA POR DEFECTO (KalmOS.png)
+    // ═══════════════════════════════════════════════════════════
+    (function setDefaultWallpaper() {
+        // Si no hay wallpaper guardado, usar la imagen por defecto
+        if (!localStorage.getItem('kalm_wallpaper')) {
+            // Usar la imagen PNG de static/img/KalmOS.png
+            document.body.style.backgroundImage = "url('/static/img/KalmOS.png')";
+            // Guardar para futuras sesiones
+            localStorage.setItem('kalm_wallpaper', '/static/img/KalmOS.png');
+        } else {
+            // Si hay wallpaper guardado, usarlo
+            const savedBg = localStorage.getItem('kalm_wallpaper');
+            if (savedBg) {
+                document.body.style.backgroundImage = `url(${savedBg})`;
+            }
+        }
+    })();
+
+    // ═══════════════════════════════════════════════════════════
+    // CONFIGURACIÓN DE ICONOS Y TEMAS
+    // ═══════════════════════════════════════════════════════════
+
     function changeIconSize(size) {
         const icons = document.querySelectorAll('.desktop-icon');
         const sizes = {
@@ -643,21 +687,20 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Cargar tamaño de iconos guardado
         const saved = localStorage.getItem('kalm_icon_size') || 'medium';
         const iconSelect = document.getElementById('icon-size');
         if (iconSelect) {
             iconSelect.value = saved;
             changeIconSize(saved);
         }
+
+        // Cargar tema guardado
         const theme = localStorage.getItem('kalm_theme') || 'dark';
         const themeSelect = document.getElementById('theme-select');
         if (themeSelect) {
             themeSelect.value = theme;
             applyTheme(theme);
-        }
-        const savedBg = localStorage.getItem('kalm_wallpaper');
-        if (savedBg) {
-            document.body.style.backgroundImage = `url(${savedBg})`;
         }
     });
 
@@ -668,16 +711,24 @@
 
     const themeSelect = document.getElementById('theme-select');
     if (themeSelect) {
-        themeSelect.addEventListener('change', function() { applyTheme(this.value); });
+        themeSelect.addEventListener('change', function() {
+            applyTheme(this.value);
+        });
     }
 
     function resetBg() {
         document.body.style.backgroundImage = '';
         localStorage.removeItem('kalm_wallpaper');
+        // Restaurar la imagen por defecto
+        document.body.style.backgroundImage = "url('/static/img/KalmOS.png')";
+        localStorage.setItem('kalm_wallpaper', '/static/img/KalmOS.png');
         alert('✅ Wallpaper restaurado');
     }
 
-    // ═══ FUNCIONES PARA REPRODUCTOR ═══
+    // ═══════════════════════════════════════════════════════════
+    // FUNCIONES DE REPRODUCTOR
+    // ═══════════════════════════════════════════════════════════
+
     function musicPlay() {
         const info = document.getElementById('music-info');
         const progress = document.getElementById('music-progress');
@@ -688,10 +739,12 @@
         if (time) time.textContent = '0:30';
         if (duration) duration.textContent = '2:30';
     }
+
     function musicPause() {
         const info = document.getElementById('music-info');
         if (info) info.textContent = '⏸️ Pausado';
     }
+
     function musicNext() {
         const info = document.getElementById('music-info');
         const progress = document.getElementById('music-progress');
@@ -700,6 +753,7 @@
         if (progress) progress.style.width = '0%';
         if (time) time.textContent = '0:00';
     }
+
     function musicPrev() {
         const info = document.getElementById('music-info');
         const progress = document.getElementById('music-progress');
@@ -709,7 +763,10 @@
         if (time) time.textContent = '0:00';
     }
 
-    // ═══ FUNCIONES PARA NOTEPAD ═══
+    // ═══════════════════════════════════════════════════════════
+    // FUNCIONES DE NOTEPAD
+    // ═══════════════════════════════════════════════════════════
+
     function notepadSave() {
         const content = document.getElementById('notepad-content');
         const status = document.getElementById('notepad-status');
@@ -718,6 +775,7 @@
         status.textContent = '✅ Guardado';
         setTimeout(() => status.textContent = 'Listo', 2000);
     }
+
     function notepadLoad() {
         const content = document.getElementById('notepad-content');
         const status = document.getElementById('notepad-status');
@@ -731,6 +789,7 @@
             status.textContent = '❌ No hay archivo guardado';
         }
     }
+
     function notepadClear() {
         const content = document.getElementById('notepad-content');
         const status = document.getElementById('notepad-status');
@@ -742,7 +801,10 @@
         }
     }
 
-    // ═══ FUNCIONES PARA RELOJ ═══
+    // ═══════════════════════════════════════════════════════════
+    // FUNCIONES DE RELOJ
+    // ═══════════════════════════════════════════════════════════
+
     function updateWorldClocks() {
         const now = new Date();
         const localDisplay = document.getElementById('clock-display');
@@ -762,10 +824,48 @@
         const sydneyEl = document.getElementById('clock-sydney');
         if (sydneyEl) sydneyEl.textContent = sydney.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
     }
+
     setInterval(updateWorldClocks, 1000);
     setTimeout(updateWorldClocks, 100);
 
+    // ═══════════════════════════════════════════════════════════
+    // CARGA DINÁMICA DE JUEGOS Y HERRAMIENTAS
+    // ═══════════════════════════════════════════════════════════
+
+    // Cuando se abre la ventana de juegos, cargar juegos
+    document.addEventListener('DOMContentLoaded', function() {
+        const gamesObserver = new MutationObserver(() => {
+            const win = document.getElementById('win-games');
+            if (win && win.style.display !== 'none') {
+                if (typeof loadGames === 'function') loadGames();
+            }
+        });
+        gamesObserver.observe(document.body, { childList: true, subtree: true });
+
+        // Cuando se abre la ventana de herramientas, cargar herramientas
+        const toolsObserver = new MutationObserver(() => {
+            const win = document.getElementById('win-tools');
+            if (win && win.style.display !== 'none') {
+                if (typeof loadTools === 'function') loadTools();
+            }
+        });
+        toolsObserver.observe(document.body, { childList: true, subtree: true });
+
+        // Si las ventanas ya están abiertas, cargar contenido
+        setTimeout(() => {
+            const gamesWin = document.getElementById('win-games');
+            if (gamesWin && gamesWin.style.display !== 'none' && typeof loadGames === 'function') {
+                loadGames();
+            }
+            const toolsWin = document.getElementById('win-tools');
+            if (toolsWin && toolsWin.style.display !== 'none' && typeof loadTools === 'function') {
+                loadTools();
+            }
+        }, 500);
+    });
+
     console.log('🏰 Kalm OS v4.3 - Desktop Moderno cargado');
+    console.log('📱 Modo responsive activo para móviles');
 </script>
 </body>
 </html>
