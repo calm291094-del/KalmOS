@@ -98,13 +98,13 @@ function runProgram(path) {
     .then(data => {
         if (data.ok) {
             if (data.viewer_url) {
-                // Abrir documento en visor (nueva ventana o pestaña)
                 window.open(data.viewer_url, '_blank');
                 showNotification(`📄 ${path.split('/').pop()} abierto en visor`, 'success');
             } else if (data.session_id) {
-                // Programa ejecutado - abrir terminal
                 showNotification(`✅ ${path.split('/').pop()} ejecutado (PID ${data.pid})`, 'success');
-                openTerminalForProcess(data.session_id, path.split('/').pop());
+                if (typeof openTerminalForProcess === 'function') {
+                    openTerminalForProcess(data.session_id, path.split('/').pop());
+                }
                 if (typeof loadServers === 'function') loadServers();
             } else {
                 showNotification(data.message || `✅ ${path.split('/').pop()} ejecutado`, 'success');
@@ -252,44 +252,49 @@ function uploadFiles(input) {
     });
 }
 
-// ═══ TERMINAL VIRTUAL (CORREGIDA) ═══
+// ═══ TERMINAL VIRTUAL ═══
 function openTerminalForProcess(sessionId, programName) {
     let win = document.getElementById('win-terminal');
     
-    if (!win) {
-        win = document.createElement('div');
-        win.id = 'win-terminal';
-        win.className = 'window resizable';
-        win.style.cssText = 'top:100px;left:100px;width:750px;height:500px;display:flex;flex-direction:column';
-        win.dataset.title = `💻 Terminal: ${programName || 'Proceso'}`;
-        
-        win.innerHTML = `
-            <div class="title-bar" onmousedown="drag(event,'win-terminal')">
-                <span>💻 Terminal: ${programName || 'Proceso'}</span>
-                <div class="controls">
-                    <button class="btn btn-min" onclick="minimizeWin('terminal')">─</button>
-                    <button class="btn btn-max" onclick="maximizeWin('terminal')">▢</button>
-                    <button class="btn btn-close" onclick="closeTerminalWindow()">✕</button>
-                </div>
-            </div>
-            <div class="window-body" style="padding:0;display:flex;flex-direction:column;height:100%">
-                <pre id="term-output" style="flex:1;margin:0;padding:10px;overflow-y:auto;background:#0a0a1a;color:#0f0;font-family:'Consolas',monospace;font-size:13px;white-space:pre-wrap;word-wrap:break-word;min-height:300px">⏳ Conectando al proceso...</pre>
-                <div style="padding:8px;background:#0a0a1a;border-top:1px solid #4b0082;display:flex">
-                    <span style="color:#0f0;margin-right:8px;font-family:monospace">$</span>
-                    <input id="term-input" style="flex:1;background:transparent;color:#0f0;border:none;outline:none;font-family:monospace;font-size:13px" placeholder="Escribe aquí para enviar al proceso...">
-                </div>
-            </div>
-        `;
-        document.body.appendChild(win);
+    if (win) {
+        win.style.display = 'flex';
+        win.classList.add('active');
+        win.style.zIndex = ++windowZIndex;
+        const titleBar = win.querySelector('.title-bar span');
+        if (titleBar) titleBar.textContent = `💻 Terminal: ${programName || 'Proceso'}`;
+        startTerminalStream(sessionId);
+        updateTaskbar('terminal');
+        return;
     }
     
+    win = document.createElement('div');
+    win.id = 'win-terminal';
+    win.className = 'window resizable';
+    win.style.cssText = 'top:100px;left:100px;width:750px;height:500px;display:flex;flex-direction:column;z-index:9999';
+    win.dataset.title = `💻 Terminal: ${programName || 'Proceso'}`;
+    
+    win.innerHTML = `
+        <div class="title-bar" onmousedown="startDrag(event,'terminal')">
+            <span>💻 Terminal: ${programName || 'Proceso'}</span>
+            <div class="controls">
+                <button class="btn btn-min" onclick="minimizeWin('terminal')">─</button>
+                <button class="btn btn-max" onclick="maximizeWin('terminal')">▢</button>
+                <button class="btn btn-close" onclick="closeTerminalWindow()">✕</button>
+            </div>
+        </div>
+        <div class="window-body" style="padding:0;display:flex;flex-direction:column;height:100%">
+            <pre id="term-output" style="flex:1;margin:0;padding:10px;overflow-y:auto;background:#0a0a1a;color:#0f0;font-family:'Consolas',monospace;font-size:13px;white-space:pre-wrap;word-wrap:break-word;min-height:300px">⏳ Conectando al proceso...</pre>
+            <div style="padding:8px;background:#0a0a1a;border-top:1px solid #4b0082;display:flex">
+                <span style="color:#0f0;margin-right:8px;font-family:monospace">$</span>
+                <input id="term-input" style="flex:1;background:transparent;color:#0f0;border:none;outline:none;font-family:monospace;font-size:13px" placeholder="Escribe aquí para enviar al proceso...">
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(win);
     win.style.display = 'flex';
     win.classList.add('active');
     win.style.zIndex = ++windowZIndex;
-    
-    const titleBar = win.querySelector('.title-bar span');
-    if (titleBar) titleBar.textContent = `💻 Terminal: ${programName || 'Proceso'}`;
-    
     updateTaskbar('terminal');
     startTerminalStream(sessionId);
     
@@ -329,19 +334,17 @@ function startTerminalStream(sessionId) {
     const output = document.getElementById('term-output');
     if (!output) return;
     
-    // Cerrar conexión anterior
     if (window.termEventSource) {
         window.termEventSource.close();
         window.termEventSource = null;
     }
     
-    // Usar EventSource con reconexión controlada
     const url = `/api/process/stream/${sessionId}`;
     const eventSource = new EventSource(url);
     window.termEventSource = eventSource;
     
     let reconnectAttempts = 0;
-    const maxReconnectAttempts = 2; // Solo 2 intentos, no infinito
+    const maxReconnectAttempts = 3;
     
     eventSource.onmessage = function(event) {
         try {
@@ -429,6 +432,13 @@ function showNotification(message, type = 'info') {
     }, 5000);
 }
 
+// ═══ EXPORTAR FUNCIONES GLOBALMENTE ═══
+window.openTerminalForProcess = openTerminalForProcess;
+window.closeTerminalWindow = closeTerminalWindow;
+window.startTerminalStream = startTerminalStream;
+window.sendTerminalInput = sendTerminalInput;
+window.showNotification = showNotification;
+
 // ═══ INICIALIZAR ═══
 document.addEventListener('DOMContentLoaded', function() {
     const observer = new MutationObserver(() => {
@@ -458,10 +468,5 @@ styleNotif.textContent = `
     }
 `;
 document.head.appendChild(styleNotif);
-
-// ═══ Asegurar que openTerminalForProcess esté disponible globalmente ═══
-window.openTerminalForProcess = openTerminalForProcess;
-window.closeTerminalWindow = closeTerminalWindow;
-window.showNotification = showNotification;
 
 console.log('📁 File Manager cargado - Terminal disponible globalmente');

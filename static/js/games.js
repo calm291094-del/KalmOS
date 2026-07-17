@@ -28,7 +28,7 @@ function loadGames() {
                 btn.className = 'act success';
                 btn.textContent = `${game.icon || '🎮'} ${game.name}`;
                 btn.onclick = () => runGame(game.filename.replace(/\.[^.]+$/, ''));
-                btn.style.cssText = 'margin:4px;padding:8px 14px;';
+                btn.style.cssText = 'margin:4px;padding:8px 14px;cursor:pointer;';
                 container.appendChild(btn);
             });
         })
@@ -38,14 +38,13 @@ function loadGames() {
         });
 }
 
-// Función original runGame (se mantiene)
+// Función para ejecutar un juego
 function runGame(game) {
     const output = document.getElementById('game-output');
     if (!output) return;
     output.textContent = `🎮 Iniciando ${game}...\n`;
     
-    const script = `${game}.py`;
-    const path = `system/Program/${script}`;
+    const path = `system/Program/${game}.py`;
     
     fetch('/api/run', {
         method: 'POST',
@@ -88,19 +87,27 @@ function stopGame() {
 
 // Cuando se abre la ventana de juegos, cargar juegos
 document.addEventListener('DOMContentLoaded', function() {
-    const observer = new MutationObserver(() => {
-        const win = document.getElementById('win-games');
-        if (win && win.style.display !== 'none') {
-            loadGames();
-        }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    
-    // Si la ventana ya está abierta, cargar
+    // Si la ventana ya está visible, cargar
     setTimeout(() => {
         const win = document.getElementById('win-games');
         if (win && win.style.display !== 'none') {
             loadGames();
         }
-    }, 500);
+    }, 300);
 });
+
+// Observador para cuando se abra la ventana
+const gamesObserver = new MutationObserver(() => {
+    const win = document.getElementById('win-games');
+    if (win && win.style.display !== 'none') {
+        loadGames();
+    }
+});
+gamesObserver.observe(document.body, { childList: true, subtree: true });
+
+// Exportar funciones globalmente
+window.loadGames = loadGames;
+window.runGame = runGame;
+window.stopGame = stopGame;
+
+console.log('🎮 Games.js cargado - Juegos disponibles');

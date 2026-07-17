@@ -1,6 +1,7 @@
 // KALM OS v4.3 - Herramientas (Carga dinámica desde system/Program)
 let toolProcessId = null;
 
+// Función para cargar herramientas desde el servidor
 function loadTools() {
     const container = document.getElementById('tool-buttons');
     if (!container) return;
@@ -31,7 +32,7 @@ function loadTools() {
                 btn.className = 'act';
                 btn.textContent = `${tool.icon || '🛠️'} ${tool.name}`;
                 btn.onclick = () => runTool(tool.filename.replace(/\.[^.]+$/, ''));
-                btn.style.cssText = 'margin:4px;padding:8px 14px;';
+                btn.style.cssText = 'margin:4px;padding:8px 14px;cursor:pointer;';
                 container.appendChild(btn);
             });
         })
@@ -41,13 +42,13 @@ function loadTools() {
         });
 }
 
+// Función para ejecutar una herramienta
 function runTool(tool) {
     const output = document.getElementById('tool-output');
     if (!output) return;
     output.textContent = `⏳ Ejecutando ${tool}...\n`;
     
-    const script = `${tool}.py`;
-    const path = `system/Program/${script}`;
+    const path = `system/Program/${tool}.py`;
     
     fetch('/api/run', {
         method: 'POST',
@@ -90,18 +91,27 @@ function stopTool() {
 
 // Cuando se abre la ventana de herramientas, cargar herramientas
 document.addEventListener('DOMContentLoaded', function() {
-    const observer = new MutationObserver(() => {
-        const win = document.getElementById('win-tools');
-        if (win && win.style.display !== 'none') {
-            loadTools();
-        }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    
+    // Si la ventana ya está visible, cargar
     setTimeout(() => {
         const win = document.getElementById('win-tools');
         if (win && win.style.display !== 'none') {
             loadTools();
         }
-    }, 500);
+    }, 300);
 });
+
+// Observador para cuando se abra la ventana
+const toolsObserver = new MutationObserver(() => {
+    const win = document.getElementById('win-tools');
+    if (win && win.style.display !== 'none') {
+        loadTools();
+    }
+});
+toolsObserver.observe(document.body, { childList: true, subtree: true });
+
+// Exportar funciones globalmente
+window.loadTools = loadTools;
+window.runTool = runTool;
+window.stopTool = stopTool;
+
+console.log('🛠️ Tools.js cargado - Herramientas disponibles');

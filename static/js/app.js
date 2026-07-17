@@ -8,10 +8,9 @@ let bookmarksLoadedFlag = false;
 let bookmarksLoading = false;
 
 // ═══════════════════════════════════════════════════════════
-// CONSTANTES - MAPAS GLOBALES (disponibles para todos los scripts)
+// CONSTANTES - MAPAS GLOBALES
 // ═══════════════════════════════════════════════════════════
 
-// Estos mapas se asignan a window para que estén disponibles globalmente
 window.TOOL_MAP = {
     'info_sistema': 'herramientas.py',
     'analisis_disco': 'herramientas.py',
@@ -455,7 +454,7 @@ async function stopAllServers() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// SCRIPT RUNNER (CORREGIDO - USA TERMINAL)
+// SCRIPT RUNNER
 // ═══════════════════════════════════════════════════════════
 
 async function runScript() {
@@ -486,7 +485,6 @@ async function runScript() {
                 window.open(data.viewer_url, '_blank');
             } else if (data.session_id) {
                 output.textContent = `✅ ${path.split('/').pop()} ejecutado\nPID: ${data.pid}\nSession: ${data.session_id}\n\n📤 Salida en tiempo real en la terminal virtual`;
-                // ABRIR TERMINAL AUTOMÁTICAMENTE
                 if (typeof openTerminalForProcess === 'function') {
                     openTerminalForProcess(data.session_id, path.split('/').pop());
                 }
@@ -561,7 +559,7 @@ async function viewLastLog() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MENÚ DE PROGRAMAS (CORREGIDO CON LOGS)
+// MENÚ DE PROGRAMAS
 // ═══════════════════════════════════════════════════════════
 
 async function loadProgramMenu() {
@@ -583,8 +581,8 @@ async function loadProgramMenu() {
         submenu.dataset.loaded = 'true';
         
         if (!programs || programs.length === 0) {
-            submenu.innerHTML = '<div class="item" style="color:#9370db;font-style:italic">📂 No hay programas en system/program/</div>';
-            console.warn('⚠️ No hay programas en system/program/');
+            submenu.innerHTML = '<div class="item" style="color:#9370db;font-style:italic">📂 No hay programas en system/Program/</div>';
+            console.warn('⚠️ No hay programas en system/Program/');
             return;
         }
         
@@ -636,16 +634,28 @@ async function loadProgramMenu() {
     }
 }
 
+function toggleProgramMenu() {
+    const submenu = document.getElementById('program-submenu');
+    if (!submenu) return;
+    
+    if (submenu.style.display === 'block') {
+        submenu.style.display = 'none';
+    } else {
+        submenu.style.display = 'block';
+        if (!submenu.dataset.loaded) {
+            loadProgramMenu();
+        }
+    }
+}
+
 // ═══ EJECUTAR PROGRAMA DESDE EL MENÚ ═══
 function executeProgramFromMenu(path, name) {
-    console.log(`▶️ Ejecutando: ${path} (${name})`);
     toggleStart();
     
     if (typeof showNotification === 'function') {
         showNotification(`⏳ Ejecutando ${name}...`, 'info');
     }
     
-    // Enviar la ruta tal cual, el servidor la resolverá
     fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -671,7 +681,7 @@ function executeProgramFromMenu(path, name) {
             } else {
                 openWin('runner');
                 const output = document.getElementById('script-out');
-                if (output) output.textContent = `✅ ${name} ejecutado (PID ${data.pid})\n📋 Abre la Terminal para ver la salida.`;
+                if (output) output.textContent = `✅ ${name} ejecutado (PID ${data.pid})`;
             }
             if (typeof loadServers === 'function') loadServers();
         } else if (data.ok && data.viewer_url) {
@@ -680,7 +690,6 @@ function executeProgramFromMenu(path, name) {
                 showNotification(`📄 ${name} abierto en visor`, 'success');
             }
         } else {
-            console.error('❌ Error ejecutando programa:', data.error);
             if (typeof showNotification === 'function') {
                 showNotification(`❌ Error: ${data.error || 'desconocido'}`, 'error');
             }
@@ -690,7 +699,6 @@ function executeProgramFromMenu(path, name) {
         }
     })
     .catch(err => {
-        console.error('❌ Error de conexión:', err);
         if (typeof showNotification === 'function') {
             showNotification(`❌ Error: ${err.message}`, 'error');
         }
@@ -698,20 +706,6 @@ function executeProgramFromMenu(path, name) {
         if (output) output.textContent = `❌ Error de conexión: ${err.message}`;
         openWin('runner');
     });
-}
-
-function toggleProgramMenu() {
-    const submenu = document.getElementById('program-submenu');
-    if (!submenu) return;
-    
-    if (submenu.style.display === 'block') {
-        submenu.style.display = 'none';
-    } else {
-        submenu.style.display = 'block';
-        if (!submenu.dataset.loaded) {
-            loadProgramMenu();
-        }
-    }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1003,16 +997,10 @@ window.openWin = function(id) {
                 loadBrowserBookmarks();
                 break;
             case 'tools':
-                const toolOutput = document.getElementById('tool-output');
-                if (toolOutput && toolOutput.textContent === 'Selecciona una herramienta...') {
-                    toolOutput.textContent = '📋 Selecciona una herramienta para ejecutarla.';
-                }
+                if (typeof loadTools === 'function') loadTools();
                 break;
             case 'games':
-                const gameOutput = document.getElementById('game-output');
-                if (gameOutput && gameOutput.textContent === 'Selecciona un juego para jugar en la terminal...') {
-                    gameOutput.textContent = '🎮 Selecciona un juego para empezar.';
-                }
+                if (typeof loadGames === 'function') loadGames();
                 break;
         }
     }, 300);
@@ -1248,39 +1236,22 @@ if (document.getElementById('clock-display')) {
     setInterval(updateWorldClocks, 1000);
 }
 
+// ═══════════════════════════════════════════════════════════
+// FUNCIONES PARA HERRAMIENTAS Y JUEGOS (desde window)
+// ═══════════════════════════════════════════════════════════
 
-// ═══ Asegurar que las funciones de juegos estén disponibles ═══
-window.runGame = runGame;
+// Estas funciones se cargan desde tools.js y games.js
+// window.runTool y window.runGame ya están definidas
+
+// ═══════════════════════════════════════════════════════════
+// EXPORTAR FUNCIONES GLOBALMENTE
+// ═══════════════════════════════════════════════════════════
+
 window.runTool = runTool;
+window.runGame = runGame;
+window.loadTools = loadTools;
+window.loadGames = loadGames;
 window.openTerminalForProcess = openTerminalForProcess;
 window.closeTerminalWindow = closeTerminalWindow;
-
-console.log('🏰 Kalm OS v4.3 - Aplicación cargada correctamente');
-
-
-
-// ═══ Asegurar que las funciones estén disponibles globalmente ═══
-// Estas funciones son definidas en otros archivos (games.js, tools.js, file_manager.js)
-// pero las exportamos aquí para que estén disponibles globalmente
-
-// Verificar que las funciones existen antes de exportarlas
-if (typeof runGame !== 'undefined') {
-    window.runGame = runGame;
-} else {
-    console.warn('⚠️ runGame no está definido - asegúrate de que games.js se cargue antes que app.js');
-}
-
-if (typeof runTool !== 'undefined') {
-    window.runTool = runTool;
-} else {
-    console.warn('⚠️ runTool no está definido - asegúrate de que tools.js se cargue antes que app.js');
-}
-
-if (typeof openTerminalForProcess !== 'undefined') {
-    window.openTerminalForProcess = openTerminalForProcess;
-    window.closeTerminalWindow = closeTerminalWindow;
-} else {
-    console.warn('⚠️ openTerminalForProcess no está definido - asegúrate de que file_manager.js se cargue antes que app.js');
-}
 
 console.log('🏰 Kalm OS v4.3 - Aplicación cargada correctamente');
