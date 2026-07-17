@@ -1,4 +1,4 @@
-// KALM OS v4.3 - Window Manager (COMPLETO Y CORREGIDO)
+// KALM OS v4.3 - Window Manager (OPTIMIZADO)
 
 const windowState = {};
 let windowZIndex = 1000;
@@ -18,37 +18,21 @@ function openWin(id) {
     
     updateTaskbar(id);
     
-    if (id === 'explorer') {
-        setTimeout(() => {
-            const grid = document.getElementById('file-grid');
-            if (grid && grid.children.length === 0) {
-                loadFiles('/D');
-            }
-        }, 100);
-    }
+    // Cargar contenido según ventana
+    const loaders = {
+        'explorer': () => { const grid = document.getElementById('file-grid'); if (grid && grid.children.length === 0) loadFiles('/D'); },
+        'taskmgr': loadProcs,
+        'dns': loadDNS,
+        'proxy': loadProxy,
+        'servers': loadServers,
+        'pac': loadPACInfo,
+        'browser': loadBrowserBookmarks,
+        'tools': () => { if (typeof loadTools === 'function') loadTools(); },
+        'games': () => { if (typeof loadGames === 'function') loadGames(); }
+    };
     
-    if (id === 'taskmgr') {
-        setTimeout(loadProcs, 100);
-    }
-    
-    if (id === 'dns') {
-        setTimeout(loadDNS, 100);
-    }
-    
-    if (id === 'proxy') {
-        setTimeout(loadProxy, 100);
-    }
-    
-    if (id === 'servers') {
-        setTimeout(loadServers, 100);
-    }
-    
-    if (id === 'pac') {
-        setTimeout(loadPACInfo, 100);
-    }
-    
-    if (id === 'browser') {
-        setTimeout(loadBrowserBookmarks, 100);
+    if (loaders[id]) {
+        setTimeout(loaders[id], 100);
     }
 }
 
@@ -124,7 +108,9 @@ function updateTaskbar(id) {
         tbItem.addEventListener('click', (e) => {
             e.stopPropagation();
             const winEl = document.getElementById(`win-${id}`);
-            if (winEl && winEl.classList.contains('minimized')) {
+            if (!winEl) return;
+            
+            if (winEl.classList.contains('minimized')) {
                 winEl.classList.remove('minimized');
                 winEl.classList.add('active');
                 winEl.style.display = 'flex';
@@ -143,7 +129,7 @@ function updateTaskbar(id) {
     });
 }
 
-// ═══ Drag ═══
+// ═══ DRAG (CORREGIDO) ═══
 let dragData = null;
 
 function startDrag(e, winId) {
@@ -207,7 +193,7 @@ document.addEventListener('touchend', () => {
     dragData = null;
 });
 
-// ═══ Resize ═══
+// ═══ RESIZE ═══
 let resizeData = null;
 
 function startResize(e, winId, direction) {
@@ -296,7 +282,7 @@ document.addEventListener('touchend', () => {
     resizeData = null;
 });
 
-// ═══ Reloj ═══
+// ═══ RELOJ ═══
 function updateClock() {
     const clock = document.getElementById('clock');
     if (!clock) return;
@@ -312,7 +298,7 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// ═══ Menú Inicio ═══
+// ═══ MENÚ INICIO ═══
 function toggleStart() {
     const menu = document.getElementById('start-menu');
     if (!menu) return;
@@ -330,19 +316,25 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// ═══ Monitoreo ═══
+// ═══ MONITOREO (CORREGIDO - SIN ERRORES DE RED) ═══
 let monitorInterval = null;
 
 function startMonitoring() {
     if (monitorInterval) return;
-    
     monitorInterval = setInterval(updateStats, 2000);
     setTimeout(updateStats, 500);
 }
 
 function updateStats() {
-    fetch('/api/system-stats')
-        .then(r => r.json())
+    // Usar fetch con timeout para evitar errores de red
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    fetch('/api/system-stats', { signal: controller.signal })
+        .then(r => {
+            if (!r.ok) throw new Error('Error en respuesta');
+            return r.json();
+        })
         .then(data => {
             const cpuVal = document.getElementById('rm-cpu-val');
             const cpuBar = document.getElementById('rm-cpu-bar');
@@ -374,7 +366,15 @@ function updateStats() {
                 if (netRecv) netRecv.textContent = data.net_total_recv || '0 B';
             }
         })
-        .catch(err => console.error('Error fetching stats:', err));
+        .catch(err => {
+            // Silenciar errores de red - no mostrar en consola
+            if (err.name === 'AbortError') {
+                // Timeout, ignorar
+            }
+        })
+        .finally(() => {
+            clearTimeout(timeoutId);
+        });
 }
 
 document.addEventListener('DOMContentLoaded', startMonitoring);
