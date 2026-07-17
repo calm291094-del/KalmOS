@@ -19,11 +19,17 @@ function saveNotes() {
             data: { content: notes.value, updated: new Date().toISOString() }
         })
     })
-    .then(r => r.json())
+    .then(r => {
+        // Verificar si la respuesta está vacía
+        if (r.status === 204 || r.status === 404) {
+            return { ok: false, error: 'Servidor no respondió' };
+        }
+        return r.json();
+    })
     .then(data => {
-        if (data.ok) {
+        if (data && data.ok) {
             if (status) {
-                status.textContent = '✅ Guardado en GitHub';
+                status.textContent = '✅ Guardado';
                 status.style.color = '#00cc66';
             }
             setTimeout(() => { 
@@ -34,7 +40,7 @@ function saveNotes() {
             }, 3000);
         } else {
             if (status) {
-                status.textContent = '❌ Error: ' + (data.error || 'desconocido');
+                status.textContent = '❌ Error: ' + (data?.error || 'desconocido');
                 status.style.color = '#ff4444';
             }
         }
@@ -63,20 +69,19 @@ function loadNotes() {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ name: 'notes' })
     })
-    .then(r => r.json())
+    .then(r => {
+        if (r.status === 204 || r.status === 404) {
+            return { ok: true, data: null };
+        }
+        return r.json();
+    })
     .then(data => {
-        if (data.ok && data.data) {
+        if (data && data.ok && data.data) {
             notes.value = data.data.content || '';
             if (status) {
-                status.textContent = '📂 Cargado desde GitHub';
+                status.textContent = '📂 Cargado';
                 status.style.color = '#00cc66';
             }
-            setTimeout(() => { 
-                if (status) {
-                    status.textContent = '📝 Listo';
-                    status.style.color = '#9370db';
-                }
-            }, 2000);
         } else {
             notes.value = '';
             if (status) {
@@ -84,6 +89,12 @@ function loadNotes() {
                 status.style.color = '#9370db';
             }
         }
+        setTimeout(() => { 
+            if (status && status.textContent !== '📝 Sin notas guardadas') {
+                status.textContent = '📝 Listo';
+                status.style.color = '#9370db';
+            }
+        }, 2000);
     })
     .catch(err => {
         if (status) {
@@ -101,9 +112,14 @@ function loadBackups() {
     list.innerHTML = '<span style="color:#ffaa00">⏳ Cargando backups...</span>';
     
     fetch('/api/persistence/backups')
-        .then(r => r.json())
+        .then(r => {
+            if (r.status === 204 || r.status === 404) {
+                return { ok: true, backups: [] };
+            }
+            return r.json();
+        })
         .then(data => {
-            if (data.ok && data.backups && data.backups.length > 0) {
+            if (data && data.ok && data.backups && data.backups.length > 0) {
                 let html = '<div style="display:flex;flex-direction:column;gap:5px">';
                 data.backups.forEach(b => {
                     html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 10px;background:rgba(75,0,130,0.2);border-radius:3px">
@@ -131,11 +147,16 @@ function createBackup() {
     }
     
     fetch('/api/persistence/backup', { method: 'POST' })
-        .then(r => r.json())
+        .then(r => {
+            if (r.status === 204 || r.status === 404) {
+                return { ok: false, error: 'Servidor no respondió' };
+            }
+            return r.json();
+        })
         .then(data => {
-            if (data.ok) {
+            if (data && data.ok) {
                 if (status) {
-                    status.textContent = `✅ Backup creado: ${data.backup}`;
+                    status.textContent = `✅ Backup creado: ${data.backup || 'OK'}`;
                     status.style.color = '#00cc66';
                 }
                 loadBackups();
@@ -175,9 +196,14 @@ function restoreBackup(name) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ name: name })
     })
-    .then(r => r.json())
+    .then(r => {
+        if (r.status === 204 || r.status === 404) {
+            return { ok: false, error: 'Servidor no respondió' };
+        }
+        return r.json();
+    })
     .then(data => {
-        if (data.ok) {
+        if (data && data.ok) {
             if (status) {
                 status.textContent = '✅ Backup restaurado';
                 status.style.color = '#00cc66';
@@ -264,5 +290,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 1000);
 });
 
-console.log('💾 Persistencia con GitHub cargada');
-console.log('📌 Funciones disponibles: saveNotes, loadNotes, createBackup, restoreBackup, loadBackups');
+console.log('💾 Persistencia cargada correctamente');
+console.log('📌 Funciones: saveNotes, loadNotes, createBackup, restoreBackup, loadBackups');
