@@ -8,7 +8,7 @@ let bookmarksLoadedFlag = false;
 let bookmarksLoading = false;
 let resourceUpdateInterval = null;
 let clockUpdateInterval = null;
-let windowZIndex = 1000;
+// windowZIndex ya está declarado en window_manager.js - NO redeclarar
 
 // ═══════════════════════════════════════════════════════════
 // CONSTANTES - MAPAS GLOBALES
