@@ -13,7 +13,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 
 from system.config import (
-    BASE_DIR, VIEWS_DIR, STATIC_DIR, BG_FILE, DRIVE_D, DATA_DIR, log
+    BASE_DIR, VIEWS_DIR, STATIC_DIR, BG_FILE, DRIVE_D, DATA_DIR, log, IS_CLOUD
 )
 from system.auth import auth_system
 from system.task_manager import TaskManager, network_monitor
