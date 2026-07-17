@@ -252,10 +252,11 @@ function uploadFiles(input) {
     });
 }
 
-// ═══ TERMINAL VIRTUAL ═══
+// ═══ TERMINAL VIRTUAL (OPTIMIZADA) ═══
 function openTerminalForProcess(sessionId, programName) {
     let win = document.getElementById('win-terminal');
     
+    // Si ya existe, traer al frente
     if (win) {
         win.style.display = 'flex';
         win.classList.add('active');
@@ -264,9 +265,10 @@ function openTerminalForProcess(sessionId, programName) {
         if (titleBar) titleBar.textContent = `💻 Terminal: ${programName || 'Proceso'}`;
         startTerminalStream(sessionId);
         updateTaskbar('terminal');
-        return;
+        return win;
     }
     
+    // Crear nueva terminal
     win = document.createElement('div');
     win.id = 'win-terminal';
     win.className = 'window resizable';
@@ -286,7 +288,7 @@ function openTerminalForProcess(sessionId, programName) {
             <pre id="term-output" style="flex:1;margin:0;padding:10px;overflow-y:auto;background:#0a0a1a;color:#0f0;font-family:'Consolas',monospace;font-size:13px;white-space:pre-wrap;word-wrap:break-word;min-height:300px">⏳ Conectando al proceso...</pre>
             <div style="padding:8px;background:#0a0a1a;border-top:1px solid #4b0082;display:flex">
                 <span style="color:#0f0;margin-right:8px;font-family:monospace">$</span>
-                <input id="term-input" style="flex:1;background:transparent;color:#0f0;border:none;outline:none;font-family:monospace;font-size:13px" placeholder="Escribe aquí para enviar al proceso...">
+                <input id="term-input" style="flex:1;background:transparent;color:#0f0;border:none;outline:none;font-family:monospace;font-size:13px" placeholder="Escribe aquí para enviar...">
             </div>
         </div>
     `;
@@ -298,6 +300,7 @@ function openTerminalForProcess(sessionId, programName) {
     updateTaskbar('terminal');
     startTerminalStream(sessionId);
     
+    // Configurar input
     const input = document.getElementById('term-input');
     if (input) {
         input.onkeydown = function(e) {
@@ -306,15 +309,15 @@ function openTerminalForProcess(sessionId, programName) {
                 if (value.trim()) {
                     sendTerminalInput(sessionId, value);
                     const output = document.getElementById('term-output');
-                    if (output) {
-                        output.textContent += `\n${value}`;
-                    }
+                    if (output) output.textContent += `\n${value}`;
                     this.value = '';
                 }
             }
         };
-        setTimeout(() => input.focus(), 500);
+        setTimeout(() => input.focus(), 300);
     }
+    
+    return win;
 }
 
 function closeTerminalWindow() {
@@ -334,21 +337,38 @@ function startTerminalStream(sessionId) {
     const output = document.getElementById('term-output');
     if (!output) return;
     
+    // Cerrar conexión anterior
     if (window.termEventSource) {
         window.termEventSource.close();
         window.termEventSource = null;
     }
     
+    // Usar EventSource con límite de tiempo
     const url = `/api/process/stream/${sessionId}`;
     const eventSource = new EventSource(url);
     window.termEventSource = eventSource;
     
     let reconnectAttempts = 0;
-    const maxReconnectAttempts = 3;
+    const maxReconnectAttempts = 2;
+    let timeoutId = null;
+    
+    // Timeout para cerrar la conexión si no hay actividad
+    const resetTimeout = () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            if (window.termEventSource) {
+                window.termEventSource.close();
+                window.termEventSource = null;
+                output.textContent += '\n\x1b[33m⏱️ Tiempo de espera agotado\x1b[0m\n';
+            }
+        }, 30000); // 30 segundos sin actividad
+    };
     
     eventSource.onmessage = function(event) {
         try {
             const data = JSON.parse(event.data);
+            resetTimeout();
+            
             if (data.type === 'output') {
                 output.textContent += data.data;
                 output.scrollTop = output.scrollHeight;
@@ -356,6 +376,7 @@ function startTerminalStream(sessionId) {
                 output.textContent += `\n\n\x1b[33m📋 Proceso terminado (código ${data.code || 0})\x1b[0m\n`;
                 eventSource.close();
                 window.termEventSource = null;
+                if (timeoutId) clearTimeout(timeoutId);
             } else if (data.type === 'error') {
                 output.textContent += `\n\x1b[31m❌ Error: ${data.data}\x1b[0m\n`;
             } else if (data.type === 'connected') {
@@ -370,15 +391,20 @@ function startTerminalStream(sessionId) {
         if (eventSource.readyState === EventSource.CLOSED) {
             output.textContent += '\n\x1b[31m❌ Conexión cerrada\x1b[0m\n';
             window.termEventSource = null;
+            if (timeoutId) clearTimeout(timeoutId);
         } else if (reconnectAttempts < maxReconnectAttempts) {
             reconnectAttempts++;
             output.textContent += `\n\x1b[33m⚠️ Reconectando... (${reconnectAttempts}/${maxReconnectAttempts})\x1b[0m\n`;
+            resetTimeout();
         } else {
             output.textContent += '\n\x1b[31m❌ Error de conexión persistente\x1b[0m\n';
             eventSource.close();
             window.termEventSource = null;
+            if (timeoutId) clearTimeout(timeoutId);
         }
     };
+    
+    resetTimeout();
 }
 
 function sendTerminalInput(sessionId, data) {
