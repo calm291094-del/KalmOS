@@ -730,6 +730,48 @@ function executeProgramFromMenu(path, name) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// KrootCorp
+// ═══════════════════════════════════════════════════════════
+function openKrootCorp() {
+    // Primero, ejecutar el script de Kroot Corp
+    showNotification('🏢 Iniciando Kroot Corp IA...', 'info');
+    
+    fetch('/api/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            path: 'system/Program/kroot_corp/run.py',
+            args: ['--no-browser']  // Para que no abra el navegador automáticamente
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok && data.session_id) {
+            showNotification('✅ Kroot Corp IA iniciado', 'success');
+            // Abrir el navegador interno después de 2 segundos
+            setTimeout(() => {
+                openWin('browser');
+                setTimeout(() => {
+                    const urlInput = document.getElementById('browser-url');
+                    if (urlInput) {
+                        urlInput.value = 'http://localhost:8000/dashboard';
+                        browserNavigate();
+                    }
+                }, 500);
+            }, 2000);
+        } else {
+            showNotification('❌ Error iniciando Kroot Corp: ' + (data.error || 'desconocido'), 'error');
+        }
+    })
+    .catch(err => {
+        showNotification('❌ Error: ' + err.message, 'error');
+    });
+}
+
+// Exportar función globalmente
+window.openKrootCorp = openKrootCorp;
+
+// ═══════════════════════════════════════════════════════════
 // PAC CONFIGURATION
 // ═══════════════════════════════════════════════════════════
 
