@@ -1,4 +1,4 @@
-"""Servidor web principal de Kalm OS v4.3 - CON PERSISTENCIA"""
+"""Servidor web principal de Kalm OS v4.3 - CON PERSISTENCIA COMPLETA"""
 import json
 import mimetypes
 import urllib.parse
