@@ -432,8 +432,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
 
         # ═══ PROXY PARA CHAT ACADÉMICO (puerto 5000) ═══
         if p.startswith("/api/chat/"):
-            # Obtener la ruta después de /api/chat/
-            chat_path = p[10:]  # Quita "/api/chat/"
+            chat_path = p[10:]
             if not chat_path:
                 chat_path = "/"
     
@@ -465,12 +464,14 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.send_response(503)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
-                self.wfile.write(b"<html><body><h2>Chat Académico no disponible</h2></body></html>")
+                # ⚠️ CORREGIDO: usar string normal y encode
+                html_content = """<html><body><h2>Chat Academico no disponible</h2></body></html>"""
+                self.wfile.write(html_content.encode('utf-8'))
             return
 
         # ═══ PROXY PARA KROOT CORP (puerto 5001) ═══
         if p.startswith("/api/kroot/"):
-            kroot_path = p[10:]  # Quita "/api/kroot/"
+            kroot_path = p[10:]
             if not kroot_path:
                 kroot_path = "/"
     
@@ -502,7 +503,9 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.send_response(503)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
-                self.wfile.write(b"<html><body><h2>Kroot Corp no disponible</h2></body></html>")
+                # ⚠️ CORREGIDO: usar string normal y encode
+                html_content = """<html><body><h2>Kroot Corp no disponible</h2></body></html>"""
+                self.wfile.write(html_content.encode('utf-8'))
             return
         
         # ═══ LOGS ═══
@@ -898,8 +901,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
 
         # ═══ PROXY PARA CHAT ACADÉMICO (puerto 5000) ═══
         if p.startswith("/api/chat/"):
-            # Obtener la ruta después de /api/chat/
-            chat_path = p[10:]  # Quita "/api/chat/"
+            chat_path = p[10:]
             if not chat_path:
                 chat_path = "/"
     
@@ -931,12 +933,14 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.send_response(503)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
-                self.wfile.write(b"<html><body><h2>Chat Académico no disponible</h2></body></html>")
+                # ⚠️ CORREGIDO: usar string normal y encode
+                html_content = """<html><body><h2>Chat Academico no disponible</h2></body></html>"""
+                self.wfile.write(html_content.encode('utf-8'))
             return
 
         # ═══ PROXY PARA KROOT CORP (puerto 5001) ═══
         if p.startswith("/api/kroot/"):
-            kroot_path = p[10:]  # Quita "/api/kroot/"
+            kroot_path = p[10:]
             if not kroot_path:
                 kroot_path = "/"
     
@@ -968,8 +972,11 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.send_response(503)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
-                self.wfile.write(b"<html><body><h2>Kroot Corp no disponible</h2></body></html>")
+                # ⚠️ CORREGIDO: usar string normal y encode
+                html_content = """<html><body><h2>Kroot Corp no disponible</h2></body></html>"""
+                self.wfile.write(html_content.encode('utf-8'))
             return
+        
         
         # ═══ SHUTDOWN ═══
         if p == "/api/shutdown":
