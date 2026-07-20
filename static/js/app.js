@@ -750,6 +750,7 @@ function startKalmAIProcess() {
             if (typeof showNotification === 'function') {
                 showNotification('✅ Kalm AI iniciando...', 'success');
             }
+            // Esperar más tiempo para que el servidor arranque
             waitForKalmAI(0);
         } else {
             if (typeof showNotification === 'function') {
@@ -768,12 +769,12 @@ function startKalmAIProcess() {
 }
 
 function waitForKalmAI(attempt) {
-    const maxAttempts = 30;
-    const delay = 1500;
+    const maxAttempts = 40;  // Más intentos
+    const delay = 2000;     // Más tiempo entre intentos
     
     if (attempt >= maxAttempts) {
         if (typeof showNotification === 'function') {
-            showNotification('⚠️ Kalm AI no responde', 'warning');
+            showNotification('⚠️ Kalm AI no responde, intenta de nuevo', 'warning');
         }
         openKalmAIBrowserDirect();
         return;
@@ -804,7 +805,6 @@ function openKalmAIBrowserDirect() {
     // 1. Abrir la ventana del navegador
     const win = document.getElementById('win-browser');
     if (!win) {
-        console.error('❌ Ventana del navegador no encontrada');
         openWin('browser');
     } else {
         win.style.display = 'flex';
@@ -821,12 +821,9 @@ function openKalmAIBrowserDirect() {
         
         if (urlInput) {
             urlInput.value = '/api/kalm/';
-            console.log('📝 URL establecida: /api/kalm/');
         }
         
         if (frame) {
-            console.log('🔄 Cargando frame con /api/kalm/');
-            // Forzar recarga del frame
             frame.src = '/api/kalm/';
         }
         
