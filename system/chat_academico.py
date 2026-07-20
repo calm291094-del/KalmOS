@@ -462,20 +462,24 @@ def ejecutar_web(kalm_mode=False):
     
     # Puerto para Render (usar variable de entorno PORT)
     port = int(os.environ.get('PORT', 5000))
-    
+
     if kalm_mode:
         # ═══ MODO KALM: ARRANCAR SERVIDOR EN SEGUNDO PLANO ═══
         print(f"🚀 Iniciando Chat Académico en puerto {port} (modo Kalm)")
     
-        # Crear archivo de señal con la URL
-        url_file = Path("/tmp/chat_academico_url.txt")
-        try:
-            url_file.write_text(f"http://localhost:{port}")
-            print(f"✅ URL escrita en {url_file}")
-        except Exception as e:
-            print(f"⚠️ No se pudo escribir archivo de señal: {e}")
+        # Usar archivo dentro de kalm_data (tiene permisos garantizados)
+        from pathlib import Path
+        signal_dir = Path("kalm_data/persistence")
+        signal_dir.mkdir(parents=True, exist_ok=True)
+        signal_file = signal_dir / "chat_academico_url.txt"
     
-        # ⚠️ IMPRIMIR LA URL (por si el frontend la captura)
+        try:
+            signal_file.write_text(f"http://localhost:{port}")
+            print(f"✅ URL escrita en {signal_file}")
+        except Exception as e:
+            print(f"⚠️ Error escribiendo archivo de señal: {e}")
+    
+        # También imprimir la URL (por si acaso)
         print(f"http://localhost:{port}")
         sys.stdout.flush()
     
@@ -489,8 +493,8 @@ def ejecutar_web(kalm_mode=False):
         thread = threading.Thread(target=run_server, daemon=True)
         thread.start()
     
-        # Esperar 2 segundos a que el servidor esté listo
-        time.sleep(2)
+        # Esperar a que el servidor esté listo
+        time.sleep(3)
     
         # Mantener el proceso vivo
         try:
@@ -498,10 +502,9 @@ def ejecutar_web(kalm_mode=False):
                 time.sleep(1)
         except KeyboardInterrupt:
             print("⏹️ Cerrando Chat Académico...")
-            # Limpiar archivo de señal
-            if url_file.exists():
-                url_file.unlink()
-            sys.exit(0)
+            if signal_file.exists():
+                signal_file.unlink()
+        sys.exit(0)
     
 # ============================================================
 # 6. MODO GUI (Tkinter) - para Windows o con display
