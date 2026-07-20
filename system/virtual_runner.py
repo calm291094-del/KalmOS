@@ -42,7 +42,7 @@ class VirtualRunner:
             return path_obj
         
         # ═══ 2. Buscar en system/program/ ═══
-        program_dir = BASE_DIR / "system" / "program"
+        program_dir = BASE_DIR / "system" / "Program"
         
         if path_str.startswith("system/program/") or path_str.startswith("/system/program/"):
             rel_path = path_str.replace("system/program/", "").replace("/system/program/", "")
@@ -155,22 +155,30 @@ class VirtualRunner:
             
             python_exe = sys.executable
             cmd = [python_exe, "-u", str(py_path)]
+            
+            # ═══ AGREGAR ARGUMENTOS CORRECTAMENTE ═══
             if args:
-                cmd.extend(args)
+                if isinstance(args, list):
+                    cmd.extend(args)
+                elif isinstance(args, str):
+                    cmd.append(args)
+            
+            log(f"▶️ Ejecutando Python: {' '.join(cmd)}")
             
             session_id = str(uuid.uuid4())
             output_queue = queue.Queue()
             
             log_file = cls.OUTPUT_DIR / f"{py_path.stem}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
             
-            log(f"▶️ Ejecutando Python: {' '.join(cmd)}")
+            # ═══ CAMBIAR AL DIRECTORIO RAIZ DEL PROYECTO ═══
+            project_root = Path(__file__).parent.parent.parent  # /app/
             
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 stdin=subprocess.PIPE,
-                cwd=str(py_path.parent),
+                cwd=str(project_root),  # <-- CAMBIADO: ahora usa la raíz
                 env=env,
                 text=True,
                 encoding='utf-8',
@@ -178,7 +186,6 @@ class VirtualRunner:
                 bufsize=1
             )
             
-            # ═══ CAPTURAR STDOUT PARA DEVOLVERLO EN LA RESPUESTA ═══
             stdout_capture = []
             
             def read_output():
@@ -212,7 +219,6 @@ class VirtualRunner:
             
             log(f"✅ {py_path.name} ejecutado (PID {proc.pid})")
             
-            # ═══ COMBINAR STDOUT CAPTURADO ═══
             stdout_text = ''.join(stdout_capture)
             
             return {
@@ -223,7 +229,7 @@ class VirtualRunner:
                 "log_file": str(log_file),
                 "message": f"✅ {py_path.name} ejecutado (PID {proc.pid})",
                 "type": "python",
-                "stdout": stdout_text  # <-- AGREGADO: stdout capturado
+                "stdout": stdout_text
             }
             
         except Exception as e:
@@ -245,12 +251,14 @@ class VirtualRunner:
             output_queue = queue.Queue()
             log_file = cls.OUTPUT_DIR / f"{sh_path.stem}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
             
+            project_root = Path(__file__).parent.parent.parent
+            
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 stdin=subprocess.PIPE,
-                cwd=str(sh_path.parent),
+                cwd=str(project_root),
                 env=env,
                 text=True,
                 encoding='utf-8',
@@ -322,12 +330,14 @@ class VirtualRunner:
             output_queue = queue.Queue()
             log_file = cls.OUTPUT_DIR / f"{js_path.stem}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
             
+            project_root = Path(__file__).parent.parent.parent
+            
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 stdin=subprocess.PIPE,
-                cwd=str(js_path.parent),
+                cwd=str(project_root),
                 env=env,
                 text=True,
                 encoding='utf-8',
@@ -398,12 +408,14 @@ class VirtualRunner:
             output_queue = queue.Queue()
             log_file = cls.OUTPUT_DIR / f"{file_path.stem}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
             
+            project_root = Path(__file__).parent.parent.parent
+            
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 stdin=subprocess.PIPE,
-                cwd=str(file_path.parent),
+                cwd=str(project_root),
                 shell=True,
                 text=True,
                 encoding='utf-8',
