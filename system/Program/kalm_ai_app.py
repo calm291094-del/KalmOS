@@ -2,20 +2,21 @@
 # -*- coding: utf-8 -*-
 
 """
-KALM AI APP - Chat Academico + Kroot Corp unificados
-VERSION FUNCIONAL PARA RENDER
+KALM AI APP - Chat Academico + Kroot Corp
+VERSION PARA INTEGRAR EN EL SERVIDOR PRINCIPAL
 """
 
 import sys
 import os
-import threading
-import time
 import subprocess
 import json
-import socket
+import time
+import requests
+from flask import Flask, request, render_template_string, jsonify
+from flask_cors import CORS
 
 # ============================================================
-# 1. INSTALAR DEPENDENCIAS
+# 1. INSTALAR DEPENDENCIAS (si se ejecuta solo)
 # ============================================================
 def instalar_dependencias():
     for pkg in ["flask", "flask-cors", "requests", "duckduckgo-search"]:
@@ -25,11 +26,13 @@ def instalar_dependencias():
             print(f"📦 Instalando {pkg}...")
             subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "--quiet"])
 
-instalar_dependencias()
-
 # ============================================================
 # 2. IMPORTAR MÓDULOS
 # ============================================================
+# Aseguramos que las dependencias estén instaladas antes de importar Flask
+instalar_dependencias()
+
+# Ahora importamos Flask y otros módulos
 from flask import Flask, request, render_template_string, jsonify
 from flask_cors import CORS
 import requests
@@ -80,7 +83,7 @@ class IAProvider:
         return "❌ Error: Todos los proveedores fallaron. Intenta de nuevo."
 
 # ============================================================
-# 4. TEMPLATE HTML UNIFICADO (SIMPLIFICADO)
+# 4. TEMPLATE HTML UNIFICADO
 # ============================================================
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -215,7 +218,7 @@ HTML_TEMPLATE = """
     let currentResult = '';
     let currentTab = 'chat';
     let isGenerating = false;
-    const API_BASE = '/api/kalm';
+    const API_BASE = '/kalm-ai';
 
     function switchTab(tab) {
         currentTab = tab;
@@ -380,16 +383,16 @@ HTML_TEMPLATE = """
 """
 
 # ============================================================
-# 5. SERVIDOR FLASK
+# 5. CREAR LA APLICACIÓN FLASK
 # ============================================================
-app = Flask(__name__)
-CORS(app)
+kalm_ai_app = Flask(__name__)
+CORS(kalm_ai_app)
 
-@app.route('/')
+@kalm_ai_app.route('/')
 def index():
     return render_template_string(HTML_TEMPLATE)
 
-@app.route('/generar', methods=['POST'])
+@kalm_ai_app.route('/generar', methods=['POST'])
 def generar():
     data = request.json
     tema = data.get('tema', '').strip()
@@ -416,7 +419,7 @@ def generar():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/chat', methods=['POST'])
+@kalm_ai_app.route('/chat', methods=['POST'])
 def chat():
     data = request.json
     mensaje = data.get('mensaje', '').strip()
@@ -431,21 +434,14 @@ def chat():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ═══ RUTA DE SALUD ═══
-@app.route('/health')
+@kalm_ai_app.route('/health')
 def health():
     return jsonify({'status': 'ok', 'message': 'Kalm AI running'})
 
 # ============================================================
-# 6. PUNTO DE ENTRADA - VERSION SIMPLIFICADA
+# 6. PUNTO DE ENTRADA PARA EJECUCIÓN INDEPENDIENTE (Opcional)
 # ============================================================
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
-    
-    print(f"🚀 Kalm AI App iniciada en puerto {port}")
-    print(f"   URL: http://127.0.0.1:{port}")
-    print(f"   Proxy: /api/kalm/")
-    sys.stdout.flush()
-    
-    # ═══ EJECUTAR EL SERVIDOR DIRECTAMENTE (NO EN HILO) ═══
-    app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False)
+    print(f"🚀 Kalm AI App (Standalone) en puerto {port}")
+    kalm_ai_app.run(host='0.0.0.0', port=port, debug=False)
