@@ -235,73 +235,37 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         
         # ═══ PROXY PARA KROOT CORP ═══
         if p.startswith("/api/kroot/"):
+            # Obtener la ruta después de /api/kroot/
             kroot_path = p[10:]
             if not kroot_path or kroot_path == "/":
                 kroot_path = "/dashboard"
-            
-            query_string = ""
-            if parsed.query:
-                query_string = "?" + parsed.query
-            
-            target_url = f"http://localhost:8000{kroot_path}{query_string}"
-            
+    
+            target_url = f"http://localhost:8000{kroot_path}"
+    
             log(f"🔄 Proxy Kroot: {self.path} -> {target_url}", "DEBUG")
-            
+    
             try:
-                req = urllib.request.Request(target_url, method="GET")
-                for header in ["User-Agent", "Accept", "Accept-Language", "Content-Type"]:
+                req = urllib.request.Request(target_url)
+                for header in ["User-Agent", "Accept"]:
                     if header in self.headers:
                         req.add_header(header, self.headers[header])
-                
+        
                 with urllib.request.urlopen(req, timeout=10) as resp:
                     content = resp.read()
                     content_type = resp.headers.get("Content-Type", "text/html")
-                    
+            
                     self.send_response(resp.status)
                     self.send_header("Content-Type", content_type)
-                    if "Cache-Control" in resp.headers:
-                        self.send_header("Cache-Control", resp.headers["Cache-Control"])
                     self.end_headers()
                     self.wfile.write(content)
-                    log(f"✅ Proxy Kroot: {resp.status} OK", "DEBUG")
-                    
-            except urllib.error.HTTPError as e:
-                self.send_response(e.code)
-                self.end_headers()
-                log(f"❌ Proxy Kroot error HTTP: {e.code}", "WARN")
-                
+                    log(f"✅ Proxy Kroot OK", "DEBUG")
+            
             except Exception as e:
-                log(f"❌ Proxy Kroot: {e}", "WARN")
+                log(f"❌ Proxy Kroot error: {e}", "WARN")
                 self.send_response(503)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
-                html_content = """
-                <!DOCTYPE html>
-                <html>
-                <head><title>Kroot Corp - No disponible</title>
-                <style>
-                    body { background: #0a0514; color: #da70d6; font-family: 'Segoe UI', sans-serif;
-                           display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; }
-                    .box { background: rgba(75,0,130,0.3); padding: 40px; border-radius: 16px; border: 1px solid #6a0dad; max-width: 500px; text-align: center; }
-                    .icon { font-size: 64px; margin-bottom: 20px; }
-                    h1 { font-size: 28px; }
-                    p { color: #9370db; }
-                    .btn { background: #4b0082; color: #fff; border: 1px solid #9370db; padding: 10px 24px; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-block; margin-top: 10px; }
-                    .btn:hover { background: #6a0dad; }
-                </style>
-                </head>
-                <body>
-                <div class="box">
-                    <div class="icon">🏢</div>
-                    <h1>Kroot Corp IA</h1>
-                    <p>El servidor de Kroot Corp no está disponible.</p>
-                    <p style="font-size:12px;color:#6a0dad;">Ejecuta Kroot Corp desde el menú Program de Kalm OS.</p>
-                    <a href="/desktop" class="btn">⬅ Volver al Escritorio</a>
-                </div>
-                </body>
-                </html>
-                """
-                self.wfile.write(html_content.encode('utf-8'))
+                self.wfile.write(b"<html><body><h2>Kroot Corp no disponible</h2></body></html>")
             return
         
         # ═══ LISTAR MÚSICA ═══
