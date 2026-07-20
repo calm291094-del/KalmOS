@@ -822,6 +822,7 @@ class VirtualRunner:
         ]
 
 @classmethod
+@classmethod
 def execute_detached(cls, program_path, args=None):
     """Ejecuta un programa en modo detached (independiente)"""
     cls.init()
@@ -870,7 +871,6 @@ def _run_python_detached(cls, py_path, args=None):
         
         # ═══ PROCESO DETACHED - INDEPENDIENTE ═══
         if sys.platform == "win32":
-            # Windows: usar DETACHED_PROCESS
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.DEVNULL,
@@ -881,7 +881,7 @@ def _run_python_detached(cls, py_path, args=None):
                 creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
             )
         else:
-            # Linux/Unix: usar doble fork + setsid
+            # Linux: usar doble fork + setsid
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.DEVNULL,
@@ -889,8 +889,8 @@ def _run_python_detached(cls, py_path, args=None):
                 stdin=subprocess.DEVNULL,
                 cwd=str(project_root),
                 env=env,
-                preexec_fn=os.setsid,
-                start_new_session=True
+                start_new_session=True,
+                preexec_fn=os.setsid
             )
         
         log(f"✅ {py_path.name} ejecutado en detached (PID {proc.pid})")
@@ -903,4 +903,4 @@ def _run_python_detached(cls, py_path, args=None):
         
     except Exception as e:
         log(f"❌ Error ejecutando Python detached: {e}", "ERROR")
-        return {"ok": False, "error": f"Error ejecutando Python: {str(e)}"}
+        return {"ok": False, "error": f"Error ejecutando Python: {str(e)}"}: f"Error ejecutando Python: {str(e)}"}
