@@ -1326,9 +1326,8 @@ if (document.getElementById('clock-display')) {
 
 
 // ═══════════════════════════════════════════════════════════
-// CHAT ACADÉMICO - LECTURA DE ARCHIVO DE SEÑAL
+// CHAT ACADÉMICO - VERSIÓN SIMPLE
 // ═══════════════════════════════════════════════════════════
-
 function openChatAcademico() {
     console.log('📚 Abriendo Chat Académico...');
     
@@ -1336,7 +1335,6 @@ function openChatAcademico() {
         showNotification('📚 Iniciando Chat Académico...', 'info');
     }
     
-    // Ejecutar el script en modo Kalm (--kalm)
     fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1347,95 +1345,41 @@ function openChatAcademico() {
     })
     .then(r => r.json())
     .then(data => {
-        console.log('📤 Respuesta Chat Académico:', data);
+        console.log('📤 Respuesta:', data);
         
-        if (data.ok && data.session_id) {
-            if (typeof showNotification === 'function') {
-                showNotification('⏳ Chat Académico iniciando...', 'info');
+        // Buscar URL en stdout
+        if (data.ok && data.stdout) {
+            const urlMatch = data.stdout.match(/http:\/\/localhost:\d+/);
+            if (urlMatch) {
+                const url = urlMatch[0];
+                console.log('✅ URL encontrada:', url);
+                openWin('browser');
+                setTimeout(() => {
+                    const urlInput = document.getElementById('browser-url');
+                    if (urlInput) {
+                        urlInput.value = url;
+                        if (typeof browserNavigate === 'function') browserNavigate();
+                    }
+                }, 500);
+                if (typeof showNotification === 'function') {
+                    showNotification('✅ Chat Académico iniciado', 'success');
+                }
+                return;
             }
-            
-            // ═══ LEER EL ARCHIVO DE SEÑAL ═══
-            let attempts = 0;
-            const maxAttempts = 30;
-            
-            function readSignalFile() {
-                attempts++;
-                console.log(`🔍 Leyendo archivo de señal (${attempts}/${maxAttempts})...`);
-                
-                // Leer el archivo usando un endpoint dedicado
-                fetch('/api/read-signal', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        file: 'kalm_data/persistence/chat_academico_url.txt'
-                    })
-                })
-                .then(r => {
-                    if (r.status === 404) {
-                        return { ok: false, error: 'Archivo no encontrado' };
-                    }
-                    return r.json();
-                })
-                .then(signalData => {
-                    console.log('📄 Señal:', signalData);
-                    
-                    if (signalData.ok && signalData.content) {
-                        const url = signalData.content.trim();
-                        if (url && url.startsWith('http')) {
-                            console.log('✅ URL obtenida:', url);
-                            
-                            openWin('browser');
-                            setTimeout(() => {
-                                const urlInput = document.getElementById('browser-url');
-                                if (urlInput) {
-                                    urlInput.value = url;
-                                    if (typeof browserNavigate === 'function') {
-                                        browserNavigate();
-                                    }
-                                }
-                            }, 500);
-                            
-                            if (typeof showNotification === 'function') {
-                                showNotification('✅ Chat Académico iniciado', 'success');
-                            }
-                            return;
-                        }
-                    }
-                    
-                    if (attempts < maxAttempts) {
-                        setTimeout(readSignalFile, 1000);
-                    } else {
-                        console.log('⚠️ No se encontró señal. Abriendo localhost:5000');
-                        openWin('browser');
-                        setTimeout(() => {
-                            const urlInput = document.getElementById('browser-url');
-                            if (urlInput) {
-                                urlInput.value = 'http://localhost:5000';
-                                if (typeof browserNavigate === 'function') {
-                                    browserNavigate();
-                                }
-                            }
-                        }, 500);
-                        if (typeof showNotification === 'function') {
-                            showNotification('⚠️ Chat Académico en localhost:5000', 'warning');
-                        }
-                    }
-                })
-                .catch(err => {
-                    console.error('❌ Error leyendo señal:', err);
-                    if (attempts < maxAttempts) {
-                        setTimeout(readSignalFile, 1000);
-                    }
-                });
+        }
+        
+        // Fallback: localhost:5000
+        console.log('⚠️ Usando fallback localhost:5000');
+        openWin('browser');
+        setTimeout(() => {
+            const urlInput = document.getElementById('browser-url');
+            if (urlInput) {
+                urlInput.value = 'http://localhost:5000';
+                if (typeof browserNavigate === 'function') browserNavigate();
             }
-            
-            // Esperar 2 segundos antes de empezar a leer
-            setTimeout(readSignalFile, 2000);
-            
-        } else {
-            if (typeof showNotification === 'function') {
-                showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
-            }
+        }, 500);
+        if (typeof showNotification === 'function') {
+            showNotification('⚠️ Chat Académico en localhost:5000', 'warning');
         }
     })
     .catch(err => {
