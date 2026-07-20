@@ -465,22 +465,14 @@ def ejecutar_web(kalm_mode=False):
 
     if kalm_mode:
         # ═══ MODO KALM: ARRANCAR SERVIDOR EN SEGUNDO PLANO ═══
+        url = f"http://localhost:{port}"
+    
+        # ⚠️ IMPRIMIR LA URL PRIMERO (para que el ScriptRunner la capture)
+        print(f"KALM_URL={url}")
+        sys.stdout.flush()
+    
+        # Luego iniciar el servidor en segundo plano
         print(f"🚀 Iniciando Chat Académico en puerto {port} (modo Kalm)")
-    
-        # Usar archivo dentro de kalm_data (tiene permisos garantizados)
-        from pathlib import Path
-        signal_dir = Path("kalm_data/persistence")
-        signal_dir.mkdir(parents=True, exist_ok=True)
-        signal_file = signal_dir / "chat_academico_url.txt"
-    
-        try:
-            signal_file.write_text(f"http://localhost:{port}")
-            print(f"✅ URL escrita en {signal_file}")
-        except Exception as e:
-            print(f"⚠️ Error escribiendo archivo de señal: {e}")
-    
-        # También imprimir la URL (por si acaso)
-        print(f"http://localhost:{port}")
         sys.stdout.flush()
     
         # Iniciar el servidor en un hilo separado
@@ -494,7 +486,7 @@ def ejecutar_web(kalm_mode=False):
         thread.start()
     
         # Esperar a que el servidor esté listo
-        time.sleep(3)
+        time.sleep(2)
     
         # Mantener el proceso vivo
         try:
@@ -502,9 +494,7 @@ def ejecutar_web(kalm_mode=False):
                 time.sleep(1)
         except KeyboardInterrupt:
             print("⏹️ Cerrando Chat Académico...")
-            if signal_file.exists():
-                signal_file.unlink()
-        sys.exit(0)
+            sys.exit(0)
     
 # ============================================================
 # 6. MODO GUI (Tkinter) - para Windows o con display
