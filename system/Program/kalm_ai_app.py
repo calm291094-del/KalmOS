@@ -447,18 +447,7 @@ if __name__ == "__main__":
         print(f"   Proxy: /api/kalm/")
         sys.stdout.flush()
         
-        def run():
-            app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False)
-        
-        thread = threading.Thread(target=run, daemon=True)
-        thread.start()
-        
-        # Mantener el proceso vivo
-        try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            print("\n⏹️ Deteniendo Kalm AI...")
-            sys.exit(0)
+        # ═══ EJECUTAR EN EL MISMO PROCESO (NO EN HILO) ═══
+        app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False)
     else:
         app.run(host='127.0.0.1', port=port, debug=True)
