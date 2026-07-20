@@ -22,43 +22,39 @@ from system.program_detector import ProgramDetector
 from system.registry import get_dns_server, get_proxy_server
 from system.script_runner import ScriptRunner
 
-# ═══ IMPORTAR KALM AI APP ═══
 try:
     from system.Program.kalm_ai_app import kalm_ai_app
     KALM_AI_AVAILABLE = True
-    log("🧠 Kalm AI App importada correctamente", "INFO")
+    log("Kalm AI App importada correctamente", "INFO")
 except Exception as e:
     KALM_AI_AVAILABLE = False
-    log(f"⚠️ No se pudo importar Kalm AI App: {e}", "WARN")
+    log(f"No se pudo importar Kalm AI App: {e}", "WARN")
 
-# ═══ VARIABLE GLOBAL PARA EL THREAD DE KALM AI ═══
 _kalm_ai_thread = None
 _kalm_ai_port = 5001
 
 def start_kalm_ai_thread():
-    """Inicia el servidor de Kalm AI en un hilo separado"""
     global _kalm_ai_thread
     if not KALM_AI_AVAILABLE:
-        log("❌ Kalm AI no disponible para iniciar", "WARN")
+        log("Kalm AI no disponible para iniciar", "WARN")
         return False
     
     if _kalm_ai_thread and _kalm_ai_thread.is_alive():
-        log("✅ Kalm AI ya está corriendo", "INFO")
+        log("Kalm AI ya esta corriendo", "INFO")
         return True
     
     def run_kalm_ai():
         try:
-            log(f"🧠 Iniciando Kalm AI en puerto {_kalm_ai_port}", "INFO")
+            log(f"Iniciando Kalm AI en puerto {_kalm_ai_port}", "INFO")
             kalm_ai_app.run(host='127.0.0.1', port=_kalm_ai_port, debug=False, use_reloader=False)
         except Exception as e:
-            log(f"❌ Error en Kalm AI thread: {e}", "ERROR")
+            log(f"Error en Kalm AI thread: {e}", "ERROR")
     
     _kalm_ai_thread = threading.Thread(target=run_kalm_ai, daemon=True)
     _kalm_ai_thread.start()
     
-    # Esperar a que el servidor arranque
     time.sleep(2)
-    log(f"✅ Kalm AI thread iniciado en puerto {_kalm_ai_port}", "INFO")
+    log(f"Kalm AI thread iniciado en puerto {_kalm_ai_port}", "INFO")
     return True
 
 
@@ -131,16 +127,13 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         return None, None
     
     def _proxy_kalm_ai(self, path):
-        """Proxy interno para la aplicación Kalm AI integrada"""
         global _kalm_ai_thread
         
-        # Asegurar que Kalm AI esté corriendo
         if not _kalm_ai_thread or not _kalm_ai_thread.is_alive():
-            log("🚀 Iniciando Kalm AI por primera vez...", "INFO")
+            log("Iniciando Kalm AI por primera vez...", "INFO")
             start_kalm_ai_thread()
             time.sleep(3)
         
-        # Construir la URL del proxy
         kalm_path = path[9:] if path.startswith("/kalm-ai") else "/"
         if not kalm_path or kalm_path == "":
             kalm_path = "/"
@@ -151,7 +144,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         if self.path and '?' in self.path:
             target_url += "?" + self.path.split('?', 1)[1]
         
-        log(f"🔄 Proxy Kalm AI: {self.path} -> {target_url}", "DEBUG")
+        log(f"Proxy Kalm AI: {self.path} -> {target_url}", "DEBUG")
         
         try:
             req = urllib.request.Request(target_url, method=self.command)
@@ -177,14 +170,13 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
                 self.wfile.write(content)
-                log(f"✅ Kalm AI proxy OK: {kalm_path}", "DEBUG")
+                log(f"Kalm AI proxy OK: {kalm_path}", "DEBUG")
                 
         except urllib.error.URLError as e:
-            log(f"❌ Error en proxy Kalm AI: {e}", "WARN")
+            log(f"Error en proxy Kalm AI: {e}", "WARN")
             self.send_response(503)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
-            # HTML sin caracteres especiales en bytes
             self.wfile.write(b"""
             <!DOCTYPE html>
             <html>
@@ -194,7 +186,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 <title>Kalm AI</title>
                 <style>
                     body {
-                        background: linear-gradient(135deg, #0a0514 0%, #1a0033 50%, #2e0854 100%);
+                        background: #0a0514;
                         font-family: 'Segoe UI', sans-serif;
                         min-height: 100vh;
                         display: flex;
@@ -251,11 +243,11 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 <div class="container">
                     <div class="icon">🧠</div>
                     <h1>Kalm AI</h1>
-                    <div class="status">⏳ Iniciando...</div>
+                    <div class="status">Starting...</div>
                     <div class="loading"></div>
-                    <p style="font-size:13px;color:#9370db;">El servidor esta iniciandose en segundo plano</p>
-                    <p style="font-size:11px;color:#6a0dad;">⏱️ Espera unos segundos...</p>
-                    <button class="btn" onclick="window.location.reload()">🔄 Reintentar</button>
+                    <p style="font-size:13px;color:#9370db;">The server is starting in the background</p>
+                    <p style="font-size:11px;color:#6a0dad;">Please wait a few seconds...</p>
+                    <button class="btn" onclick="window.location.reload()">Retry</button>
                 </div>
                 <script>
                     let attempts = 0;
@@ -271,7 +263,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                             .catch(() => {
                                 if (attempts > 15) {
                                     clearInterval(checkInterval);
-                                    document.querySelector('.status').textContent = '⚠️ No responde';
+                                    document.querySelector('.status').textContent = 'Not responding';
                                     document.querySelector('.status').style.borderColor = '#ff4444';
                                     document.querySelector('.status').style.color = '#ff4444';
                                     document.querySelector('.loading').style.display = 'none';
@@ -283,33 +275,28 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             </html>
             """)
         except Exception as e:
-            log(f"❌ Error en _proxy_kalm_ai: {e}", "ERROR")
+            log(f"Error en _proxy_kalm_ai: {e}", "ERROR")
             self.send_response(500)
             self.end_headers()
     
-    # ═══ DO_GET ═══
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
         p = parsed.path
         q = urllib.parse.parse_qs(parsed.query)
         
-        # ═══ FAVICON ═══
         if p == "/favicon.ico":
             self.send_response(204)
             self.end_headers()
             return
         
-        # ═══ KALM AI APP - INTEGRADA ═══
         if p.startswith("/kalm-ai"):
             self._proxy_kalm_ai(p)
             return
         
-        # ═══ ESTÁTICOS ═══
         if p.startswith("/static/"):
             self._serve_static(p[8:])
             return
         
-        # ═══ PAC ═══
         if p.startswith("/static/pac/"):
             pac_file = DATA_DIR / "pac" / p[12:]
             if pac_file.exists():
@@ -323,13 +310,12 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.end_headers()
             return
         
-        # ═══ SERVIR MUSICA DESDE D:/Music/ ═══
         if p.startswith("/D/Music/"):
             rel_path = urllib.parse.unquote(p[8:])
             filename = os.path.basename(rel_path)
             music_dir = DRIVE_D / "Music"
             
-            log(f"🎵 Buscando: {filename} en {music_dir}", "DEBUG")
+            log(f"Buscando: {filename} en {music_dir}", "DEBUG")
             
             found_file = None
             if music_dir.exists():
@@ -339,7 +325,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                         break
             
             if not found_file:
-                log(f"❌ Archivo no encontrado: {filename}", "WARN")
+                log(f"Archivo no encontrado: {filename}", "WARN")
                 self.send_response(404)
                 self.end_headers()
                 return
@@ -348,13 +334,10 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 with open(found_file, "rb") as f:
                     file_content = f.read()
             except Exception as e:
-                log(f"❌ Error leyendo archivo: {e}", "ERROR")
+                log(f"Error leyendo archivo: {e}", "ERROR")
                 self.send_response(500)
                 self.end_headers()
                 return
-            
-            if len(file_content) < 100:
-                log(f"⚠️ Archivo sospechosamente pequeño: {len(file_content)} bytes - {found_file.name}", "WARN")
             
             ext = found_file.suffix.lower()
             if ext == '.mp3':
@@ -368,8 +351,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             else:
                 content_type = 'application/octet-stream'
             
-            log(f"✅ Sirviendo: {found_file.name} ({content_type}, {len(file_content)} bytes)", "DEBUG")
-            
             self.send_response(200)
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(len(file_content)))
@@ -380,7 +361,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self.wfile.write(file_content)
             return
         
-        # ═══ SERVIR ARCHIVOS DESDE D: ═══
         if p.startswith("/D/"):
             rel_path = p[3:]
             file_path = DRIVE_D / rel_path
@@ -399,7 +379,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 return
         
-        # ═══ PUBLICAS ═══
         if p in ["/", "/index.html", "/login"]:
             self._serve_view("login.html")
             return
@@ -430,7 +409,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self._json({"exists": BG_FILE.exists()})
             return
         
-        # ═══ WHOAMI ═══
         if p == "/api/whoami":
             session = self.get_session()
             if session:
@@ -439,7 +417,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"username": "user", "role": "user"})
             return
         
-        # ═══ LISTAR MUSICA ═══
         if p == "/api/music/list":
             try:
                 music_dir = DRIVE_D / "Music"
@@ -455,14 +432,13 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                                 "url": url_path,
                                 "size": file_size
                             })
-                            log(f"   📁 {f.name} ({file_size} bytes)", "DEBUG")
+                            log(f"   {f.name} ({file_size} bytes)", "DEBUG")
                 files.sort(key=lambda x: x["name"].lower())
                 self._json({"ok": True, "files": files, "count": len(files)})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ VISOR DE DOCUMENTOS ═══
         if p == "/api/viewer":
             viewer_path = q.get('path', [''])[0]
             if viewer_path and Path(viewer_path).exists():
@@ -476,7 +452,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.end_headers()
             return
         
-        # ═══ BROWSER BOOKMARKS ═══
         if p == "/api/browser/bookmarks":
             try:
                 from system.internal_browser import InternalBrowser
@@ -486,7 +461,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json([])
             return
         
-        # ═══ BROWSER FETCH ═══
         if p == "/api/browser/fetch":
             url = q.get('url', [''])[0]
             if not url:
@@ -500,7 +474,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ SSE - STREAM DE PROCESOS ═══
         if p.startswith("/api/process/stream/"):
             session = self.require_auth()
             if not session:
@@ -562,12 +535,10 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             
             return
         
-        # ═══ RUTAS PROTEGIDAS ═══
         session = self.require_auth()
         if not session:
             return
         
-        # ═══ TASK MANAGER ═══
         if p == "/api/processes":
             self._json(TaskManager.list_processes())
             return
@@ -584,19 +555,16 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self._json({"ok": True, "processes": ScriptRunner.list_running()})
             return
         
-        # ═══ PROGRAMAS ═══
         if p == "/api/programs":
             detector = ProgramDetector()
             self._json(detector.get_cached())
             return
         
-        # ═══ DNS ═══
         if p == "/api/dns":
             dns = get_dns_server()
             self._json({"rules": dns.get_rules() if dns else {}})
             return
         
-        # ═══ PROXY ═══
         if p == "/api/proxy":
             proxy = get_proxy_server()
             self._json({"rules": proxy.get_rules() if proxy else {}})
@@ -607,7 +575,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self._json(proxy.get_log() if proxy else [])
             return
         
-        # ═══ PAC INFO ═══
         if p == "/api/pac-info":
             try:
                 from system.pac_generator import PACGenerator
@@ -622,7 +589,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ ARCHIVOS ═══
         if p == "/api/files":
             fp = q.get('path', [''])[0]
             if not fp or fp == "":
@@ -635,7 +601,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self._json(FileManager.search(q.get('q', [''])[0]))
             return
         
-        # ═══ LOGS ═══
         if p == "/api/last-log":
             log_data = ScriptRunner.get_last_log()
             if log_data:
@@ -644,11 +609,9 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": "No hay logs"})
             return
         
-        # ═══ 404 ═══
         self.send_response(404)
         self.end_headers()
     
-    # ═══ DO_POST ═══
     def do_POST(self):
         length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(length) if length else b""
@@ -656,12 +619,10 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         p = parsed.path
         q = urllib.parse.parse_qs(parsed.query)
         
-        # ═══ KALM AI APP - INTEGRADA ═══
         if p.startswith("/kalm-ai"):
             self._proxy_kalm_ai(p)
             return
         
-        # ═══ LOGIN (SIN AUTENTICACION) ═══
         if p == "/api/login":
             try:
                 d = json.loads(body)
@@ -683,12 +644,10 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self._json({"ok": True})
             return
         
-        # ═══ RUTAS PROTEGIDAS ═══
         session = self.require_auth()
         if not session:
             return
         
-        # ═══ KILL/STOP ═══
         if p.startswith("/api/kill/"):
             pid = int(p.split("/")[-1])
             self._json({"ok": TaskManager.kill_process(pid)})
@@ -707,7 +666,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self._json({"ok": True, "stopped": len(results)})
             return
         
-        # ═══ ENVIAR INPUT ═══
         if p == "/api/process/input":
             try:
                 data = json.loads(body)
@@ -719,14 +677,12 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ DETENER POR SESSION ═══
         if p.startswith("/api/process/stop/"):
             session_id = p.split("/")[-1]
             result = ScriptRunner.stop_process(session_id)
             self._json(result)
             return
         
-        # ═══ DNS ═══
         if p == "/api/dns":
             dns = get_dns_server()
             if dns:
@@ -749,7 +705,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": "DNS no disponible"})
             return
         
-        # ═══ PROXY ═══
         if p == "/api/proxy":
             proxy = get_proxy_server()
             if proxy:
@@ -789,7 +744,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self._json({"ok": True})
             return
         
-        # ═══ PAC GENERATE ═══
         if p == "/api/pac/generate":
             try:
                 from system.pac_generator import PACGenerator
@@ -799,7 +753,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)})
             return
 
-        # ═══ LEER LOG DE PROCESO ═══
         if p == "/api/process/log":
             try:
                 data = json.loads(body)
@@ -832,7 +785,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)})
             return
 
-        # ═══ LEER ARCHIVO DE SEÑAL ═══
         if p == "/api/read-signal":
             try:
                 data = json.loads(body)
@@ -854,7 +806,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     if path.exists():
                         try:
                             found_content = path.read_text(encoding="utf-8").strip()
-                            log(f"✅ Señal encontrada en: {path}", "DEBUG")
+                            log(f"Senal encontrada en: {path}", "DEBUG")
                             break
                         except:
                             pass
@@ -867,7 +819,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ RUN SCRIPT ═══
         if p == "/api/run":
             try:
                 data = json.loads(body)
@@ -890,7 +841,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ RUN SCRIPT DIRECT ═══
         if p == "/api/run-direct":
             try:
                 data = json.loads(body)
@@ -909,7 +859,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ FILES ═══
         if p == "/api/files/folder":
             try:
                 d = json.loads(body)
@@ -946,7 +895,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": "Invalid type"})
             return
         
-        # ═══ BACKGROUND ═══
         if p == "/api/background":
             ct = self.headers.get("Content-Type", "")
             if "multipart/form-data" in ct:
@@ -962,7 +910,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": "Invalid"})
             return
         
-        # ═══ PERSISTENCIA - Guardar datos ═══
         if p == "/api/persistence/save":
             try:
                 data = json.loads(body)
@@ -977,7 +924,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ PERSISTENCIA - Cargar datos ═══
         if p == "/api/persistence/load":
             try:
                 data = json.loads(body)
@@ -992,7 +938,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ PERSISTENCIA - Listar backups ═══
         if p == "/api/persistence/backups":
             try:
                 backup_dir = DATA_DIR / "persistence" / "backups"
@@ -1005,7 +950,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ PERSISTENCIA - Crear backup ═══
         if p == "/api/persistence/backup":
             try:
                 import shutil
@@ -1023,7 +967,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ PERSISTENCIA - Restaurar backup ═══
         if p == "/api/persistence/restore":
             try:
                 import shutil
@@ -1046,7 +989,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ SHUTDOWN ═══
         if p == "/api/shutdown":
             self._json({"ok": True})
             threading.Thread(target=lambda: (time.sleep(1), os._exit(0)), daemon=True).start()
@@ -1055,7 +997,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         self.send_response(404)
         self.end_headers()
     
-    # ═══ DO_DELETE ═══
     def do_DELETE(self):
         parsed = urllib.parse.urlparse(self.path)
         p = parsed.path
@@ -1091,7 +1032,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         self.send_response(404)
         self.end_headers()
     
-    # ═══ DO_OPTIONS ═══
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -1100,13 +1040,11 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
 
-# ═══ SERVIDOR THREADED ═══
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
 
-# ═══ INICIAR KALM AI AL CARGAR EL SERVIDOR ═══
-log("🧠 Iniciando Kalm AI integrado...", "INFO")
+log("Iniciando Kalm AI integrado...", "INFO")
 start_kalm_ai_thread()
-log("✅ Kalm AI integrado listo", "INFO")
+log("Kalm AI integrado listo", "INFO")
