@@ -1292,6 +1292,71 @@ function musicPrev() {
     if (time) time.textContent = '0:00';
 }
 
+// ═══ CHAT ACADÉMICO ═══
+function openChatAcademico() {
+    console.log('📚 Abriendo Chat Académico...');
+    
+    if (typeof showNotification === 'function') {
+        showNotification('📚 Iniciando Chat Académico...', 'info');
+    }
+    
+    // Ejecutar el script en modo Kalm (--kalm)
+    fetch('/api/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            path: 'system/Program/chat_academico.py',
+            args: ['--kalm']
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        console.log('📤 Respuesta Chat Académico:', data);
+        if (data.ok && data.viewer_url) {
+            // Abrir el navegador con la URL devuelta
+            openWin('browser');
+            setTimeout(() => {
+                const urlInput = document.getElementById('browser-url');
+                if (urlInput) {
+                    urlInput.value = data.viewer_url;
+                    if (typeof browserNavigate === 'function') {
+                        browserNavigate();
+                    }
+                }
+            }, 500);
+            if (typeof showNotification === 'function') {
+                showNotification('✅ Chat Académico iniciado', 'success');
+            }
+        } else if (data.ok && data.stdout) {
+            // Si el script devolvió la URL en stdout, usarla
+            const urlMatch = data.stdout.match(/http:\/\/localhost:\d+/);
+            if (urlMatch) {
+                const url = urlMatch[0];
+                openWin('browser');
+                setTimeout(() => {
+                    const urlInput = document.getElementById('browser-url');
+                    if (urlInput) {
+                        urlInput.value = url;
+                        if (typeof browserNavigate === 'function') {
+                            browserNavigate();
+                        }
+                    }
+                }, 500);
+                if (typeof showNotification === 'function') {
+                    showNotification('✅ Chat Académico iniciado', 'success');
+                }
+            } else {
+                showNotification('⚠️ Chat Académico iniciado pero no se pudo abrir el navegador', 'warning');
+            }
+        } else {
+            showNotification('❌ Error iniciando Chat Académico: ' + (data.error || 'desconocido'), 'error');
+        }
+    })
+    .catch(err => {
+        showNotification('❌ Error: ' + err.message, 'error');
+    });
+}
+
 // ═══════════════════════════════════════════════════════════
 // FUNCIONES PARA RELOJ
 // ═══════════════════════════════════════════════════════════
@@ -1335,10 +1400,12 @@ if (document.getElementById('clock-display')) {
 // EXPORTAR FUNCIONES GLOBALMENTE
 // ═══════════════════════════════════════════════════════════
 
+
 window.runTool = runTool;
 window.runGame = runGame;
 window.loadTools = loadTools;
 window.loadGames = loadGames;
+window.openChatAcademico = openChatAcademico;
 window.openTerminalForProcess = openTerminalForProcess;
 window.closeTerminalWindow = closeTerminalWindow;
 
