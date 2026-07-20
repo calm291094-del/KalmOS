@@ -70,6 +70,10 @@ function maximizeWin(id) {
             win.dataset.origWidth = win.style.width;
             win.dataset.origHeight = win.style.height;
         }
+        win.style.top = '0';
+        win.style.left = '0';
+        win.style.width = '100%';
+        win.style.height = 'calc(100% - 50px)';
     } else {
         if (win.dataset.origTop) {
             win.style.top = win.dataset.origTop;
