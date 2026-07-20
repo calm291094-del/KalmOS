@@ -702,11 +702,11 @@ function executeProgramFromMenu(path, name) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// KALM AI APP - SIMPLIFICADA
+// KALM AI - VERSION FINAL
 // ═══════════════════════════════════════════════════════════
 
 function openKalmAI() {
-    console.log('🧠 Abriendo Kalm AI App...');
+    console.log('🧠 Abriendo Kalm AI...');
     
     if (typeof showNotification === 'function') {
         showNotification('🧠 Abriendo Kalm AI...', 'info');
@@ -717,15 +717,14 @@ function openKalmAI() {
 }
 
 function openKalmAIBrowser() {
-    console.log('🌐 Abriendo navegador con Kalm AI integrado...');
+    console.log('🌐 Abriendo navegador con Kalm AI...');
     
-    // Obtener la ventana del navegador
     let win = document.getElementById('win-browser');
     
     if (!win) {
         openWin('browser');
         setTimeout(() => {
-            loadKalmAIInFrame();
+            loadKalmAI();
         }, 500);
     } else {
         win.style.display = 'flex';
@@ -733,12 +732,12 @@ function openKalmAIBrowser() {
         win.style.zIndex = ++windowZIndex;
         updateTaskbar('browser');
         setTimeout(() => {
-            loadKalmAIInFrame();
+            loadKalmAI();
         }, 300);
     }
 }
 
-function loadKalmAIInFrame() {
+function loadKalmAI() {
     console.log('🔄 Cargando Kalm AI...');
     
     const frame = document.getElementById('browser-frame');
@@ -759,15 +758,32 @@ function loadKalmAIInFrame() {
         status.style.color = '#ffaa00';
     }
     
+    // Cargar la URL en el frame
     frame.src = '/kalm-ai';
     console.log('✅ Frame cargado con /kalm-ai');
     
-    // Verificar si se cargó correctamente
+    // Verificar después de unos segundos
     setTimeout(() => {
-        if (status) {
-            status.textContent = '🧠 Kalm AI';
-            status.style.color = '#da70d6';
-        }
+        fetch('/kalm-ai/health')
+            .then(r => {
+                if (r.ok) {
+                    if (status) {
+                        status.textContent = '✅ Kalm AI - Listo';
+                        status.style.color = '#00cc66';
+                    }
+                } else {
+                    if (status) {
+                        status.textContent = '⚠️ Kalm AI no responde';
+                        status.style.color = '#ffaa00';
+                    }
+                }
+            })
+            .catch(() => {
+                if (status) {
+                    status.textContent = '⚠️ Kalm AI no disponible';
+                    status.style.color = '#ff4444';
+                }
+            });
     }, 3000);
 }
 
