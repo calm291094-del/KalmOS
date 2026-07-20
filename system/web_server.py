@@ -138,7 +138,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         if not _kalm_ai_thread or not _kalm_ai_thread.is_alive():
             log("🚀 Iniciando Kalm AI por primera vez...", "INFO")
             start_kalm_ai_thread()
-            # Esperar un poco más
             time.sleep(3)
         
         # Construir la URL del proxy
@@ -158,12 +157,10 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             req = urllib.request.Request(target_url, method=self.command)
             req.add_header("User-Agent", "KalmOS-Internal/1.0")
             
-            # Copiar headers relevantes
             for header in ["Content-Type", "Accept", "Accept-Language"]:
                 if header in self.headers:
                     req.add_header(header, self.headers[header])
             
-            # Si es POST, leer el body
             if self.command in ["POST", "PUT", "PATCH"]:
                 content_length = int(self.headers.get("Content-Length", 0))
                 if content_length > 0:
@@ -187,13 +184,14 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self.send_response(503)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
+            # HTML sin caracteres especiales en bytes
             self.wfile.write(b"""
             <!DOCTYPE html>
             <html>
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>🧠 Kalm AI</title>
+                <title>Kalm AI</title>
                 <style>
                     body {
                         background: linear-gradient(135deg, #0a0514 0%, #1a0033 50%, #2e0854 100%);
@@ -255,7 +253,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     <h1>Kalm AI</h1>
                     <div class="status">⏳ Iniciando...</div>
                     <div class="loading"></div>
-                    <p style="font-size:13px;color:#9370db;">El servidor está iniciándose en segundo plano</p>
+                    <p style="font-size:13px;color:#9370db;">El servidor esta iniciandose en segundo plano</p>
                     <p style="font-size:11px;color:#6a0dad;">⏱️ Espera unos segundos...</p>
                     <button class="btn" onclick="window.location.reload()">🔄 Reintentar</button>
                 </div>
@@ -325,7 +323,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.end_headers()
             return
         
-        # ═══ SERVIR MÚSICA DESDE D:/Music/ ═══
+        # ═══ SERVIR MUSICA DESDE D:/Music/ ═══
         if p.startswith("/D/Music/"):
             rel_path = urllib.parse.unquote(p[8:])
             filename = os.path.basename(rel_path)
@@ -401,7 +399,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 return
         
-        # ═══ PÚBLICAS ═══
+        # ═══ PUBLICAS ═══
         if p in ["/", "/index.html", "/login"]:
             self._serve_view("login.html")
             return
@@ -441,7 +439,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"username": "user", "role": "user"})
             return
         
-        # ═══ LISTAR MÚSICA ═══
+        # ═══ LISTAR MUSICA ═══
         if p == "/api/music/list":
             try:
                 music_dir = DRIVE_D / "Music"
@@ -663,7 +661,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self._proxy_kalm_ai(p)
             return
         
-        # ═══ LOGIN (SIN AUTENTICACIÓN) ═══
+        # ═══ LOGIN (SIN AUTENTICACION) ═══
         if p == "/api/login":
             try:
                 d = json.loads(body)
