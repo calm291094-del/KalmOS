@@ -27,7 +27,7 @@ def instalar_dependencias():
 instalar_dependencias()
 
 # ============================================================
-# 2. HTML TEMPLATE
+# 2. HTML TEMPLATE - CORREGIDO
 # ============================================================
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -98,7 +98,6 @@ HTML_TEMPLATE = """
         <div class="tab" data-tab="kroot" onclick="switchTab('kroot')">🏢 Kroot Corp</div>
     </div>
     
-    <!-- Tab: Chat Academico -->
     <div class="tab-content active" id="tab-chat">
         <div class="controls">
             <label>Modelo:</label>
@@ -110,7 +109,7 @@ HTML_TEMPLATE = """
                 <option value="llama">Llama</option>
                 <option value="mistral">Mistral</option>
             </select>
-            <input type="text" id="chat-tema" placeholder="Tema del trabajo academico..." />
+            <input type="text" id="chat-tema" placeholder="Tema del trabajo academico...">
             <button class="btn-primary" id="chat-generar">📝 Generar</button>
             <button class="btn-secondary" id="chat-chat">💬 Chat</button>
         </div>
@@ -124,7 +123,6 @@ HTML_TEMPLATE = """
         </div>
     </div>
     
-    <!-- Tab: Kroot Corp -->
     <div class="tab-content" id="tab-kroot">
         <div class="controls">
             <label>Modelo:</label>
@@ -136,7 +134,7 @@ HTML_TEMPLATE = """
                 <option value="llama">Llama</option>
                 <option value="mistral">Mistral</option>
             </select>
-            <input type="text" id="kroot-tema" placeholder="Tema del informe ejecutivo..." />
+            <input type="text" id="kroot-tema" placeholder="Tema del informe ejecutivo...">
             <button class="btn-primary" id="kroot-generar">📝 Generar Informe</button>
         </div>
         <div class="result-container" id="kroot-result">
@@ -166,11 +164,11 @@ HTML_TEMPLATE = """
 
     function switchTab(tab) {
         currentTab = tab;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
-        document.getElementById(`tab-${tab}`).classList.add('active');
-        document.getElementById('status').textContent = `🟢 Listo - ${tab === 'chat' ? 'Chat' : 'Kroot'}`;
+        document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelector('.tab[data-tab=\"' + tab + '\"]').classList.add('active');
+        document.getElementById('tab-' + tab).classList.add('active');
+        document.getElementById('status').textContent = '🟢 Listo - ' + (tab === 'chat' ? 'Chat' : 'Kroot');
     }
 
     function getResultContainer() {
@@ -186,18 +184,18 @@ HTML_TEMPLATE = """
     }
 
     function setStatus(texto, tipo) {
-        const colors = { info: '#9370db', success: '#00cc66', error: '#ff4444', loading: '#ffaa00' };
-        const el = document.getElementById('status');
+        var colors = { info: '#9370db', success: '#00cc66', error: '#ff4444', loading: '#ffaa00' };
+        var el = document.getElementById('status');
         el.textContent = texto;
         el.style.color = colors[tipo] || '#9370db';
     }
 
     function setLoading(loading) {
         isGenerating = loading;
-        const btn = document.getElementById(currentTab === 'chat' ? 'chat-generar' : 'kroot-generar');
+        var btn = document.getElementById(currentTab === 'chat' ? 'chat-generar' : 'kroot-generar');
         btn.disabled = loading;
         if (loading) {
-            btn.innerHTML = '<span class="loading"></span> Generando...';
+            btn.innerHTML = '<span class=\"loading\"></span> Generando...';
             setStatus('⏳ Generando...', 'loading');
         } else {
             btn.innerHTML = currentTab === 'chat' ? '📝 Generar' : '📝 Generar Informe';
@@ -205,105 +203,119 @@ HTML_TEMPLATE = """
     }
 
     function appendResult(text, type) {
-        const container = getResultContainer();
-        const classes = { titulo: 'titulo', subtitulo: 'subtitulo', error: 'error', exito: 'exito', normal: '' };
-        const cls = classes[type] || '';
-        const content = container.querySelector('.result-content');
-        if (cls) { content.innerHTML += `<span class="${cls}">${text}</span>`; }
-        else { content.innerHTML += text; }
+        var container = getResultContainer();
+        var classes = { titulo: 'titulo', subtitulo: 'subtitulo', error: 'error', exito: 'exito', normal: '' };
+        var cls = classes[type] || '';
+        var content = container.querySelector('.result-content');
+        if (cls) {
+            content.innerHTML += '<span class=\"' + cls + '\">' + text + '</span>';
+        } else {
+            content.innerHTML += text;
+        }
         container.scrollTop = container.scrollHeight;
     }
 
-    async function generar() {
-        const tema = getTemaInput().value.trim();
+    function generar() {
+        var tema = getTemaInput().value.trim();
         if (!tema) { alert('Escribe un tema.'); return; }
         if (isGenerating) return;
         
-        const modelo = getModeloSelect().value;
-        const tipo = currentTab;
+        var modelo = getModeloSelect().value;
+        var tipo = currentTab;
         setLoading(true);
-        const container = getResultContainer();
+        var container = getResultContainer();
         container.querySelector('.result-content').innerHTML = '';
-        appendResult(`📝 Generando ${tipo === 'chat' ? 'trabajo' : 'informe'} sobre: ${tema}\n`, 'titulo');
+        appendResult('📝 Generando ' + (tipo === 'chat' ? 'trabajo' : 'informe') + ' sobre: ' + tema + '\n', 'titulo');
         appendResult('='.repeat(40) + '\n\n', 'normal');
         
-        try {
-            const response = await fetch(`${API_BASE}/generar`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tema, modelo, tipo })
-            });
-            const data = await response.json();
-            
+        fetch(API_BASE + '/generar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tema: tema, modelo: modelo, tipo: tipo })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
             if (data.error) {
-                appendResult(`\n❌ Error: ${data.error}\n`, 'error');
+                appendResult('\n❌ Error: ' + data.error + '\n', 'error');
                 setStatus('❌ Error', 'error');
             } else {
-                const lines = data.resultado.split('\n');
-                for (const line of lines) {
-                    if (line.startsWith('##') || line.startsWith('#')) { appendResult(line + '\n', 'titulo'); }
-                    else if (line.startsWith('**') || line.startsWith('*')) { appendResult(line + '\n', 'subtitulo'); }
-                    else if (line.startsWith('✅') || line.startsWith('📊') || line.startsWith('📝')) { appendResult(line + '\n', 'exito'); }
-                    else if (line.startsWith('❌')) { appendResult(line + '\n', 'error'); }
-                    else { appendResult(line + '\n', 'normal'); }
+                var lines = data.resultado.split('\n');
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i];
+                    if (line.startsWith('##') || line.startsWith('#')) {
+                        appendResult(line + '\n', 'titulo');
+                    } else if (line.startsWith('**') || line.startsWith('*')) {
+                        appendResult(line + '\n', 'subtitulo');
+                    } else if (line.startsWith('✅') || line.startsWith('📊') || line.startsWith('📝')) {
+                        appendResult(line + '\n', 'exito');
+                    } else if (line.startsWith('❌')) {
+                        appendResult(line + '\n', 'error');
+                    } else {
+                        appendResult(line + '\n', 'normal');
+                    }
                 }
                 currentResult = data.resultado;
                 setStatus('✅ Listo', 'success');
             }
-        } catch (error) {
-            appendResult(`\n❌ Error: ${error.message}\n`, 'error');
+            setLoading(false);
+        })
+        .catch(function(error) {
+            appendResult('\n❌ Error: ' + error.message + '\n', 'error');
             setStatus('❌ Error', 'error');
-        }
-        setLoading(false);
+            setLoading(false);
+        });
     }
 
-    async function chatLibre() {
-        const mensaje = getTemaInput().value.trim();
+    function chatLibre() {
+        var mensaje = getTemaInput().value.trim();
         if (!mensaje) { alert('Escribe un mensaje.'); return; }
         if (isGenerating) return;
         
-        const modelo = getModeloSelect().value;
+        var modelo = getModeloSelect().value;
         setLoading(true);
-        appendResult(`\n🧑 Tú: ${mensaje}\n`, 'subtitulo');
-        appendResult(`🤖 IA: `, 'exito');
+        appendResult('\n🧑 Tú: ' + mensaje + '\n', 'subtitulo');
+        appendResult('🤖 IA: ', 'exito');
         
-        try {
-            const response = await fetch(`${API_BASE}/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mensaje, modelo })
-            });
-            const data = await response.json();
-            if (data.error) { appendResult(`❌ Error: ${data.error}\n`, 'error'); }
-            else { appendResult(`${data.respuesta}\n\n`, 'normal'); setStatus('✅ Listo', 'success'); }
-        } catch (error) { appendResult(`❌ Error: ${error.message}\n`, 'error'); setStatus('❌ Error', 'error'); }
+        fetch(API_BASE + '/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mensaje: mensaje, modelo: modelo })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) {
+                appendResult('❌ Error: ' + data.error + '\n', 'error');
+            } else {
+                appendResult(data.respuesta + '\n\n', 'normal');
+                setStatus('✅ Listo', 'success');
+            }
+            setLoading(false);
+        })
+        .catch(function(error) {
+            appendResult('❌ Error: ' + error.message + '\n', 'error');
+            setStatus('❌ Error', 'error');
+            setLoading(false);
+        });
         getTemaInput().value = '';
-        setLoading(false);
     }
 
     function exportarTxt() {
         if (!currentResult) { alert('No hay contenido para exportar.'); return; }
-        const blob = new Blob([currentResult], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        var blob = new Blob([currentResult], { type: 'text/plain' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
         a.href = url;
-        a.download = `${currentTab}_${new Date().toISOString().slice(0,19).replace(/[:-]/g, '')}.txt`;
+        a.download = currentTab + '_' + new Date().toISOString().slice(0,19).replace(/[:-]/g, '') + '.txt';
         a.click();
         URL.revokeObjectURL(url);
         setStatus('📄 Exportado', 'success');
     }
 
     function limpiar() {
-        const container = getResultContainer();
-        const content = container.querySelector('.result-content');
-        const title = currentTab === 'chat' ? '🤖 Chat Academico' : '🏢 Kroot Corp IA';
-        content.innerHTML = `
-            <span class="titulo">${title}</span>
-            <br><br>
-            <span class="exito">✅ Listo para generar</span>
-            <br><br>
-            <span style="color:#9370db;">📝 Escribe un tema y pulsa "Generar"</span>
-        `;
+        var container = getResultContainer();
+        var content = container.querySelector('.result-content');
+        var title = currentTab === 'chat' ? '🤖 Chat Academico' : '🏢 Kroot Corp IA';
+        content.innerHTML = '<span class=\"titulo\">' + title + '</span><br><br><span class=\"exito\">✅ Listo para generar</span><br><br><span style=\"color:#9370db;\">📝 Escribe un tema y pulsa "Generar"</span>';
         currentResult = '';
         getTemaInput().value = '';
         setStatus('🗑️ Limpiado', 'info');
@@ -314,12 +326,17 @@ HTML_TEMPLATE = """
     document.getElementById('kroot-generar').addEventListener('click', generar);
     document.getElementById('btn-export').addEventListener('click', exportarTxt);
     document.getElementById('btn-limpiar').addEventListener('click', limpiar);
-    document.querySelectorAll('#chat-tema, #kroot-tema').forEach(el => {
-        el.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); generar(); } });
+    document.querySelectorAll('#chat-tema, #kroot-tema').forEach(function(el) {
+        el.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                generar();
+            }
+        });
     });
 
     console.log('🧠 Kalm AI App cargada');
-    console.log(`📡 API: ${API_BASE}`);
+    console.log('📡 API: ' + API_BASE);
 </script>
 </body>
 </html>
