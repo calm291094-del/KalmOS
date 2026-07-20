@@ -1326,7 +1326,7 @@ if (document.getElementById('clock-display')) {
 
 
 // ═══════════════════════════════════════════════════════════
-// CHAT ACADÉMICO - LEE ARCHIVO DE SEÑAL
+// CHAT ACADÉMICO - VERSIÓN CON ARCHIVO EN kalm_data
 // ═══════════════════════════════════════════════════════════
 
 function openChatAcademico() {
@@ -1349,24 +1349,26 @@ function openChatAcademico() {
     .then(data => {
         console.log('📤 Respuesta Chat Académico:', data);
         
-        // Si el script se ejecutó correctamente
         if (data.ok && data.session_id) {
             if (typeof showNotification === 'function') {
                 showNotification('⏳ Chat Académico iniciando...', 'info');
             }
             
-            // Leer el archivo de señal para obtener la URL
+            // Leer el archivo de señal
             let attempts = 0;
-            const maxAttempts = 20;
+            const maxAttempts = 30;
             
             function checkSignalFile() {
                 attempts++;
                 console.log(`🔍 Intentando leer señal (${attempts}/${maxAttempts})...`);
                 
+                // Leer el archivo de señal usando el endpoint /api/read-signal
                 fetch('/api/read-signal', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ file: '/tmp/chat_academico_url.txt' })
+                    body: JSON.stringify({ 
+                        file: 'kalm_data/persistence/chat_academico_url.txt'
+                    })
                 })
                 .then(r => r.json())
                 .then(signalData => {
@@ -1377,6 +1379,7 @@ function openChatAcademico() {
                         if (url && url.startsWith('http')) {
                             console.log('✅ URL obtenida:', url);
                             
+                            // Abrir el navegador
                             openWin('browser');
                             setTimeout(() => {
                                 const urlInput = document.getElementById('browser-url');
