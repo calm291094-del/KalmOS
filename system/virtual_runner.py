@@ -145,32 +145,31 @@ class VirtualRunner:
         try:
             if not py_path.exists():
                 return {"ok": False, "error": f"Python script no encontrado: {py_path}"}
-        
+            
             env = os.environ.copy()
             env.update({
                 "PYTHONIOENCODING": "utf-8",
                 "PYTHONUTF8": "1",
                 "PYTHONUNBUFFERED": "1"
             })
-        
+            
             python_exe = sys.executable
             cmd = [python_exe, "-u", str(py_path)]
-        
+            
             if args:
                 if isinstance(args, list):
                     cmd.extend(args)
                 elif isinstance(args, str):
                     cmd.append(args)
-        
+            
             log(f"▶️ Ejecutando Python: {' '.join(cmd)}")
-        
+            
             session_id = str(uuid.uuid4())
             output_queue = queue.Queue()
-        
+            
             log_file = cls.OUTPUT_DIR / f"{py_path.stem}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
             project_root = Path(__file__).parent.parent.parent
-        
-            # ═══ IMPORTANTE: Iniciar proceso en segundo plano sin dependencia del padre ═══
+            
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
@@ -181,15 +180,11 @@ class VirtualRunner:
                 text=True,
                 encoding='utf-8',
                 errors='replace',
-                bufsize=1,
-                # En Linux/Unix, crear un grupo de procesos separado
-                preexec_fn=os.setsid if hasattr(os, 'setsid') else None,
-                # En Windows, crear un proceso independiente
-                creationflags=subprocess.DETACHED_PROCESS if hasattr(subprocess, 'DETACHED_PROCESS') else 0
+                bufsize=1
             )
-        
+            
             stdout_capture = []
-        
+            
             def read_output():
                 try:
                     for line in iter(proc.stdout.readline, ''):
@@ -204,10 +199,10 @@ class VirtualRunner:
                     proc.stdout.close()
                     proc.wait()
                     output_queue.put({"type": "exit", "code": proc.returncode})
-        
+            
             reader_thread = threading.Thread(target=read_output, daemon=True)
             reader_thread.start()
-        
+            
             cls._active_processes[session_id] = {
                 "process": proc,
                 "queue": output_queue,
@@ -216,15 +211,15 @@ class VirtualRunner:
                 "started": datetime.now().isoformat(),
                 "log_file": str(log_file)
             }
-        
+            
             output_queue.put({"type": "output", "data": f"▶️ Iniciando {py_path.name}...\n"})
-        
+            
             log(f"✅ {py_path.name} ejecutado (PID {proc.pid})")
-        
+            
             stdout_text = ''.join(stdout_capture)
-        
+            
             return {
-                "ok": True,    
+                "ok": True,
                 "session_id": session_id,
                 "pid": proc.pid,
                 "is_alive": True,
@@ -233,7 +228,7 @@ class VirtualRunner:
                 "type": "python",
                 "stdout": stdout_text
             }
-        
+            
         except Exception as e:
             log(f"❌ Error ejecutando Python: {e}", "ERROR")
             return {"ok": False, "error": f"Error ejecutando Python: {str(e)}"}
