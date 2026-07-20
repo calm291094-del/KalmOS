@@ -616,7 +616,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": "Ruta requerida"})
                     return
         
-                # Usar VirtualRunner pero en modo detached
                 from system.virtual_runner import VirtualRunner
                 result = VirtualRunner.execute_detached(path, args)
         
