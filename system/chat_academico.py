@@ -466,30 +466,43 @@ def ejecutar_web(kalm_mode=False):
     if kalm_mode:
         # ═══ MODO KALM: ARRANCAR SERVIDOR EN SEGUNDO PLANO ═══
         print(f"🚀 Iniciando Chat Académico en puerto {port} (modo Kalm)")
-        
+    
+        # Crear archivo de señal con la URL
+        url_file = Path("/tmp/chat_academico_url.txt")
+        try:
+            url_file.write_text(f"http://localhost:{port}")
+            print(f"✅ URL escrita en {url_file}")
+        except Exception as e:
+            print(f"⚠️ No se pudo escribir archivo de señal: {e}")
+    
+        # ⚠️ IMPRIMIR LA URL (por si el frontend la captura)
+        print(f"http://localhost:{port}")
+        sys.stdout.flush()
+    
         # Iniciar el servidor en un hilo separado
         def run_server():
             try:
                 app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
             except Exception as e:
                 print(f"❌ Error en servidor: {e}")
-        
+    
         thread = threading.Thread(target=run_server, daemon=True)
         thread.start()
-        
+    
         # Esperar 2 segundos a que el servidor esté listo
         time.sleep(2)
-        
-        # ═══ IMPRIMIR LA URL PARA QUE EL FRONTEND LA CAPTURE ═══
-        print(f"http://localhost:{port}")
-        sys.stdout.flush()  # Forzar el flush para que el frontend lo capture
-        return
     
-    else:
-        # Modo normal: ejecutar en primer plano
-        print(f"🚀 Servidor web iniciado en http://0.0.0.0:{port}")
-        app.run(host='0.0.0.0', port=port, debug=False)
-
+        # Mantener el proceso vivo
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("⏹️ Cerrando Chat Académico...")
+            # Limpiar archivo de señal
+            if url_file.exists():
+                url_file.unlink()
+            sys.exit(0)
+    
 # ============================================================
 # 6. MODO GUI (Tkinter) - para Windows o con display
 # ============================================================
