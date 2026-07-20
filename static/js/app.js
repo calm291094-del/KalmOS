@@ -1324,10 +1324,10 @@ if (document.getElementById('clock-display')) {
     setInterval(updateWorldClocks, 1000);
 }
 
-// ═══════════════════════════════════════════════════════════
-// CHAT ACADÉMICO - VERSIÓN MEJORADA
-// ═══════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════
+// CHAT ACADÉMICO - VERSIÓN QUE LEE EL LOG FILE
+// ═══════════════════════════════════════════════════════════
 function openChatAcademico() {
     console.log('📚 Abriendo Chat Académico...');
     
@@ -1348,32 +1348,111 @@ function openChatAcademico() {
     .then(data => {
         console.log('📤 Respuesta Chat Académico:', data);
         
-        // ⚠️ CASO 1: El script devolvió viewer_url
-        if (data.ok && data.viewer_url) {
-            openWin('browser');
-            setTimeout(() => {
-                const urlInput = document.getElementById('browser-url');
-                if (urlInput) {
-                    urlInput.value = data.viewer_url;
-                    if (typeof browserNavigate === 'function') {
-                        browserNavigate();
-                    }
-                }
-            }, 500);
+        // Si el script se ejecutó correctamente con session_id
+        if (data.ok && data.session_id) {
+            const sessionId = data.session_id;
+            const logFile = data.log_file;
+            
+            console.log('📋 Session ID:', sessionId);
+            console.log('📄 Log file:', logFile);
+            
             if (typeof showNotification === 'function') {
-                showNotification('✅ Chat Académico iniciado', 'success');
+                showNotification('⏳ Chat Académico iniciando, esperando servidor...', 'info');
             }
-            return;
-        }
-        
-        // ⚠️ CASO 2: El script devolvió stdout con la URL
-        if (data.ok && data.stdout) {
+            
+            // Intentar leer el log file para obtener la URL
+            let attempts = 0;
+            const maxAttempts = 15;
+            
+            function checkLogForUrl() {
+                attempts++;
+                console.log(`🔍 Intentando leer log (${attempts}/${maxAttempts})...`);
+                
+                fetch('/api/process/log', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sessionId })
+                })
+                .then(r => r.json())
+                .then(logData => {
+                    console.log('📄 Contenido del log:', logData);
+                    
+                    if (logData.ok && logData.content) {
+                        // Buscar URL en el contenido del log
+                        const urlMatch = logData.content.match(/https?:\/\/localhost:\d+/);
+                        if (urlMatch) {
+                            const url = urlMatch[0];
+                            console.log('✅ URL encontrada en log:', url);
+                            
+                            // Abrir el navegador
+                            openWin('browser');
+                            setTimeout(() => {
+                                const urlInput = document.getElementById('browser-url');
+                                if (urlInput) {
+                                    urlInput.value = url;
+                                    if (typeof browserNavigate === 'function') {
+                                        browserNavigate();
+                                    }
+                                }
+                            }, 500);
+                            
+                            if (typeof showNotification === 'function') {
+                                showNotification('✅ Chat Académico iniciado', 'success');
+                            }
+                            return;
+                        }
+                    }
+                    
+                    // Si no se encontró URL y no hemos superado los intentos
+                    if (attempts < maxAttempts) {
+                        setTimeout(checkLogForUrl, 1000); // Esperar 1 segundo y reintentar
+                    } else {
+                        // Último intento: abrir localhost:5000 por defecto
+                        console.log('⚠️ No se encontró URL en el log. Abriendo localhost:5000');
+                        openWin('browser');
+                        setTimeout(() => {
+                            const urlInput = document.getElementById('browser-url');
+                            if (urlInput) {
+                                urlInput.value = 'http://localhost:5000';
+                                if (typeof browserNavigate === 'function') {
+                                    browserNavigate();
+                                }
+                            }
+                        }, 500);
+                        if (typeof showNotification === 'function') {
+                            showNotification('⚠️ Chat Académico en localhost:5000 (no se encontró URL)', 'warning');
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('❌ Error leyendo log:', err);
+                    if (attempts < maxAttempts) {
+                        setTimeout(checkLogForUrl, 1000);
+                    } else {
+                        // Fallback: abrir localhost:5000
+                        openWin('browser');
+                        setTimeout(() => {
+                            const urlInput = document.getElementById('browser-url');
+                            if (urlInput) {
+                                urlInput.value = 'http://localhost:5000';
+                                if (typeof browserNavigate === 'function') {
+                                    browserNavigate();
+                                }
+                            }
+                        }, 500);
+                    }
+                });
+            }
+            
+            // Esperar 2 segundos antes de empezar a leer el log
+            setTimeout(checkLogForUrl, 2000);
+            
+        } else if (data.ok && data.stdout) {
+            // Si el script devolvió stdout directamente
             console.log('📄 stdout del script:', data.stdout);
-            // Buscar URL en el stdout (http://localhost:puerto)
             const urlMatch = data.stdout.match(/https?:\/\/localhost:\d+/);
             if (urlMatch) {
                 const url = urlMatch[0];
-                console.log('✅ URL encontrada en stdout:', url);
                 openWin('browser');
                 setTimeout(() => {
                     const urlInput = document.getElementById('browser-url');
@@ -1387,30 +1466,11 @@ function openChatAcademico() {
                 if (typeof showNotification === 'function') {
                     showNotification('✅ Chat Académico iniciado', 'success');
                 }
-                return;
             }
-            
-            // Si no se encontró URL, intentar con localhost:5000
-            console.log('⚠️ No se encontró URL en stdout. Intentando con localhost:5000');
-            openWin('browser');
-            setTimeout(() => {
-                const urlInput = document.getElementById('browser-url');
-                if (urlInput) {
-                    urlInput.value = 'http://localhost:5000';
-                    if (typeof browserNavigate === 'function') {
-                        browserNavigate();
-                    }
-                }
-            }, 500);
+        } else {
             if (typeof showNotification === 'function') {
-                showNotification('⚠️ Chat Académico iniciado en localhost:5000', 'warning');
+                showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
             }
-            return;
-        }
-        
-        // ⚠️ CASO 3: Error
-        if (typeof showNotification === 'function') {
-            showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
         }
     })
     .catch(err => {
