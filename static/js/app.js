@@ -1326,8 +1326,9 @@ if (document.getElementById('clock-display')) {
 
 
 // ═══════════════════════════════════════════════════════════
-// CHAT ACADÉMICO - VERSIÓN QUE LEE EL LOG FILE
+// CHAT ACADÉMICO - LEE ARCHIVO DE SEÑAL
 // ═══════════════════════════════════════════════════════════
+
 function openChatAcademico() {
     console.log('📚 Abriendo Chat Académico...');
     
@@ -1348,43 +1349,34 @@ function openChatAcademico() {
     .then(data => {
         console.log('📤 Respuesta Chat Académico:', data);
         
-        // Si el script se ejecutó correctamente con session_id
+        // Si el script se ejecutó correctamente
         if (data.ok && data.session_id) {
-            const sessionId = data.session_id;
-            const logFile = data.log_file;
-            
-            console.log('📋 Session ID:', sessionId);
-            console.log('📄 Log file:', logFile);
-            
             if (typeof showNotification === 'function') {
-                showNotification('⏳ Chat Académico iniciando, esperando servidor...', 'info');
+                showNotification('⏳ Chat Académico iniciando...', 'info');
             }
             
-            // Intentar leer el log file para obtener la URL
+            // Leer el archivo de señal para obtener la URL
             let attempts = 0;
-            const maxAttempts = 15;
+            const maxAttempts = 20;
             
-            function checkLogForUrl() {
+            function checkSignalFile() {
                 attempts++;
-                console.log(`🔍 Intentando leer log (${attempts}/${maxAttempts})...`);
+                console.log(`🔍 Intentando leer señal (${attempts}/${maxAttempts})...`);
                 
-                fetch('/api/process/log', {
+                fetch('/api/read-signal', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: sessionId })
+                    body: JSON.stringify({ file: '/tmp/chat_academico_url.txt' })
                 })
                 .then(r => r.json())
-                .then(logData => {
-                    console.log('📄 Contenido del log:', logData);
+                .then(signalData => {
+                    console.log('📄 Señal:', signalData);
                     
-                    if (logData.ok && logData.content) {
-                        // Buscar URL en el contenido del log
-                        const urlMatch = logData.content.match(/https?:\/\/localhost:\d+/);
-                        if (urlMatch) {
-                            const url = urlMatch[0];
-                            console.log('✅ URL encontrada en log:', url);
+                    if (signalData.ok && signalData.content) {
+                        const url = signalData.content.trim();
+                        if (url && url.startsWith('http')) {
+                            console.log('✅ URL obtenida:', url);
                             
-                            // Abrir el navegador
                             openWin('browser');
                             setTimeout(() => {
                                 const urlInput = document.getElementById('browser-url');
@@ -1403,12 +1395,11 @@ function openChatAcademico() {
                         }
                     }
                     
-                    // Si no se encontró URL y no hemos superado los intentos
                     if (attempts < maxAttempts) {
-                        setTimeout(checkLogForUrl, 1000); // Esperar 1 segundo y reintentar
+                        setTimeout(checkSignalFile, 1000);
                     } else {
-                        // Último intento: abrir localhost:5000 por defecto
-                        console.log('⚠️ No se encontró URL en el log. Abriendo localhost:5000');
+                        // Fallback: localhost:5000
+                        console.log('⚠️ No se encontró señal. Abriendo localhost:5000');
                         openWin('browser');
                         setTimeout(() => {
                             const urlInput = document.getElementById('browser-url');
@@ -1420,53 +1411,21 @@ function openChatAcademico() {
                             }
                         }, 500);
                         if (typeof showNotification === 'function') {
-                            showNotification('⚠️ Chat Académico en localhost:5000 (no se encontró URL)', 'warning');
+                            showNotification('⚠️ Chat Académico en localhost:5000', 'warning');
                         }
                     }
                 })
                 .catch(err => {
-                    console.error('❌ Error leyendo log:', err);
+                    console.error('❌ Error leyendo señal:', err);
                     if (attempts < maxAttempts) {
-                        setTimeout(checkLogForUrl, 1000);
-                    } else {
-                        // Fallback: abrir localhost:5000
-                        openWin('browser');
-                        setTimeout(() => {
-                            const urlInput = document.getElementById('browser-url');
-                            if (urlInput) {
-                                urlInput.value = 'http://localhost:5000';
-                                if (typeof browserNavigate === 'function') {
-                                    browserNavigate();
-                                }
-                            }
-                        }, 500);
+                        setTimeout(checkSignalFile, 1000);
                     }
                 });
             }
             
-            // Esperar 2 segundos antes de empezar a leer el log
-            setTimeout(checkLogForUrl, 2000);
+            // Esperar 2 segundos antes de empezar a leer
+            setTimeout(checkSignalFile, 2000);
             
-        } else if (data.ok && data.stdout) {
-            // Si el script devolvió stdout directamente
-            console.log('📄 stdout del script:', data.stdout);
-            const urlMatch = data.stdout.match(/https?:\/\/localhost:\d+/);
-            if (urlMatch) {
-                const url = urlMatch[0];
-                openWin('browser');
-                setTimeout(() => {
-                    const urlInput = document.getElementById('browser-url');
-                    if (urlInput) {
-                        urlInput.value = url;
-                        if (typeof browserNavigate === 'function') {
-                            browserNavigate();
-                        }
-                    }
-                }, 500);
-                if (typeof showNotification === 'function') {
-                    showNotification('✅ Chat Académico iniciado', 'success');
-                }
-            }
         } else {
             if (typeof showNotification === 'function') {
                 showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
