@@ -237,6 +237,102 @@ function browserNavigate() {
         });
 }
 
+// ═══ VERIFICAR ESTADO DE KALM AI DESDE EL NAVEGADOR ═══
+function checkKalmAIStatus() {
+    let attempts = 0;
+    const maxAttempts = 20;
+    const status = document.getElementById('browser-status');
+    
+    if (status) {
+        status.textContent = '🧠 Verificando Kalm AI...';
+    }
+    
+    const checkInterval = setInterval(() => {
+        attempts++;
+        fetch('/api/kalm/health')
+            .then(r => {
+                if (r.ok) {
+                    clearInterval(checkInterval);
+                    if (status) {
+                        status.textContent = '🧠 Kalm AI - Listo';
+                        status.style.color = '#00cc66';
+                    }
+                    // Recargar el frame
+                    const frame = document.getElementById('browser-frame');
+                    if (frame && frame.src.includes('/api/kalm/')) {
+                        frame.src = '/api/kalm/';
+                    }
+                    if (typeof showNotification === 'function') {
+                        showNotification('✅ Kalm AI listo', 'success');
+                    }
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(checkInterval);
+                    if (status) {
+                        status.textContent = '⚠️ Kalm AI no responde';
+                        status.style.color = '#ffaa00';
+                    }
+                    // Mostrar mensaje en el iframe
+                    const frame = document.getElementById('browser-frame');
+                    if (frame) {
+                        frame.srcdoc = `
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                                <meta charset="UTF-8">
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                <title>🧠 Kalm AI</title>
+                                <style>
+                                    body {
+                                        background: #0a0514;
+                                        color: #e6e6fa;
+                                        font-family: 'Segoe UI', sans-serif;
+                                        display: flex;
+                                        justify-content: center;
+                                        align-items: center;
+                                        height: 100vh;
+                                        flex-direction: column;
+                                        padding: 20px;
+                                    }
+                                    .icon { font-size: 64px; margin-bottom: 20px; }
+                                    h2 { color: #da70d6; }
+                                    p { color: #9370db; }
+                                    .btn {
+                                        background: linear-gradient(135deg, #6a0dad, #9370db);
+                                        color: white;
+                                        border: none;
+                                        padding: 12px 30px;
+                                        border-radius: 10px;
+                                        font-size: 16px;
+                                        cursor: pointer;
+                                        margin-top: 20px;
+                                        transition: all 0.3s;
+                                    }
+                                    .btn:hover { transform: scale(1.05); }
+                                </style>
+                            </head>
+                            <body>
+                                <div class="icon">🧠</div>
+                                <h2>Kalm AI no está disponible</h2>
+                                <p>Haz clic en "Kalm AI" en el escritorio para iniciarlo</p>
+                                <button class="btn" onclick="window.location.href='/desktop'">🏰 Ir al escritorio</button>
+                            </body>
+                            </html>
+                        `;
+                    }
+                }
+            })
+            .catch(() => {
+                if (attempts >= maxAttempts) {
+                    clearInterval(checkInterval);
+                    if (status) {
+                        status.textContent = '⚠️ Kalm AI no disponible';
+                        status.style.color = '#ff4444';
+                    }
+                }
+            });
+    }, 1500);
+}
+
 // ═══ LIMPIAR URL AL PRESIONAR ENTER ═══
 function setupBrowserUrlInput() {
     const urlInput = document.getElementById('browser-url');
@@ -466,5 +562,6 @@ window.loadBrowserBookmarks = loadBrowserBookmarks;
 window.sanitizeUrl = sanitizeUrl;
 window.isBlockedInIframe = isBlockedInIframe;
 window.isLocalPath = isLocalPath;
+window.checkKalmAIStatus = checkKalmAIStatus;
 
 console.log('🌐 Internal Browser cargado - Sitios bloqueados en iframe manejados');

@@ -703,7 +703,7 @@ function executeProgramFromMenu(path, name) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// KALM AI APP - UNIFICADA (Chat + Kroot)
+// KALM AI APP - UNIFICADA (Chat + Kroot) - VERSIÓN CORREGIDA
 // ═══════════════════════════════════════════════════════════
 
 function openKalmAI() {
@@ -713,6 +713,24 @@ function openKalmAI() {
         showNotification('🧠 Iniciando Kalm AI...', 'info');
     }
     
+    // Primero verificar si ya está corriendo
+    fetch('/api/kalm/health')
+        .then(r => {
+            if (r.ok) {
+                // Ya está corriendo, abrir directamente
+                openKalmAIBrowser();
+                return;
+            }
+            // No está corriendo, iniciar
+            startKalmAIProcess();
+        })
+        .catch(() => {
+            // Error de conexión, iniciar
+            startKalmAIProcess();
+        });
+}
+
+function startKalmAIProcess() {
     // Usar ruta correcta - el archivo está en la raíz
     const appPath = 'kalm_ai_app.py';
     
@@ -729,45 +747,16 @@ function openKalmAI() {
         console.log('📤 Respuesta Kalm AI:', data);
         
         if (data.ok) {
-            // Esperar a que la app se inicie
-            setTimeout(() => {
-                // Abrir el navegador interno
-                openWin('browser');
-                
-                // Navegar a la URL del proxy
-                setTimeout(() => {
-                    const urlInput = document.getElementById('browser-url');
-                    const frame = document.getElementById('browser-frame');
-                    
-                    if (urlInput) {
-                        urlInput.value = '/api/kalm/';
-                    }
-                    
-                    // Cargar directamente en el iframe
-                    if (frame) {
-                        frame.src = '/api/kalm/';
-                    }
-                    
-                    // Actualizar estado
-                    const status = document.getElementById('browser-status');
-                    if (status) {
-                        status.textContent = '🧠 Kalm AI cargando...';
-                    }
-                    
-                    // Verificar si la app responde
-                    checkKalmAIStatus();
-                    
-                }, 1000);
-            }, 2000);
-            
             if (typeof showNotification === 'function') {
-                showNotification('✅ Kalm AI iniciado', 'success');
+                showNotification('✅ Kalm AI iniciando...', 'success');
             }
+            // Esperar a que la app se inicie
+            waitForKalmAI(0);
         } else {
             if (typeof showNotification === 'function') {
                 showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
             }
-            // Intentar ejecutar con ruta alternativa
+            // Intentar con ruta alternativa
             fallbackRunKalmAI();
         }
     })
@@ -780,7 +769,63 @@ function openKalmAI() {
     });
 }
 
-// Función de fallback
+function waitForKalmAI(attempt) {
+    const maxAttempts = 20;
+    const delay = 1500;
+    
+    if (attempt >= maxAttempts) {
+        if (typeof showNotification === 'function') {
+            showNotification('⚠️ Kalm AI no responde, intenta de nuevo', 'warning');
+        }
+        openKalmAIBrowser();
+        return;
+    }
+    
+    fetch('/api/kalm/health')
+        .then(r => {
+            if (r.ok) {
+                console.log('✅ Kalm AI respondiendo');
+                if (typeof showNotification === 'function') {
+                    showNotification('✅ Kalm AI listo', 'success');
+                }
+                setTimeout(() => openKalmAIBrowser(), 500);
+            } else {
+                console.log(`⏳ Esperando Kalm AI (${attempt + 1}/${maxAttempts})...`);
+                setTimeout(() => waitForKalmAI(attempt + 1), delay);
+            }
+        })
+        .catch(() => {
+            console.log(`⏳ Esperando Kalm AI (${attempt + 1}/${maxAttempts})...`);
+            setTimeout(() => waitForKalmAI(attempt + 1), delay);
+        });
+}
+
+function openKalmAIBrowser() {
+    // Abrir el navegador interno
+    openWin('browser');
+    
+    // Navegar a la URL del proxy
+    setTimeout(() => {
+        const urlInput = document.getElementById('browser-url');
+        const frame = document.getElementById('browser-frame');
+        const status = document.getElementById('browser-status');
+        
+        if (urlInput) {
+            urlInput.value = '/api/kalm/';
+        }
+        
+        // Cargar directamente en el iframe
+        if (frame) {
+            frame.src = '/api/kalm/';
+        }
+        
+        if (status) {
+            status.textContent = '🧠 Cargando Kalm AI...';
+            status.style.color = '#ffaa00';
+        }
+    }, 300);
+}
+
 function fallbackRunKalmAI() {
     console.log('🔄 Intentando ejecutar Kalm AI con ruta alternativa...');
     
@@ -795,69 +840,15 @@ function fallbackRunKalmAI() {
     .then(r => r.json())
     .then(data => {
         if (data.ok) {
-            setTimeout(() => {
-                openWin('browser');
-                setTimeout(() => {
-                    const urlInput = document.getElementById('browser-url');
-                    if (urlInput) {
-                        urlInput.value = '/api/kalm/';
-                    }
-                    const frame = document.getElementById('browser-frame');
-                    if (frame) {
-                        frame.src = '/api/kalm/';
-                    }
-                    checkKalmAIStatus();
-                }, 1500);
-            }, 2000);
+            waitForKalmAI(0);
+        } else {
+            openKalmAIBrowser();
         }
     })
-    .catch(err => console.error('❌ Fallback error:', err));
-}
-
-// Verificar estado de Kalm AI
-function checkKalmAIStatus() {
-    let attempts = 0;
-    const maxAttempts = 15;
-    
-    const checkInterval = setInterval(() => {
-        attempts++;
-        fetch('/api/kalm/')
-            .then(r => {
-                if (r.ok) {
-                    clearInterval(checkInterval);
-                    const status = document.getElementById('browser-status');
-                    if (status) {
-                        status.textContent = '🧠 Kalm AI - Listo';
-                        status.style.color = '#00cc66';
-                    }
-                    if (typeof showNotification === 'function') {
-                        showNotification('✅ Kalm AI listo', 'success');
-                    }
-                    // Recargar el frame para asegurar que se vea
-                    const frame = document.getElementById('browser-frame');
-                    if (frame) {
-                        frame.src = '/api/kalm/';
-                    }
-                } else if (attempts >= maxAttempts) {
-                    clearInterval(checkInterval);
-                    const status = document.getElementById('browser-status');
-                    if (status) {
-                        status.textContent = '⚠️ Kalm AI no responde';
-                        status.style.color = '#ffaa00';
-                    }
-                }
-            })
-            .catch(() => {
-                if (attempts >= maxAttempts) {
-                    clearInterval(checkInterval);
-                    const status = document.getElementById('browser-status');
-                    if (status) {
-                        status.textContent = '⚠️ Kalm AI no disponible';
-                        status.style.color = '#ff4444';
-                    }
-                }
-            });
-    }, 1500);
+    .catch(err => {
+        console.error('❌ Fallback error:', err);
+        openKalmAIBrowser();
+    });
 }
 
 // ═══ MANTENER COMPATIBILIDAD ═══
@@ -1306,7 +1297,7 @@ function notepadLoad() {
         const saved = localStorage.getItem('kalm_notepad_' + name);
         if (saved) {
             content.value = saved;
-            status.textContent = '📂 Cargado: ' + name;
+            status.textContent = '📂 Cargado: ' + name';
         } else {
             status.textContent = '❌ Archivo no encontrado';
         }
@@ -1456,6 +1447,7 @@ window.openKalmAI = openKalmAI;
 window.openChatAcademico = openChatAcademico;
 window.openKrootCorp = openKrootCorp;
 window.showNotification = showNotification;
-window.checkKalmAIStatus = checkKalmAIStatus;
+window.waitForKalmAI = waitForKalmAI;
+window.startKalmAIProcess = startKalmAIProcess;
 
 console.log('🏰 Kalm OS v4.3 - Aplicación cargada correctamente');
