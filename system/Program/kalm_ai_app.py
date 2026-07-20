@@ -3,7 +3,7 @@
 
 """
 KALM AI APP - Chat Academico + Kroot Corp
-VERSION PARA INTEGRAR EN EL SERVIDOR PRINCIPAL
+VERSION PARA IMPORTAR EN EL SERVIDOR PRINCIPAL
 """
 
 import sys
@@ -23,23 +23,11 @@ def instalar_dependencias():
         try:
             __import__(pkg.replace("-", "_"))
         except ImportError:
-            print(f"📦 Instalando {pkg}...")
+            print(f"Instalando {pkg}...")
             subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "--quiet"])
 
 # ============================================================
-# 2. IMPORTAR MÓDULOS
-# ============================================================
-# Aseguramos que las dependencias estén instaladas antes de importar Flask
-instalar_dependencias()
-
-# Ahora importamos Flask y otros módulos
-from flask import Flask, request, render_template_string, jsonify
-from flask_cors import CORS
-import requests
-import time
-
-# ============================================================
-# 3. CLIENTE IA (con fallbacks)
+# 2. CLIENTE IA (con fallbacks)
 # ============================================================
 class IAProvider:
     @staticmethod
@@ -70,20 +58,20 @@ class IAProvider:
         
         for name, func in providers:
             try:
-                print(f"🔄 Intentando con {name}...")
+                print(f"Intentando con {name}...")
                 result = func()
                 if result and len(result.strip()) > 10:
-                    print(f"✅ Éxito con {name}")
+                    print(f"Exito con {name}")
                     return result
             except Exception as e:
-                print(f"❌ {name} falló: {e}")
+                print(f"{name} fallo: {e}")
                 time.sleep(1)
                 continue
         
-        return "❌ Error: Todos los proveedores fallaron. Intenta de nuevo."
+        return "Error: Todos los proveedores fallaron. Intenta de nuevo."
 
 # ============================================================
-# 4. TEMPLATE HTML UNIFICADO
+# 3. TEMPLATE HTML UNIFICADO
 # ============================================================
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -383,7 +371,7 @@ HTML_TEMPLATE = """
 """
 
 # ============================================================
-# 5. CREAR LA APLICACIÓN FLASK
+# 4. CREAR LA APLICACIÓN FLASK
 # ============================================================
 kalm_ai_app = Flask(__name__)
 CORS(kalm_ai_app)
@@ -437,11 +425,3 @@ def chat():
 @kalm_ai_app.route('/health')
 def health():
     return jsonify({'status': 'ok', 'message': 'Kalm AI running'})
-
-# ============================================================
-# 6. PUNTO DE ENTRADA PARA EJECUCIÓN INDEPENDIENTE (Opcional)
-# ============================================================
-if __name__ == "__main__":
-    port = int(os.environ.get('PORT', 5000))
-    print(f"🚀 Kalm AI App (Standalone) en puerto {port}")
-    kalm_ai_app.run(host='0.0.0.0', port=port, debug=False)
