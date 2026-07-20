@@ -197,6 +197,22 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.send_response(404)
                 self.end_headers()
                 return
+
+        # En DO_GET, asegurar que /api/kalm/health funciona
+        if p == "/api/kalm/health":
+            try:
+                req = urllib.request.Request("http://127.0.0.1:5000/health")
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    content = resp.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(content)
+            except:
+                self.send_response(503)
+                self.end_headers()
+                self.wfile.write(b'{"status": "error", "message": "Kalm AI not running"}')
+            return
         
         # ═══ PÚBLICAS ═══
         if p in ["/", "/index.html", "/login"]:
