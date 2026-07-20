@@ -86,19 +86,22 @@ function browserNavigate() {
     
     // Si es una ruta local
     if (isLocalPath(url)) {
+        console.log('📂 Navegando a ruta local:', url);
         frame.src = url;
         if (status) status.textContent = '✅ Cargando local: ' + url;
         browserHistory.push(url);
         browserIndex = browserHistory.length - 1;
         
-        // Si es /api/kalm/, verificar estado
+        // Si es /api/kalm/, forzar carga
         if (url.startsWith('/api/kalm')) {
             if (status) status.textContent = '🧠 Cargando Kalm AI...';
             setTimeout(function() {
-                if (typeof checkKalmAIStatus === 'function') {
+                if (typeof forceLoadKalmAI === 'function') {
+                    forceLoadKalmAI();
+                } else if (typeof checkKalmAIStatus === 'function') {
                     checkKalmAIStatus();
                 }
-            }, 2000);
+            }, 1000);
         }
         return;
     }
@@ -113,7 +116,6 @@ function browserNavigate() {
     
     // ═══ VERIFICAR SI EL SITIO ESTÁ BLOQUEADO EN IFRAME ═══
     if (isBlockedInIframe(url)) {
-        // Mostrar mensaje en el iframe
         frame.srcdoc = `
             <!DOCTYPE html>
             <html>
@@ -197,8 +199,6 @@ function browserNavigate() {
             </html>
         `;
         if (status) status.textContent = '⛔ Sitio no compatible con iframe';
-        
-        // Guardar en historial
         browserHistory.push(url);
         browserIndex = browserHistory.length - 1;
         return;
@@ -210,7 +210,6 @@ function browserNavigate() {
     
     if (status) status.textContent = '⏳ Cargando...';
     
-    // Mostrar mensaje si es HTTP
     if (url.startsWith('http://')) {
         if (status) status.textContent = '⚠️ Cargando contenido HTTP (no seguro)...';
     }
@@ -226,13 +225,11 @@ function browserNavigate() {
         })
         .then(data => {
             if (data.ok && data.content) {
-                // Si el proxy devuelve contenido, mostrarlo
                 frame.srcdoc = data.content;
                 if (status) status.textContent = `✅ Cargado (${data.size || 0} bytes)`;
             }
         })
         .catch(() => {
-            // El iframe ya está cargando la URL
             if (status) status.textContent = `🌐 Cargando...`;
         });
 }
