@@ -32,10 +32,12 @@ def run_kalm_ai():
     if not app_path:
         print("❌ No se encontró kalm_ai_app.py")
         print("   Buscado en:", [str(p) for p in possible_paths])
+        sys.stdout.flush()
         return
     
     print(f"🚀 Iniciando Kalm AI desde: {app_path}")
     print(f"📂 Directorio: {app_path.parent}")
+    sys.stdout.flush()
     
     # Cambiar al directorio del proyecto para resolver imports
     os.chdir(str(Path(__file__).parent))
@@ -49,9 +51,11 @@ def run_kalm_ai():
         subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError as e:
         print(f"❌ Error ejecutando Kalm AI: {e}")
+        sys.stdout.flush()
         sys.exit(1)
     except KeyboardInterrupt:
         print("\n⏹️ Kalm AI detenido")
+        sys.stdout.flush()
         sys.exit(0)
 
 if __name__ == "__main__":
