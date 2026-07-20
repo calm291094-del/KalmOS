@@ -429,6 +429,81 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         if p == "/api/files/search":
             self._json(FileManager.search(q.get('q', [''])[0]))
             return
+
+        # ═══ PROXY PARA CHAT ACADÉMICO (puerto 5000) ═══
+        if p.startswith("/api/chat/"):
+            # Obtener la ruta después de /api/chat/
+            chat_path = p[10:]  # Quita "/api/chat/"
+            if not chat_path:
+                chat_path = "/"
+    
+            target_url = f"http://localhost:5000{chat_path}"
+            if parsed.query:
+                target_url += "?" + parsed.query
+    
+            log(f"🔄 Proxy Chat: {self.path} -> {target_url}", "DEBUG")
+    
+            try:
+                req = urllib.request.Request(target_url)
+                for header in ["User-Agent", "Accept", "Accept-Language", "Content-Type"]:
+                    if header in self.headers:
+                        req.add_header(header, self.headers[header])
+        
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    content = resp.read()
+                    content_type = resp.headers.get("Content-Type", "text/html")
+            
+                    self.send_response(resp.status)
+                    self.send_header("Content-Type", content_type)
+                    if "Cache-Control" in resp.headers:
+                        self.send_header("Cache-Control", resp.headers["Cache-Control"])
+                    self.end_headers()
+                    self.wfile.write(content)
+                    log(f"✅ Proxy Chat OK", "DEBUG")
+            except Exception as e:
+                log(f"❌ Proxy Chat error: {e}", "WARN")
+                self.send_response(503)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(b"<html><body><h2>Chat Académico no disponible</h2></body></html>")
+            return
+
+        # ═══ PROXY PARA KROOT CORP (puerto 5001) ═══
+        if p.startswith("/api/kroot/"):
+            kroot_path = p[10:]  # Quita "/api/kroot/"
+            if not kroot_path:
+                kroot_path = "/"
+    
+            target_url = f"http://localhost:5001{kroot_path}"
+            if parsed.query:
+                target_url += "?" + parsed.query
+    
+            log(f"🔄 Proxy Kroot: {self.path} -> {target_url}", "DEBUG")
+    
+            try:
+                req = urllib.request.Request(target_url)
+                for header in ["User-Agent", "Accept", "Accept-Language", "Content-Type"]:
+                    if header in self.headers:
+                        req.add_header(header, self.headers[header])
+        
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    content = resp.read()
+                    content_type = resp.headers.get("Content-Type", "text/html")
+            
+                    self.send_response(resp.status)
+                    self.send_header("Content-Type", content_type)
+                    if "Cache-Control" in resp.headers:
+                        self.send_header("Cache-Control", resp.headers["Cache-Control"])
+                    self.end_headers()
+                    self.wfile.write(content)
+                    log(f"✅ Proxy Kroot OK", "DEBUG")
+            except Exception as e:
+                log(f"❌ Proxy Kroot error: {e}", "WARN")
+                self.send_response(503)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(b"<html><body><h2>Kroot Corp no disponible</h2></body></html>")
+            return
         
         # ═══ LOGS ═══
         if p == "/api/last-log":
@@ -819,6 +894,81 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": True})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
+            return
+
+        # ═══ PROXY PARA CHAT ACADÉMICO (puerto 5000) ═══
+        if p.startswith("/api/chat/"):
+            # Obtener la ruta después de /api/chat/
+            chat_path = p[10:]  # Quita "/api/chat/"
+            if not chat_path:
+                chat_path = "/"
+    
+            target_url = f"http://localhost:5000{chat_path}"
+            if parsed.query:
+                target_url += "?" + parsed.query
+    
+            log(f"🔄 Proxy Chat: {self.path} -> {target_url}", "DEBUG")
+    
+            try:
+                req = urllib.request.Request(target_url)
+                for header in ["User-Agent", "Accept", "Accept-Language", "Content-Type"]:
+                    if header in self.headers:
+                        req.add_header(header, self.headers[header])
+        
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    content = resp.read()
+                    content_type = resp.headers.get("Content-Type", "text/html")
+            
+                    self.send_response(resp.status)
+                    self.send_header("Content-Type", content_type)
+                    if "Cache-Control" in resp.headers:
+                        self.send_header("Cache-Control", resp.headers["Cache-Control"])
+                    self.end_headers()
+                    self.wfile.write(content)
+                    log(f"✅ Proxy Chat OK", "DEBUG")
+            except Exception as e:
+                log(f"❌ Proxy Chat error: {e}", "WARN")
+                self.send_response(503)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(b"<html><body><h2>Chat Académico no disponible</h2></body></html>")
+            return
+
+        # ═══ PROXY PARA KROOT CORP (puerto 5001) ═══
+        if p.startswith("/api/kroot/"):
+            kroot_path = p[10:]  # Quita "/api/kroot/"
+            if not kroot_path:
+                kroot_path = "/"
+    
+            target_url = f"http://localhost:5001{kroot_path}"
+            if parsed.query:
+                target_url += "?" + parsed.query
+    
+            log(f"🔄 Proxy Kroot: {self.path} -> {target_url}", "DEBUG")
+    
+            try:
+                req = urllib.request.Request(target_url)
+                for header in ["User-Agent", "Accept", "Accept-Language", "Content-Type"]:
+                    if header in self.headers:
+                        req.add_header(header, self.headers[header])
+        
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    content = resp.read()
+                    content_type = resp.headers.get("Content-Type", "text/html")
+            
+                    self.send_response(resp.status)
+                    self.send_header("Content-Type", content_type)
+                    if "Cache-Control" in resp.headers:
+                        self.send_header("Cache-Control", resp.headers["Cache-Control"])
+                    self.end_headers()
+                    self.wfile.write(content)
+                    log(f"✅ Proxy Kroot OK", "DEBUG")
+            except Exception as e:
+                log(f"❌ Proxy Kroot error: {e}", "WARN")
+                self.send_response(503)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(b"<html><body><h2>Kroot Corp no disponible</h2></body></html>")
             return
         
         # ═══ SHUTDOWN ═══
