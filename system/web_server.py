@@ -1,4 +1,4 @@
-"""Servidor web principal de Kalm OS v4.3 - CON PERSISTENCIA COMPLETA"""
+"""Servidor web principal de Kalm OS v4.3 - CON KALM AI INTEGRADO"""
 import json
 import mimetypes
 import urllib.parse
@@ -21,6 +21,45 @@ from system.file_manager import FileManager
 from system.program_detector import ProgramDetector
 from system.registry import get_dns_server, get_proxy_server
 from system.script_runner import ScriptRunner
+
+# ═══ IMPORTAR KALM AI APP ═══
+try:
+    from system.Program.kalm_ai_app import kalm_ai_app
+    KALM_AI_AVAILABLE = True
+    log("🧠 Kalm AI App importada correctamente", "INFO")
+except Exception as e:
+    KALM_AI_AVAILABLE = False
+    log(f"⚠️ No se pudo importar Kalm AI App: {e}", "WARN")
+
+# ═══ VARIABLE GLOBAL PARA EL THREAD DE KALM AI ═══
+_kalm_ai_thread = None
+_kalm_ai_port = 5001
+
+def start_kalm_ai_thread():
+    """Inicia el servidor de Kalm AI en un hilo separado"""
+    global _kalm_ai_thread
+    if not KALM_AI_AVAILABLE:
+        log("❌ Kalm AI no disponible para iniciar", "WARN")
+        return False
+    
+    if _kalm_ai_thread and _kalm_ai_thread.is_alive():
+        log("✅ Kalm AI ya está corriendo", "INFO")
+        return True
+    
+    def run_kalm_ai():
+        try:
+            log(f"🧠 Iniciando Kalm AI en puerto {_kalm_ai_port}", "INFO")
+            kalm_ai_app.run(host='127.0.0.1', port=_kalm_ai_port, debug=False, use_reloader=False)
+        except Exception as e:
+            log(f"❌ Error en Kalm AI thread: {e}", "ERROR")
+    
+    _kalm_ai_thread = threading.Thread(target=run_kalm_ai, daemon=True)
+    _kalm_ai_thread.start()
+    
+    # Esperar a que el servidor arranque
+    time.sleep(2)
+    log(f"✅ Kalm AI thread iniciado en puerto {_kalm_ai_port}", "INFO")
+    return True
 
 
 class KalmWebHandler(BaseHTTPRequestHandler):
@@ -91,6 +130,165 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                             return (data[:-2] if data.endswith(b"\r\n") else data), fn
         return None, None
     
+    def _proxy_kalm_ai(self, path):
+        """Proxy interno para la aplicación Kalm AI integrada"""
+        global _kalm_ai_thread
+        
+        # Asegurar que Kalm AI esté corriendo
+        if not _kalm_ai_thread or not _kalm_ai_thread.is_alive():
+            log("🚀 Iniciando Kalm AI por primera vez...", "INFO")
+            start_kalm_ai_thread()
+            # Esperar un poco más
+            time.sleep(3)
+        
+        # Construir la URL del proxy
+        kalm_path = path[9:] if path.startswith("/kalm-ai") else "/"
+        if not kalm_path or kalm_path == "":
+            kalm_path = "/"
+        elif not kalm_path.startswith("/"):
+            kalm_path = "/" + kalm_path
+        
+        target_url = f"http://127.0.0.1:{_kalm_ai_port}{kalm_path}"
+        if self.path and '?' in self.path:
+            target_url += "?" + self.path.split('?', 1)[1]
+        
+        log(f"🔄 Proxy Kalm AI: {self.path} -> {target_url}", "DEBUG")
+        
+        try:
+            req = urllib.request.Request(target_url, method=self.command)
+            req.add_header("User-Agent", "KalmOS-Internal/1.0")
+            
+            # Copiar headers relevantes
+            for header in ["Content-Type", "Accept", "Accept-Language"]:
+                if header in self.headers:
+                    req.add_header(header, self.headers[header])
+            
+            # Si es POST, leer el body
+            if self.command in ["POST", "PUT", "PATCH"]:
+                content_length = int(self.headers.get("Content-Length", 0))
+                if content_length > 0:
+                    body = self.rfile.read(content_length)
+                    req.data = body
+            
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                content = resp.read()
+                content_type = resp.headers.get("Content-Type", "text/html; charset=utf-8")
+                
+                self.send_response(resp.status)
+                self.send_header("Content-Type", content_type)
+                self.send_header("Content-Length", str(len(content)))
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(content)
+                log(f"✅ Kalm AI proxy OK: {kalm_path}", "DEBUG")
+                
+        except urllib.error.URLError as e:
+            log(f"❌ Error en proxy Kalm AI: {e}", "WARN")
+            self.send_response(503)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(b"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>🧠 Kalm AI</title>
+                <style>
+                    body {
+                        background: linear-gradient(135deg, #0a0514 0%, #1a0033 50%, #2e0854 100%);
+                        font-family: 'Segoe UI', sans-serif;
+                        min-height: 100vh;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        color: #e6e6fa;
+                        padding: 20px;
+                    }
+                    .container {
+                        max-width: 500px;
+                        background: rgba(26, 0, 51, 0.8);
+                        border-radius: 20px;
+                        border: 1px solid rgba(106, 13, 173, 0.3);
+                        padding: 40px;
+                        text-align: center;
+                    }
+                    .icon { font-size: 64px; margin-bottom: 15px; }
+                    h1 { color: #da70d6; font-size: 24px; }
+                    .status {
+                        display: inline-block;
+                        padding: 6px 16px;
+                        border-radius: 20px;
+                        background: rgba(255,170,0,0.2);
+                        border: 1px solid #ffaa00;
+                        color: #ffaa00;
+                        margin: 10px 0;
+                        font-size: 13px;
+                    }
+                    .loading {
+                        display: inline-block;
+                        width: 30px;
+                        height: 30px;
+                        border: 4px solid rgba(106, 13, 173, 0.3);
+                        border-radius: 50%;
+                        border-top-color: #da70d6;
+                        animation: spin 0.8s linear infinite;
+                        margin: 15px auto;
+                    }
+                    @keyframes spin { to { transform: rotate(360deg); } }
+                    .btn {
+                        background: linear-gradient(135deg, #6a0dad, #9370db);
+                        color: white;
+                        border: none;
+                        padding: 10px 24px;
+                        border-radius: 8px;
+                        font-size: 14px;
+                        cursor: pointer;
+                        margin-top: 10px;
+                    }
+                    .btn:hover { transform: scale(1.05); }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="icon">🧠</div>
+                    <h1>Kalm AI</h1>
+                    <div class="status">⏳ Iniciando...</div>
+                    <div class="loading"></div>
+                    <p style="font-size:13px;color:#9370db;">El servidor está iniciándose en segundo plano</p>
+                    <p style="font-size:11px;color:#6a0dad;">⏱️ Espera unos segundos...</p>
+                    <button class="btn" onclick="window.location.reload()">🔄 Reintentar</button>
+                </div>
+                <script>
+                    let attempts = 0;
+                    const checkInterval = setInterval(() => {
+                        attempts++;
+                        fetch('/kalm-ai/health')
+                            .then(r => {
+                                if (r.ok) {
+                                    clearInterval(checkInterval);
+                                    window.location.reload();
+                                }
+                            })
+                            .catch(() => {
+                                if (attempts > 15) {
+                                    clearInterval(checkInterval);
+                                    document.querySelector('.status').textContent = '⚠️ No responde';
+                                    document.querySelector('.status').style.borderColor = '#ff4444';
+                                    document.querySelector('.status').style.color = '#ff4444';
+                                    document.querySelector('.loading').style.display = 'none';
+                                }
+                            });
+                    }, 2000);
+                </script>
+            </body>
+            </html>
+            """)
+        except Exception as e:
+            log(f"❌ Error en _proxy_kalm_ai: {e}", "ERROR")
+            self.send_response(500)
+            self.end_headers()
+    
     # ═══ DO_GET ═══
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
@@ -101,6 +299,11 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         if p == "/favicon.ico":
             self.send_response(204)
             self.end_headers()
+            return
+        
+        # ═══ KALM AI APP - INTEGRADA ═══
+        if p.startswith("/kalm-ai"):
+            self._proxy_kalm_ai(p)
             return
         
         # ═══ ESTÁTICOS ═══
@@ -299,177 +502,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ HEALTH CHECK PARA KALM AI ═══
-        if p == "/api/kalm/health":
-            try:
-                with urllib.request.urlopen("http://127.0.0.1:5000/health", timeout=3) as resp:
-                    content = resp.read()
-                    self.send_response(200)
-                    self.send_header("Content-Type", "application/json")
-                    self.send_header("Access-Control-Allow-Origin", "*")
-                    self.end_headers()
-                    self.wfile.write(content)
-                    log(f"✅ Kalm AI health check OK", "INFO")
-            except:
-                self.send_response(503)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(b'{"status": "error", "message": "Kalm AI not running"}')
-            return
-        
-        # ═══ PROXY PARA KALM AI ═══
-        if p.startswith("/api/kalm/"):
-            kalm_path = p[10:]
-            if not kalm_path or kalm_path == "":
-                kalm_path = "/"
-            elif not kalm_path.startswith("/"):
-                kalm_path = "/" + kalm_path
-            
-            target_url = f"http://127.0.0.1:5000{kalm_path}"
-            if parsed.query:
-                target_url += "?" + parsed.query
-            
-            log(f"🔄 Proxy Kalm AI: {self.path} -> {target_url}", "INFO")
-            
-            try:
-                req = urllib.request.Request(target_url, method=self.command)
-                req.add_header("User-Agent", "KalmOS-InternalBrowser/4.3")
-                req.add_header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-                
-                if self.command in ["POST", "PUT", "PATCH"]:
-                    content_length = int(self.headers.get("Content-Length", 0))
-                    if content_length > 0:
-                        body = self.rfile.read(content_length)
-                        req.data = body
-                
-                with urllib.request.urlopen(req, timeout=30) as resp:
-                    content = resp.read()
-                    content_type = resp.headers.get("Content-Type", "text/html; charset=utf-8")
-                    
-                    self.send_response(resp.status)
-                    self.send_header("Content-Type", content_type)
-                    self.send_header("Content-Length", str(len(content)))
-                    self.send_header("Access-Control-Allow-Origin", "*")
-                    self.end_headers()
-                    self.wfile.write(content)
-                    log(f"✅ Proxy Kalm AI OK: {kalm_path}", "INFO")
-                    
-            except urllib.error.URLError as e:
-                log(f"❌ Proxy Kalm AI error: {e}", "WARN")
-                self.send_response(503)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                
-                html_content = """<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧠 Kalm AI</title>
-    <style>
-        body {
-            background: linear-gradient(135deg, #0a0514 0%, #1a0033 50%, #2e0854 100%);
-            font-family: 'Segoe UI', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #e6e6fa;
-            padding: 20px;
-        }
-        .container {
-            max-width: 500px;
-            background: rgba(26, 0, 51, 0.8);
-            border-radius: 20px;
-            border: 1px solid rgba(106, 13, 173, 0.3);
-            padding: 40px;
-            text-align: center;
-        }
-        .icon { font-size: 64px; margin-bottom: 15px; }
-        h1 { color: #da70d6; font-size: 24px; }
-        .status {
-            display: inline-block;
-            padding: 6px 16px;
-            border-radius: 20px;
-            background: rgba(255,170,0,0.2);
-            border: 1px solid #ffaa00;
-            color: #ffaa00;
-            margin: 10px 0;
-            font-size: 13px;
-        }
-        .loading {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            border: 4px solid rgba(106, 13, 173, 0.3);
-            border-radius: 50%;
-            border-top-color: #da70d6;
-            animation: spin 0.8s linear infinite;
-            margin: 15px auto;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .btn {
-            background: linear-gradient(135deg, #6a0dad, #9370db);
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        .btn:hover { transform: scale(1.05); }
-        .hint { font-size: 11px; color: #6a0dad; margin-top: 15px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="icon">🧠</div>
-        <h1>Kalm AI</h1>
-        <div class="status">⏳ Iniciando...</div>
-        <div class="loading"></div>
-        <p style="font-size:13px;color:#9370db;">La aplicación está iniciándose en segundo plano</p>
-        <p style="font-size:11px;color:#6a0dad;">⏱️ Espera unos segundos...</p>
-        <button class="btn" onclick="window.location.reload()">🔄 Reintentar</button>
-    </div>
-    <script>
-        let attempts = 0;
-        const checkInterval = setInterval(() => {
-            attempts++;
-            fetch('/api/kalm/health')
-                .then(r => {
-                    if (r.ok) {
-                        clearInterval(checkInterval);
-                        window.location.reload();
-                    }
-                })
-                .catch(() => {
-                    if (attempts > 20) {
-                        clearInterval(checkInterval);
-                        document.querySelector('.status').textContent = '⚠️ No responde';
-                        document.querySelector('.status').style.borderColor = '#ff4444';
-                        document.querySelector('.status').style.color = '#ff4444';
-                        document.querySelector('.loading').style.display = 'none';
-                        document.querySelector('.container').innerHTML += `
-                            <p style="color:#ff4444;">No se pudo iniciar Kalm AI</p>
-                            <button class="btn" onclick="window.location.href='/desktop'">🏰 Volver</button>
-                        `;
-                    }
-                });
-        }, 2000);
-    </script>
-</body>
-</html>"""
-                self.wfile.write(html_content.encode('utf-8'))
-                
-            except Exception as e:
-                log(f"❌ Proxy Kalm AI exception: {e}", "ERROR")
-                self.send_response(500)
-                self.end_headers()
-            return
-        
         # ═══ SSE - STREAM DE PROCESOS ═══
         if p.startswith("/api/process/stream/"):
             session = self.require_auth()
@@ -604,7 +636,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         if p == "/api/files/search":
             self._json(FileManager.search(q.get('q', [''])[0]))
             return
-       
+        
         # ═══ LOGS ═══
         if p == "/api/last-log":
             log_data = ScriptRunner.get_last_log()
@@ -625,6 +657,11 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         p = parsed.path
         q = urllib.parse.parse_qs(parsed.query)
+        
+        # ═══ KALM AI APP - INTEGRADA ═══
+        if p.startswith("/kalm-ai"):
+            self._proxy_kalm_ai(p)
+            return
         
         # ═══ LOGIN (SIN AUTENTICACIÓN) ═══
         if p == "/api/login":
@@ -832,158 +869,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ PROXY PARA KALM AI (puerto 5000) ═══
-        if p.startswith("/api/kalm/"):
-            kalm_path = p[10:]
-            if not kalm_path or kalm_path == "":
-                kalm_path = "/"
-            elif not kalm_path.startswith("/"):
-                kalm_path = "/" + kalm_path
-            
-            target_url = f"http://127.0.0.1:5000{kalm_path}"
-            if parsed.query:
-                target_url += "?" + parsed.query
-            
-            log(f"🔄 Proxy Kalm AI: {self.path} -> {target_url}", "INFO")
-            
-            try:
-                req = urllib.request.Request(target_url, method=self.command)
-                req.add_header("User-Agent", "KalmOS-InternalBrowser/4.3")
-                req.add_header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-                
-                if self.command in ["POST", "PUT", "PATCH"]:
-                    content_length = int(self.headers.get("Content-Length", 0))
-                    if content_length > 0:
-                        body = self.rfile.read(content_length)
-                        req.data = body
-                
-                with urllib.request.urlopen(req, timeout=30) as resp:
-                    content = resp.read()
-                    content_type = resp.headers.get("Content-Type", "text/html; charset=utf-8")
-                    
-                    self.send_response(resp.status)
-                    self.send_header("Content-Type", content_type)
-                    self.send_header("Content-Length", str(len(content)))
-                    self.send_header("Access-Control-Allow-Origin", "*")
-                    self.end_headers()
-                    self.wfile.write(content)
-                    log(f"✅ Proxy Kalm AI OK: {kalm_path}", "INFO")
-                    
-            except urllib.error.URLError as e:
-                log(f"❌ Proxy Kalm AI error: {e}", "WARN")
-                self.send_response(503)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                
-                html_content = """<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧠 Kalm AI</title>
-    <style>
-        body {
-            background: linear-gradient(135deg, #0a0514 0%, #1a0033 50%, #2e0854 100%);
-            font-family: 'Segoe UI', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #e6e6fa;
-            padding: 20px;
-        }
-        .container {
-            max-width: 500px;
-            background: rgba(26, 0, 51, 0.8);
-            border-radius: 20px;
-            border: 1px solid rgba(106, 13, 173, 0.3);
-            padding: 40px;
-            text-align: center;
-        }
-        .icon { font-size: 64px; margin-bottom: 15px; }
-        h1 { color: #da70d6; font-size: 24px; }
-        .status {
-            display: inline-block;
-            padding: 6px 16px;
-            border-radius: 20px;
-            background: rgba(255,170,0,0.2);
-            border: 1px solid #ffaa00;
-            color: #ffaa00;
-            margin: 10px 0;
-            font-size: 13px;
-        }
-        .loading {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            border: 4px solid rgba(106, 13, 173, 0.3);
-            border-radius: 50%;
-            border-top-color: #da70d6;
-            animation: spin 0.8s linear infinite;
-            margin: 15px auto;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .btn {
-            background: linear-gradient(135deg, #6a0dad, #9370db);
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        .btn:hover { transform: scale(1.05); }
-        .hint { font-size: 11px; color: #6a0dad; margin-top: 15px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="icon">🧠</div>
-        <h1>Kalm AI</h1>
-        <div class="status">⏳ Iniciando...</div>
-        <div class="loading"></div>
-        <p style="font-size:13px;color:#9370db;">La aplicación está iniciándose en segundo plano</p>
-        <p style="font-size:11px;color:#6a0dad;">⏱️ Espera unos segundos...</p>
-        <button class="btn" onclick="window.location.reload()">🔄 Reintentar</button>
-    </div>
-    <script>
-        let attempts = 0;
-        const checkInterval = setInterval(() => {
-            attempts++;
-            fetch('/api/kalm/health')
-                .then(r => {
-                    if (r.ok) {
-                        clearInterval(checkInterval);
-                        window.location.reload();
-                    }
-                })
-                .catch(() => {
-                    if (attempts > 20) {
-                        clearInterval(checkInterval);
-                        document.querySelector('.status').textContent = '⚠️ No responde';
-                        document.querySelector('.status').style.borderColor = '#ff4444';
-                        document.querySelector('.status').style.color = '#ff4444';
-                        document.querySelector('.loading').style.display = 'none';
-                        document.querySelector('.container').innerHTML += `
-                            <p style="color:#ff4444;">No se pudo iniciar Kalm AI</p>
-                            <button class="btn" onclick="window.location.href='/desktop'">🏰 Volver</button>
-                        `;
-                    }
-                });
-        }, 2000);
-    </script>
-</body>
-</html>"""
-                self.wfile.write(html_content.encode('utf-8'))
-                
-            except Exception as e:
-                log(f"❌ Proxy Kalm AI exception: {e}", "ERROR")
-                self.send_response(500)
-                self.end_headers()
-            return
-        
         # ═══ RUN SCRIPT ═══
         if p == "/api/run":
             try:
@@ -1007,20 +892,20 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ RUN SCRIPT DIRECT (CON ESPERA) ═══
+        # ═══ RUN SCRIPT DIRECT ═══
         if p == "/api/run-direct":
             try:
                 data = json.loads(body)
                 path = data.get("path", "").strip()
                 args = data.get("args", [])
-        
+                
                 if not path:
                     self._json({"ok": False, "error": "Ruta requerida"})
                     return
-        
+                
                 from system.virtual_runner import VirtualRunner
                 result = VirtualRunner.execute_detached(path, args)
-        
+                
                 self._json(result)
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
@@ -1221,3 +1106,9 @@ class KalmWebHandler(BaseHTTPRequestHandler):
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
     allow_reuse_address = True
+
+
+# ═══ INICIAR KALM AI AL CARGAR EL SERVIDOR ═══
+log("🧠 Iniciando Kalm AI integrado...", "INFO")
+start_kalm_ai_thread()
+log("✅ Kalm AI integrado listo", "INFO")
