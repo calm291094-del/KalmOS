@@ -203,6 +203,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             try:
                 req = urllib.request.Request("http://127.0.0.1:5000/health", method="GET")
                 req.add_header("User-Agent", "KalmOS-HealthCheck/1.0")
+                req.add_header("Accept", "application/json")
                 with urllib.request.urlopen(req, timeout=5) as resp:
                     content = resp.read()
                     self.send_response(200)
@@ -211,8 +212,15 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(content)
                     log(f"✅ Kalm AI health check OK", "INFO")
-            except Exception as e:
+            except urllib.error.URLError as e:
                 log(f"❌ Kalm AI health check FAILED: {e}", "WARN")
+                self.send_response(503)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(b'{"status": "error", "message": "Kalm AI not running"}')
+            except Exception as e:
+                log(f"❌ Kalm AI health check EXCEPTION: {e}", "ERROR")
                 self.send_response(503)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Access-Control-Allow-Origin", "*")
