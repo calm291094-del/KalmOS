@@ -113,61 +113,70 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b"<h1>Kalm AI no disponible</h1>")
             return
-    
-        # Extraer la ruta
-        route = path[9:] if path.startswith("/kalm-ai") else "/"
+        
+        # Extraer la ruta correctamente
+        if path.startswith("/kalm-ai"):
+            route = path[8:]  # elimina "/kalm-ai"
+        else:
+            route = path
+        
         if not route or route == "":
             route = "/"
-    
+        
         log(f"Kalm AI route: {route}", "DEBUG")
-    
+        
         # GET requests
         if self.command == "GET":
             if route == "/" or route == "/index" or route == "/index.html":
-                # Página principal desde el archivo HTML
+                # Página principal
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
                 self.wfile.write(serve_kalm_ai_page().encode("utf-8"))
                 return
-        
+            
             elif route == "/health":
+                # Health check
                 result, code = handle_health()
                 self.send_response(code)
                 self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
                 self.wfile.write(json.dumps(result).encode("utf-8"))
                 return
-        
+            
             else:
-                self.send_response(404)    
+                # 404 para cualquier otra ruta
+                self.send_response(404)
+                self.send_header("Content-Type", "text/plain")
                 self.end_headers()
+                self.wfile.write(b"404 Not Found")
                 return
-    
+        
         # POST requests
         elif self.command == "POST":
             content_length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(content_length).decode("utf-8")
-        
+            
             try:
                 data = json.loads(body) if body else {}
             except:
                 data = {}
-        
+            
             if route == "/generar":
                 result, code = handle_generar(data)
             elif route == "/chat":
                 result, code = handle_chat(data)
             else:
                 result, code = {"error": "Ruta no encontrada"}, 404
-        
+            
             self.send_response(code)
             self.send_header("Content-Type", "application/json")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(json.dumps(result).encode("utf-8"))
             return
-    
+        
         else:
             self.send_response(405)
             self.end_headers()
