@@ -1,4 +1,4 @@
-// KALM OS v4.3 - Internal Browser (COMPLETO Y CORREGIDO)
+// KALM OS v4.3 - Internal Browser (COMPLETO Y FUNCIONAL)
 
 let browserHistory = [];
 let browserIndex = -1;
@@ -31,33 +31,27 @@ function isBlockedInIframe(url) {
     return false;
 }
 
-// ═══ SOPORTE PARA RUTAS LOCALES ═══
 function isLocalPath(url) {
     return url.startsWith('/') || url.startsWith('#') || url.startsWith('?');
 }
 
-// ═══ VALIDAR Y CORREGIR URL ═══
 function sanitizeUrl(url) {
     if (!url || url.trim() === '') return null;
     
     url = url.trim();
     
-    // Si ya tiene http:// o https://, devolverlo
     if (url.startsWith('http://') || url.startsWith('https://')) {
         return url;
     }
     
-    // Si es una ruta local (empieza con /)
     if (isLocalPath(url)) {
         return url;
     }
     
-    // Si es un dominio sin protocolo
     if (url.includes('.')) {
         return 'https://' + url;
     }
     
-    // Si es solo una palabra (ej: google), agregar .com
     return 'https://' + url + '.com';
 }
 
@@ -74,39 +68,22 @@ function browserNavigate() {
         return;
     }
     
-    // Sanitizar URL
     const url = sanitizeUrl(rawUrl);
     if (!url) {
         if (status) status.textContent = '❌ URL inválida';
         return;
     }
     
-    // Actualizar barra con URL corregida
     urlInput.value = url;
     
-    // Si es una ruta local
     if (isLocalPath(url)) {
-        console.log('📂 Navegando a ruta local:', url);
         frame.src = url;
         if (status) status.textContent = '✅ Cargando local: ' + url;
         browserHistory.push(url);
         browserIndex = browserHistory.length - 1;
-        
-        // Si es /api/kalm/, forzar carga
-        if (url.startsWith('/api/kalm')) {
-            if (status) status.textContent = '🧠 Cargando Kalm AI...';
-            setTimeout(function() {
-                if (typeof forceLoadKalmAI === 'function') {
-                    forceLoadKalmAI();
-                } else if (typeof checkKalmAIStatus === 'function') {
-                    checkKalmAIStatus();
-                }
-            }, 1000);
-        }
         return;
     }
     
-    // Verificar si la URL es válida
     try {
         new URL(url);
     } catch (e) {
@@ -114,7 +91,6 @@ function browserNavigate() {
         return;
     }
     
-    // ═══ VERIFICAR SI EL SITIO ESTÁ BLOQUEADO EN IFRAME ═══
     if (isBlockedInIframe(url)) {
         frame.srcdoc = `
             <!DOCTYPE html>
@@ -204,20 +180,16 @@ function browserNavigate() {
         return;
     }
     
-    // Guardar en historial
     browserHistory.push(url);
     browserIndex = browserHistory.length - 1;
     
     if (status) status.textContent = '⏳ Cargando...';
-    
     if (url.startsWith('http://')) {
         if (status) status.textContent = '⚠️ Cargando contenido HTTP (no seguro)...';
     }
     
-    // Cargar directamente en el iframe
     frame.src = url;
     
-    // Intentar cargar via proxy
     fetch('/api/browser/fetch?url=' + encodeURIComponent(url))
         .then(r => {
             if (!r.ok) throw new Error('Error en la respuesta');
@@ -234,104 +206,6 @@ function browserNavigate() {
         });
 }
 
-// ═══ VERIFICAR ESTADO DE KALM AI DESDE EL NAVEGADOR ═══
-function checkKalmAIStatus() {
-    let attempts = 0;
-    const maxAttempts = 30;
-    const status = document.getElementById('browser-status');
-    
-    if (status) {
-        status.textContent = '🧠 Verificando Kalm AI...';
-        status.style.color = '#ffaa00';
-    }
-    
-    const checkInterval = setInterval(() => {
-        attempts++;
-        fetch('/api/kalm/health')
-            .then(r => {
-                if (r.ok) {
-                    clearInterval(checkInterval);
-                    if (status) {
-                        status.textContent = '🧠 Kalm AI - Listo';
-                        status.style.color = '#00cc66';
-                    }
-                    // Recargar el frame
-                    const frame = document.getElementById('browser-frame');
-                    if (frame && frame.src.includes('/api/kalm/')) {
-                        frame.src = '/api/kalm/';
-                    }
-                    if (typeof showNotification === 'function') {
-                        showNotification('✅ Kalm AI listo', 'success');
-                    }
-                } else if (attempts >= maxAttempts) {
-                    clearInterval(checkInterval);
-                    if (status) {
-                        status.textContent = '⚠️ Kalm AI no responde';
-                        status.style.color = '#ffaa00';
-                    }
-                    // Mostrar mensaje en el iframe
-                    const frame = document.getElementById('browser-frame');
-                    if (frame) {
-                        frame.srcdoc = `
-                            <!DOCTYPE html>
-                            <html>
-                            <head>
-                                <meta charset="UTF-8">
-                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                <title>🧠 Kalm AI</title>
-                                <style>
-                                    body {
-                                        background: #0a0514;
-                                        color: #e6e6fa;
-                                        font-family: 'Segoe UI', sans-serif;
-                                        display: flex;
-                                        justify-content: center;
-                                        align-items: center;
-                                        height: 100vh;
-                                        flex-direction: column;
-                                        padding: 20px;
-                                    }
-                                    .icon { font-size: 64px; margin-bottom: 20px; }
-                                    h2 { color: #da70d6; }
-                                    p { color: #9370db; }
-                                    .btn {
-                                        background: linear-gradient(135deg, #6a0dad, #9370db);
-                                        color: white;
-                                        border: none;
-                                        padding: 12px 30px;
-                                        border-radius: 10px;
-                                        font-size: 16px;
-                                        cursor: pointer;
-                                        margin-top: 20px;
-                                        transition: all 0.3s;
-                                    }
-                                    .btn:hover { transform: scale(1.05); }
-                                </style>
-                            </head>
-                            <body>
-                                <div class="icon">🧠</div>
-                                <h2>Kalm AI no está disponible</h2>
-                                <p>Haz clic en "Kalm AI" en el escritorio para iniciarlo</p>
-                                <button class="btn" onclick="window.location.href='/desktop'">🏰 Ir al escritorio</button>
-                            </body>
-                            </html>
-                        `;
-                    }
-                }
-            })
-            .catch(() => {
-                if (attempts >= maxAttempts) {
-                    clearInterval(checkInterval);
-                    if (status) {
-                        status.textContent = '⚠️ Kalm AI no disponible';
-                        status.style.color = '#ff4444';
-                    }
-                }
-            });
-    }, 2000);
-}
-
-// ═══ LIMPIAR URL AL PRESIONAR ENTER ═══
 function setupBrowserUrlInput() {
     const urlInput = document.getElementById('browser-url');
     if (!urlInput) return;
@@ -412,24 +286,21 @@ function browserOpenExternal() {
     }
 }
 
-// ═══ Cargar marcadores ═══
 function loadBrowserBookmarks() {
     const container = document.getElementById('browser-bookmarks');
     if (!container) return;
     
-    if (typeof bookmarksLoadedFlag !== 'undefined' && bookmarksLoadedFlag) return;
-    if (typeof bookmarksLoading !== 'undefined' && bookmarksLoading) return;
+    if (bookmarksLoadedFlag) return;
+    if (bookmarksLoading) return;
     
-    if (typeof bookmarksLoading !== 'undefined') {
-        bookmarksLoading = true;
-    }
+    bookmarksLoading = true;
     
     fetch('/api/browser/bookmarks')
         .then(r => {
             if (!r.ok) {
                 container.innerHTML = '<span style="color:#9370db;font-size:11px">📖 Marcadores</span>';
-                if (typeof bookmarksLoading !== 'undefined') bookmarksLoading = false;
-                if (typeof bookmarksLoadedFlag !== 'undefined') bookmarksLoadedFlag = true;
+                bookmarksLoading = false;
+                bookmarksLoadedFlag = true;
                 return;
             }
             return r.json();
@@ -459,18 +330,17 @@ function loadBrowserBookmarks() {
             } else {
                 container.innerHTML = '<span style="color:#9370db;font-size:11px">📖 Sin marcadores</span>';
             }
-            if (typeof bookmarksLoading !== 'undefined') bookmarksLoading = false;
-            if (typeof bookmarksLoadedFlag !== 'undefined') bookmarksLoadedFlag = true;
+            bookmarksLoading = false;
+            bookmarksLoadedFlag = true;
         })
         .catch(err => {
             console.error('Error cargando bookmarks:', err);
             container.innerHTML = '<span style="color:#9370db;font-size:11px">📖 Marcadores</span>';
-            if (typeof bookmarksLoading !== 'undefined') bookmarksLoading = false;
-            if (typeof bookmarksLoadedFlag !== 'undefined') bookmarksLoadedFlag = true;
+            bookmarksLoading = false;
+            bookmarksLoadedFlag = true;
         });
 }
 
-// ═══ Inicializar ═══
 document.addEventListener('DOMContentLoaded', function() {
     setupBrowserUrlInput();
     
@@ -485,7 +355,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         const urlInput = document.getElementById('browser-url');
         if (urlInput && !urlInput.value) {
-            // Mostrar página de inicio
             const frame = document.getElementById('browser-frame');
             if (frame) {
                 frame.srcdoc = `
@@ -550,7 +419,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 500);
 });
 
-// Exportar funciones
 window.browserNavigate = browserNavigate;
 window.browserBack = browserBack;
 window.browserForward = browserForward;
@@ -560,6 +428,5 @@ window.loadBrowserBookmarks = loadBrowserBookmarks;
 window.sanitizeUrl = sanitizeUrl;
 window.isBlockedInIframe = isBlockedInIframe;
 window.isLocalPath = isLocalPath;
-window.checkKalmAIStatus = checkKalmAIStatus;
 
-console.log('🌐 Internal Browser cargado - Sitios bloqueados en iframe manejados');
+console.log('🌐 Internal Browser cargado');
