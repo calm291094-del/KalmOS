@@ -30,17 +30,14 @@ def es_entorno_grafico():
     sistema = platform.system()
     if sistema == "Windows":
         return True
-    # En Linux/macOS, verificar si existe DISPLAY o si estamos en terminal
     if "DISPLAY" in os.environ:
         return True
-    # Si no hay DISPLAY, asumimos headless (servidor web)
     return False
 
 def es_windows():
     return platform.system() == "Windows"
 
 def es_headless():
-    """True si es un servidor sin GUI (Render, terminal Linux sin X)"""
     return not es_entorno_grafico()
 
 # ============================================================
@@ -51,21 +48,18 @@ def instalar_dependencias():
     dependencias = ["requests"]
     if es_entorno_grafico():
         dependencias.append("python-docx")
-        # Tkinter viene con Python en Windows, en Linux puede faltar
         try:
             import tkinter
         except ImportError:
-            print("⚠️ Tkinter no encontrado. Intentando instalar...")
+            print("⚠️ Tkinter no encontrado.")
             if es_windows():
-                print("En Windows, Tkinter viene con Python. Reinstala Python con la opción 'tcl/tk'.")
+                print("Reinstala Python con la opción 'tcl/tk'.")
             else:
-                # En Linux, instalar python3-tk
                 subprocess.run(["sudo", "apt-get", "install", "-y", "python3-tk"], check=False)
     else:
-        # En entorno web, necesitamos Flask
         dependencias.append("flask")
         dependencias.append("flask-cors")
-        dependencias.append("python-docx")  # para exportar Word
+        dependencias.append("python-docx")
     
     for pkg in dependencias:
         try:
@@ -78,23 +72,20 @@ def instalar_dependencias():
 instalar_dependencias()
 
 # ============================================================
-# 3. IMPORTACIÓN DE MÓDULOS (con manejo de errores)
+# 3. IMPORTACIÓN DE MÓDULOS
 # ============================================================
 try:
     import requests
 except ImportError:
     requests = None
 
-# Para GUI (Tkinter)
 if es_entorno_grafico():
     try:
         import tkinter as tk
         from tkinter import ttk, scrolledtext, messagebox, filedialog
-    except ImportError as e:
-        print(f"Error al importar Tkinter: {e}. Cambiando a modo web.")
-        es_entorno_grafico = lambda: False  # Forzar modo web
+    except ImportError:
+        es_entorno_grafico = lambda: False
 
-# Para Flask
 if es_headless():
     try:
         from flask import Flask, request, render_template_string, jsonify, send_file
@@ -102,19 +93,17 @@ if es_headless():
     except ImportError:
         Flask = None
         CORS = None
-        print("⚠️ Flask no instalado. Ejecutando instalación...")
+        print("⚠️ Flask no instalado. Instalando...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "flask flask-cors"])
         from flask import Flask, request, render_template_string, jsonify, send_file
         from flask_cors import CORS
 
-# Para exportar Word
 try:
     from docx import Document
     from docx.shared import Pt
 except ImportError:
     Document = None
 
-# G4F (opcional)
 try:
     import g4f
     from g4f.client import Client
@@ -124,11 +113,9 @@ except ImportError:
     Client = None
 
 # ============================================================
-# 4. CLIENTE POLLINATIONS AI (sin API key)
+# 4. CLIENTE POLLINATIONS AI
 # ============================================================
 class PollinationsClient:
-    """Cliente para Pollinations AI - gratuito, sin API key."""
-    
     BASE_URL = "https://text.pollinations.ai/openai"
     
     def __init__(self):
@@ -153,19 +140,14 @@ class PollinationsClient:
             raise Exception(f"Error en Pollinations: {str(e)}")
 
 # ============================================================
-# 5. CLASE PRINCIPAL (compartida por ambos modos)
+# 5. CLASE PRINCIPAL
 # ============================================================
 class ChatAcademicoCore:
-    """Lógica central compartida entre GUI y Web."""
-    
     def __init__(self):
         self.pollinations = PollinationsClient() if requests else None
         self.g4f_client = Client() if G4F_AVAILABLE and Client else None
-        self.historial = []
-        self.proveedor_activo = "pollinations"  # default
-        
+    
     def consultar_ia(self, modelo, mensajes, proveedor="pollinations"):
-        """Consulta a la IA usando el proveedor especificado."""
         if proveedor == "pollinations":
             if self.pollinations is None:
                 raise Exception("Pollinations no disponible")
@@ -182,7 +164,6 @@ class ChatAcademicoCore:
             raise Exception(f"Proveedor desconocido: {proveedor}")
     
     def generar_trabajo(self, tema, modelo, proveedor="pollinations"):
-        """Genera el trabajo académico completo."""
         prompt = f"""
         Escribe un trabajo académico completo sobre el siguiente tema:
 
@@ -214,186 +195,9 @@ class ChatAcademicoCore:
         - La bibliografía debe incluir al menos 5 fuentes relevantes.
         """
         return self.consultar_ia(modelo, [{"role": "user", "content": prompt}], proveedor)
-    
-    def formatear_respuesta(self, texto):
-        """Convierte la respuesta en una lista de líneas con formato (para exportar)."""
-        lineas_formateadas = []
-        secciones = re.split(r'(##\s+[^\n]+)', texto)
-        for parte in secciones:
-            if parte.startswith('##'):
-                titulo = parte.replace('##', '').strip()
-                lineas_formateadas.append(("titulo", f"📌 {titulo}"))
-            else:
-                for linea in parte.strip().split('\n'):
-                    linea = linea.strip()
-                    if linea:
-                        if linea.startswith('***') or linea.startswith('**'):
-                            lineas_formateadas.append(("subtitulo", linea))
-                        else:
-                            lineas_formateadas.append(("normal", linea))
-        return lineas_formateadas
 
 # ============================================================
-# 6. MODO GUI (Tkinter) - para Windows o con display
-# ============================================================
-def ejecutar_gui():
-    """Arranca la interfaz gráfica Tkinter."""
-    from tkinter import Tk, Frame, Label, Entry, Button, Text, scrolledtext, messagebox, filedialog, ttk
-    
-    class ChatAppGUI:
-        def __init__(self, root):
-            self.root = root
-            self.root.title("Chat Académico - IA sin API Key")
-            self.root.geometry("900x750")
-            self.core = ChatAcademicoCore()
-            self.modelo_var = tk.StringVar(value="openai")
-            self.proveedor_var = tk.StringVar(value="pollinations")
-            self.crear_widgets()
-            self.mostrar_bienvenida()
-        
-        def crear_widgets(self):
-            # Frame superior
-            top = ttk.Frame(self.root, padding="10")
-            top.pack(fill=tk.X)
-            
-            ttk.Label(top, text="Proveedor:").pack(side=tk.LEFT, padx=(0,5))
-            cb_prov = ttk.Combobox(top, textvariable=self.proveedor_var, values=["pollinations", "g4f"], state="readonly", width=12)
-            cb_prov.pack(side=tk.LEFT, padx=(0,10))
-            cb_prov.bind("<<ComboboxSelected>>", self.cambiar_proveedor)
-            
-            ttk.Label(top, text="Modelo:").pack(side=tk.LEFT, padx=(0,5))
-            self.combo_modelos = ttk.Combobox(top, textvariable=self.modelo_var, values=["openai","claude","gemini","deepseek","llama","mistral","phi","qwen"], state="readonly", width=20)
-            self.combo_modelos.pack(side=tk.LEFT, padx=(0,10))
-            
-            ttk.Button(top, text="🔍 Probar", command=self.probar_modelo).pack(side=tk.LEFT, padx=(0,10))
-            ttk.Label(top, text="Tema:").pack(side=tk.LEFT, padx=(10,5))
-            self.entry_tema = ttk.Entry(top, width=40)
-            self.entry_tema.pack(side=tk.LEFT, padx=(0,10))
-            self.entry_tema.bind("<Return>", lambda e: self.generar_trabajo())
-            ttk.Button(top, text="📝 Generar", command=self.generar_trabajo).pack(side=tk.LEFT)
-            
-            # Área de texto
-            frame_chat = ttk.Frame(self.root, padding="10")
-            frame_chat.pack(fill=tk.BOTH, expand=True)
-            self.text_area = scrolledtext.ScrolledText(frame_chat, wrap=tk.WORD, font=("Segoe UI", 10))
-            self.text_area.pack(fill=tk.BOTH, expand=True)
-            self.text_area.tag_configure("usuario", foreground="#0055cc", font=("Segoe UI", 10, "bold"))
-            self.text_area.tag_configure("ia", foreground="#008800")
-            self.text_area.tag_configure("titulo", foreground="#cc3300", font=("Segoe UI", 12, "bold"))
-            self.text_area.tag_configure("subtitulo", foreground="#993300", font=("Segoe UI", 11, "bold"))
-            
-            # Botones inferiores
-            bottom = ttk.Frame(self.root, padding="10")
-            bottom.pack(fill=tk.X)
-            ttk.Button(bottom, text="📤 Exportar Word", command=self.exportar_word).pack(side=tk.LEFT, padx=5)
-            ttk.Button(bottom, text="📄 Exportar TXT", command=self.exportar_txt).pack(side=tk.LEFT, padx=5)
-            ttk.Button(bottom, text="🗑️ Limpiar", command=self.limpiar_chat).pack(side=tk.LEFT, padx=5)
-            ttk.Button(bottom, text="❓ Ayuda", command=self.mostrar_ayuda).pack(side=tk.RIGHT, padx=5)
-        
-        def mostrar_bienvenida(self):
-            self.text_area.insert(tk.END, "🤖 CHAT ACADÉMICO\n━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n✅ Sin API Key (Pollinations AI)\n✅ Elige modelo y tema\n✅ Genera trabajos con Introducción (ES/EN), Desarrollo, Conclusiones y Bibliografía.\n\n", "ia")
-        
-        def agregar_mensaje(self, texto, tipo="ia"):
-            self.text_area.insert(tk.END, texto + "\n\n", tipo)
-            self.text_area.see(tk.END)
-            self.root.update()
-        
-        def cambiar_proveedor(self, event=None):
-            prov = self.proveedor_var.get()
-            if prov == "pollinations":
-                self.combo_modelos['values'] = ["openai","claude","gemini","deepseek","llama","mistral","phi","qwen"]
-                self.modelo_var.set("openai")
-            else:
-                self.combo_modelos['values'] = ["gpt-4o-mini","gpt-4o","gpt-3.5-turbo","claude-3-haiku","gemini-pro","llama-3-70b"]
-                self.modelo_var.set("gpt-4o-mini")
-        
-        def probar_modelo(self):
-            modelo = self.modelo_var.get()
-            prov = self.proveedor_var.get()
-            self.agregar_mensaje(f"🧪 Probando {prov}/{modelo}...", "usuario")
-            def tarea():
-                try:
-                    resp = self.core.consultar_ia(modelo, [{"role":"user","content":"Responde OK"}], prov)
-                    self.root.after(0, lambda: self.agregar_mensaje(f"✅ Modelo responde: {resp}", "ia"))
-                except Exception as e:
-                    self.root.after(0, lambda: self.agregar_mensaje(f"❌ Error: {e}", "ia"))
-            threading.Thread(target=tarea, daemon=True).start()
-        
-        def generar_trabajo(self):
-            tema = self.entry_tema.get().strip()
-            if not tema:
-                messagebox.showwarning("Tema vacío", "Escribe un tema.")
-                return
-            modelo = self.modelo_var.get()
-            prov = self.proveedor_var.get()
-            self.agregar_mensaje(f"📝 Generando sobre: {tema}", "usuario")
-            def tarea():
-                try:
-                    texto = self.core.generar_trabajo(tema, modelo, prov)
-                    lineas = self.core.formatear_respuesta(texto)
-                    self.root.after(0, lambda: self.mostrar_respuesta(lineas))
-                except Exception as e:
-                    self.root.after(0, lambda: self.agregar_mensaje(f"❌ Error: {e}", "ia"))
-            threading.Thread(target=tarea, daemon=True).start()
-        
-        def mostrar_respuesta(self, lineas):
-            for tipo, texto in lineas:
-                self.agregar_mensaje(texto, tipo)
-            self.agregar_mensaje("━━━━━━━━━━━━━━━━━━━━━━━━━━━", "ia")
-        
-        def limpiar_chat(self):
-            self.text_area.delete(1.0, tk.END)
-            self.mostrar_bienvenida()
-        
-        def obtener_contenido(self):
-            return self.text_area.get(1.0, tk.END).strip()
-        
-        def exportar_txt(self):
-            contenido = self.obtener_contenido()
-            if not contenido:
-                messagebox.showinfo("Sin contenido", "No hay nada para exportar.")
-                return
-            archivo = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("TXT","*.txt")])
-            if archivo:
-                with open(archivo, 'w', encoding='utf-8') as f:
-                    f.write(contenido)
-                messagebox.showinfo("Éxito", f"Guardado en {archivo}")
-        
-        def exportar_word(self):
-            if Document is None:
-                messagebox.showerror("Error", "Instala python-docx: pip install python-docx")
-                return
-            contenido = self.obtener_contenido()
-            if not contenido:
-                messagebox.showinfo("Sin contenido", "No hay nada para exportar.")
-                return
-            archivo = filedialog.asksaveasfilename(defaultextension=".docx", filetypes=[("Word","*.docx")])
-            if archivo:
-                doc = Document()
-                doc.add_heading('Trabajo Académico - Chat IA', 0)
-                doc.add_paragraph(f"Generado: {datetime.datetime.now()}")
-                for linea in contenido.split('\n'):
-                    linea = linea.strip()
-                    if not linea:
-                        continue
-                    if linea.startswith('📌'):
-                        doc.add_heading(linea.replace('📌','').strip(), level=1)
-                    elif linea.startswith('***') or linea.startswith('**'):
-                        doc.add_heading(linea.strip('*'), level=2)
-                    else:
-                        doc.add_paragraph(linea)
-                doc.save(archivo)
-                messagebox.showinfo("Éxito", f"Guardado en {archivo}")
-        
-        def mostrar_ayuda(self):
-            messagebox.showinfo("Ayuda", "Usa Pollinations AI (gratis, sin key).\nModelos: openai, claude, gemini, etc.\nGenera trabajos con estructura académica.")
-    
-    root = Tk()
-    app = ChatAppGUI(root)
-    root.mainloop()
-
-# ============================================================
-# 7. MODO WEB (Flask) - para Render / headless
+# 6. MODO WEB (Flask) - para Render / headless
 # ============================================================
 def ejecutar_web(kalm_mode=False):
     """Arranca el servidor Flask con interfaz HTML.
@@ -565,7 +369,6 @@ def ejecutar_web(kalm_mode=False):
                     a.download = 'trabajo.txt';
                     a.click();
                 } else {
-                    // docx
                     const blob = await resp.blob();
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -659,27 +462,197 @@ def ejecutar_web(kalm_mode=False):
     
     # Puerto para Render (usar variable de entorno PORT)
     port = int(os.environ.get('PORT', 5000))
-    
+
     if kalm_mode:
-        # Modo Kalm: arrancar servidor en segundo plano
-        print(f"🚀 Iniciando servidor Chat Académico en puerto {port} (modo Kalm)")
+        # ═══ MODO KALM: ARRANCAR SERVIDOR EN SEGUNDO PLANO ═══
+        url = f"http://localhost:{port}"
+    
+        # ⚠️ IMPRIMIR LA URL PRIMERO (para que el ScriptRunner la capture)
+        print(f"KALM_URL={url}")
+        sys.stdout.flush()
+    
+        # Luego iniciar el servidor en segundo plano
+        print(f"🚀 Iniciando Chat Académico en puerto {port} (modo Kalm)")
+        sys.stdout.flush()
+    
         # Iniciar el servidor en un hilo separado
         def run_server():
-            app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+            try:
+                app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+            except Exception as e:
+                print(f"❌ Error en servidor: {e}")
+    
         thread = threading.Thread(target=run_server, daemon=True)
         thread.start()
-        # Esperar 2 segundos a que el servidor esté listo
+    
+        # Esperar a que el servidor esté listo
         time.sleep(2)
-        # Devolver la URL para que el frontend la capture
-        print(f"http://localhost:{port}")
+    
+        # Mantener el proceso vivo
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("⏹️ Cerrando Chat Académico...")
+            sys.exit(0)
+    
+# ============================================================
+# 6. MODO GUI (Tkinter) - para Windows o con display
+# ============================================================
+def ejecutar_gui():
+    """Arranca la interfaz gráfica Tkinter."""
+    try:
+        from tkinter import Tk, Frame, Label, Entry, Button, Text, scrolledtext, messagebox, filedialog, ttk
+    except ImportError:
+        print("❌ Tkinter no disponible. Usando modo web.")
+        ejecutar_web(kalm_mode=False)
         return
-    else:
-        # Modo normal: ejecutar en primer plano
-        print(f"🚀 Servidor web iniciado en http://0.0.0.0:{port}")
-        app.run(host='0.0.0.0', port=port, debug=False)
+    
+    class ChatAppGUI:
+        def __init__(self, root):
+            self.root = root
+            self.root.title("Chat Académico - IA sin API Key")
+            self.root.geometry("900x750")
+            self.core = ChatAcademicoCore()
+            self.modelo_var = tk.StringVar(value="openai")
+            self.proveedor_var = tk.StringVar(value="pollinations")
+            self.crear_widgets()
+            self.mostrar_bienvenida()
+        
+        def crear_widgets(self):
+            top = ttk.Frame(self.root, padding="10")
+            top.pack(fill=tk.X)
+            
+            ttk.Label(top, text="Proveedor:").pack(side=tk.LEFT, padx=(0,5))
+            cb_prov = ttk.Combobox(top, textvariable=self.proveedor_var, values=["pollinations", "g4f"], state="readonly", width=12)
+            cb_prov.pack(side=tk.LEFT, padx=(0,10))
+            cb_prov.bind("<<ComboboxSelected>>", self.cambiar_proveedor)
+            
+            ttk.Label(top, text="Modelo:").pack(side=tk.LEFT, padx=(0,5))
+            self.combo_modelos = ttk.Combobox(top, textvariable=self.modelo_var, values=["openai","claude","gemini","deepseek","llama","mistral","phi","qwen"], state="readonly", width=20)
+            self.combo_modelos.pack(side=tk.LEFT, padx=(0,10))
+            
+            ttk.Button(top, text="🔍 Probar", command=self.probar_modelo).pack(side=tk.LEFT, padx=(0,10))
+            ttk.Label(top, text="Tema:").pack(side=tk.LEFT, padx=(10,5))
+            self.entry_tema = ttk.Entry(top, width=40)
+            self.entry_tema.pack(side=tk.LEFT, padx=(0,10))
+            self.entry_tema.bind("<Return>", lambda e: self.generar_trabajo())
+            ttk.Button(top, text="📝 Generar", command=self.generar_trabajo).pack(side=tk.LEFT)
+            
+            frame_chat = ttk.Frame(self.root, padding="10")
+            frame_chat.pack(fill=tk.BOTH, expand=True)
+            self.text_area = scrolledtext.ScrolledText(frame_chat, wrap=tk.WORD, font=("Segoe UI", 10))
+            self.text_area.pack(fill=tk.BOTH, expand=True)
+            self.text_area.tag_configure("usuario", foreground="#0055cc", font=("Segoe UI", 10, "bold"))
+            self.text_area.tag_configure("ia", foreground="#008800")
+            self.text_area.tag_configure("titulo", foreground="#cc3300", font=("Segoe UI", 12, "bold"))
+            self.text_area.tag_configure("subtitulo", foreground="#993300", font=("Segoe UI", 11, "bold"))
+            
+            bottom = ttk.Frame(self.root, padding="10")
+            bottom.pack(fill=tk.X)
+            ttk.Button(bottom, text="📤 Exportar Word", command=self.exportar_word).pack(side=tk.LEFT, padx=5)
+            ttk.Button(bottom, text="📄 Exportar TXT", command=self.exportar_txt).pack(side=tk.LEFT, padx=5)
+            ttk.Button(bottom, text="🗑️ Limpiar", command=self.limpiar_chat).pack(side=tk.LEFT, padx=5)
+            ttk.Button(bottom, text="❓ Ayuda", command=self.mostrar_ayuda).pack(side=tk.RIGHT, padx=5)
+        
+        def mostrar_bienvenida(self):
+            self.text_area.insert(tk.END, "🤖 CHAT ACADÉMICO\n━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n✅ Sin API Key (Pollinations AI)\n✅ Elige modelo y tema\n✅ Genera trabajos con Introducción (ES/EN), Desarrollo, Conclusiones y Bibliografía.\n\n", "ia")
+        
+        def agregar_mensaje(self, texto, tipo="ia"):
+            self.text_area.insert(tk.END, texto + "\n\n", tipo)
+            self.text_area.see(tk.END)
+            self.root.update()
+        
+        def cambiar_proveedor(self, event=None):
+            prov = self.proveedor_var.get()
+            if prov == "pollinations":
+                self.combo_modelos['values'] = ["openai","claude","gemini","deepseek","llama","mistral","phi","qwen"]
+                self.modelo_var.set("openai")
+            else:
+                self.combo_modelos['values'] = ["gpt-4o-mini","gpt-4o","gpt-3.5-turbo","claude-3-haiku","gemini-pro","llama-3-70b"]
+                self.modelo_var.set("gpt-4o-mini")
+        
+        def probar_modelo(self):
+            modelo = self.modelo_var.get()
+            prov = self.proveedor_var.get()
+            self.agregar_mensaje(f"🧪 Probando {prov}/{modelo}...", "usuario")
+            def tarea():
+                try:
+                    resp = self.core.consultar_ia(modelo, [{"role":"user","content":"Responde OK"}], prov)
+                    self.root.after(0, lambda: self.agregar_mensaje(f"✅ Modelo responde: {resp}", "ia"))
+                except Exception as e:
+                    self.root.after(0, lambda: self.agregar_mensaje(f"❌ Error: {e}", "ia"))
+            threading.Thread(target=tarea, daemon=True).start()
+        
+        def generar_trabajo(self):
+            tema = self.entry_tema.get().strip()
+            if not tema:
+                messagebox.showwarning("Tema vacío", "Escribe un tema.")
+                return
+            modelo = self.modelo_var.get()
+            prov = self.proveedor_var.get()
+            self.agregar_mensaje(f"📝 Generando sobre: {tema}", "usuario")
+            def tarea():
+                try:
+                    texto = self.core.generar_trabajo(tema, modelo, prov)
+                    self.root.after(0, lambda: self.agregar_mensaje(texto, "ia"))
+                except Exception as e:
+                    self.root.after(0, lambda: self.agregar_mensaje(f"❌ Error: {e}", "ia"))
+            threading.Thread(target=tarea, daemon=True).start()
+        
+        def limpiar_chat(self):
+            self.text_area.delete(1.0, tk.END)
+            self.mostrar_bienvenida()
+        
+        def obtener_contenido(self):
+            return self.text_area.get(1.0, tk.END).strip()
+        
+        def exportar_txt(self):
+            contenido = self.obtener_contenido()
+            if not contenido:
+                messagebox.showinfo("Sin contenido", "No hay nada para exportar.")
+                return
+            archivo = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("TXT","*.txt")])
+            if archivo:
+                with open(archivo, 'w', encoding='utf-8') as f:
+                    f.write(contenido)
+                messagebox.showinfo("Éxito", f"Guardado en {archivo}")
+        
+        def exportar_word(self):
+            if Document is None:
+                messagebox.showerror("Error", "Instala python-docx: pip install python-docx")
+                return
+            contenido = self.obtener_contenido()
+            if not contenido:
+                messagebox.showinfo("Sin contenido", "No hay nada para exportar.")
+                return
+            archivo = filedialog.asksaveasfilename(defaultextension=".docx", filetypes=[("Word","*.docx")])
+            if archivo:
+                doc = Document()
+                doc.add_heading('Trabajo Académico - Chat IA', 0)
+                doc.add_paragraph(f"Generado: {datetime.datetime.now()}")
+                for linea in contenido.split('\n'):
+                    linea = linea.strip()
+                    if not linea:
+                        continue
+                    if linea.startswith('📌'):
+                        doc.add_heading(linea.replace('📌','').strip(), level=1)
+                    elif linea.startswith('***') or linea.startswith('**'):
+                        doc.add_heading(linea.strip('*'), level=2)
+                    else:
+                        doc.add_paragraph(linea)
+                doc.save(archivo)
+                messagebox.showinfo("Éxito", f"Guardado en {archivo}")
+        
+        def mostrar_ayuda(self):
+            messagebox.showinfo("Ayuda", "Usa Pollinations AI (gratis, sin key).\nModelos: openai, claude, gemini, etc.\nGenera trabajos con estructura académica.")
+    
+    root = Tk()
+    app = ChatAppGUI(root)
+    root.mainloop()
 
 # ============================================================
-# 8. PUNTO DE ENTRADA PRINCIPAL
+# 7. PUNTO DE ENTRADA PRINCIPAL
 # ============================================================
 if __name__ == "__main__":
     # Verificar si se ejecuta en modo Kalm
