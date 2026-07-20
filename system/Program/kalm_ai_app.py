@@ -3,7 +3,7 @@
 
 """
 KALM AI APP - Chat Academico + Kroot Corp unificados
-Una sola aplicacion web para ambas funciones
+VERSION FUNCIONAL PARA RENDER
 """
 
 import sys
@@ -12,6 +12,7 @@ import threading
 import time
 import subprocess
 import json
+import socket
 
 # ============================================================
 # 1. INSTALAR DEPENDENCIAS
@@ -22,7 +23,7 @@ def instalar_dependencias():
             __import__(pkg.replace("-", "_"))
         except ImportError:
             print(f"📦 Instalando {pkg}...")
-            subprocess.check_call([sys.executable, "-m", "pip", "install", pkg])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "--quiet"])
 
 instalar_dependencias()
 
@@ -79,7 +80,7 @@ class IAProvider:
         return "❌ Error: Todos los proveedores fallaron. Intenta de nuevo."
 
 # ============================================================
-# 4. TEMPLATE HTML UNIFICADO
+# 4. TEMPLATE HTML UNIFICADO (SIMPLIFICADO)
 # ============================================================
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -430,24 +431,21 @@ def chat():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ═══ RUTA DE SALUD (para verificar que la app está corriendo) ═══
+# ═══ RUTA DE SALUD ═══
 @app.route('/health')
 def health():
     return jsonify({'status': 'ok', 'message': 'Kalm AI running'})
 
 # ============================================================
-# 6. PUNTO DE ENTRADA
+# 6. PUNTO DE ENTRADA - VERSION SIMPLIFICADA
 # ============================================================
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
     
-    if "--kalm" in sys.argv:
-        print(f"🚀 Kalm AI App iniciada en puerto {port}")
-        print(f"   URL: http://127.0.0.1:{port}")
-        print(f"   Proxy: /api/kalm/")
-        sys.stdout.flush()
-        
-        # ═══ EJECUTAR EN EL MISMO PROCESO (NO EN HILO) ═══
-        app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False)
-    else:
-        app.run(host='127.0.0.1', port=port, debug=True)
+    print(f"🚀 Kalm AI App iniciada en puerto {port}")
+    print(f"   URL: http://127.0.0.1:{port}")
+    print(f"   Proxy: /api/kalm/")
+    sys.stdout.flush()
+    
+    # ═══ EJECUTAR EL SERVIDOR DIRECTAMENTE (NO EN HILO) ═══
+    app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False)
