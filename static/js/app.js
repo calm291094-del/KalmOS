@@ -702,7 +702,7 @@ function executeProgramFromMenu(path, name) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// KALM AI APP - VERSIÓN SIMPLIFICADA Y FUNCIONAL
+// KALM AI APP - VERSIÓN FUNCIONAL
 // ═══════════════════════════════════════════════════════════
 
 function openKalmAI() {
@@ -730,7 +730,6 @@ function openKalmAI() {
 function startKalmAI() {
     console.log('🚀 Iniciando Kalm AI...');
     
-    // Ejecutar kalm_ai_app.py directamente con --kalm
     fetch('/api/run-direct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -746,31 +745,23 @@ function startKalmAI() {
             if (typeof showNotification === 'function') {
                 showNotification('✅ Kalm AI iniciado', 'success');
             }
-            // Esperar y abrir el navegador
             setTimeout(() => {
                 openKalmAIBrowser();
             }, 3000);
         } else {
-            console.error('❌ Error iniciando Kalm AI:', data.error);
-            if (typeof showNotification === 'function') {
-                showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
-            }
+            console.error('❌ Error:', data.error);
             openKalmAIBrowser();
         }
     })
     .catch(err => {
         console.error('❌ Error:', err);
-        if (typeof showNotification === 'function') {
-            showNotification('❌ Error: ' + err.message, 'error');
-        }
         openKalmAIBrowser();
     });
 }
 
 function openKalmAIBrowser() {
-    console.log('🌐 Abriendo navegador con Kalm AI...');
+    console.log('🌐 Abriendo navegador...');
     
-    // Abrir la ventana del navegador
     openWin('browser');
     
     setTimeout(() => {
@@ -778,54 +769,15 @@ function openKalmAIBrowser() {
         const frame = document.getElementById('browser-frame');
         const status = document.getElementById('browser-status');
         
-        if (urlInput) {
-            urlInput.value = '/api/kalm/';
-        }
-        
-        // Forzar la carga del frame
-        if (frame) {
-            // Primero limpiar
-            frame.srcdoc = '';
-            frame.src = 'about:blank';
-            
-            setTimeout(() => {
-                frame.src = '/api/kalm/';
-                console.log('✅ Frame cargado con /api/kalm/');
-            }, 100);
-        }
-        
+        if (urlInput) urlInput.value = '/api/kalm/';
+        if (frame) frame.src = '/api/kalm/';
         if (status) {
-            status.textContent = '🧠 Cargando Kalm AI...';
-            status.style.color = '#ffaa00';
+            status.textContent = '🧠 Kalm AI';
+            status.style.color = '#da70d6';
         }
-        
-        // Verificar estado después de 5 segundos
-        setTimeout(() => {
-            fetch('/api/kalm/health')
-                .then(r => {
-                    if (r.ok) {
-                        if (status) {
-                            status.textContent = '✅ Kalm AI - Listo';
-                            status.style.color = '#00cc66';
-                        }
-                        // Recargar el frame
-                        if (frame) {
-                            frame.src = '/api/kalm/';
-                        }
-                    }
-                })
-                .catch(() => {
-                    if (status) {
-                        status.textContent = '⚠️ Kalm AI no responde';
-                        status.style.color = '#ffaa00';
-                    }
-                });
-        }, 5000);
-        
     }, 500);
 }
 
-// ═══ MANTENER COMPATIBILIDAD ═══
 function openChatAcademico() {
     openKalmAI();
 }
