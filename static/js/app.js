@@ -1,4 +1,4 @@
-// Kalm OS v4.3 - Aplicación Principal (VERSIÓN DEFINITIVA)
+// Kalm OS v4.3 - Aplicación Principal (VERSIÓN DEFINITIVA CON KALM AI CORREGIDO)
 
 // ═══════════════════════════════════════════════════════════
 // VARIABLES GLOBALES
@@ -731,15 +731,15 @@ function openKalmAI() {
 }
 
 function startKalmAIProcess() {
-    // Usar ruta correcta - el archivo está en la raíz
-    const appPath = 'kalm_ai_app.py';
+    // Usar el launcher en la raíz
+    const appPath = 'kalm_ai_app_launcher.py';
     
     fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
             path: appPath,
-            args: ['--kalm']
+            args: []
         })
     })
     .then(r => r.json())
@@ -756,7 +756,7 @@ function startKalmAIProcess() {
             if (typeof showNotification === 'function') {
                 showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
             }
-            // Intentar con ruta alternativa
+            // Intentar con ruta directa
             fallbackRunKalmAI();
         }
     })
@@ -770,7 +770,7 @@ function startKalmAIProcess() {
 }
 
 function waitForKalmAI(attempt) {
-    const maxAttempts = 20;
+    const maxAttempts = 30;
     const delay = 1500;
     
     if (attempt >= maxAttempts) {
@@ -823,17 +823,20 @@ function openKalmAIBrowser() {
             status.textContent = '🧠 Cargando Kalm AI...';
             status.style.color = '#ffaa00';
         }
+        
+        // Verificar estado después de un tiempo
+        setTimeout(checkKalmAIStatus, 3000);
     }, 300);
 }
 
 function fallbackRunKalmAI() {
-    console.log('🔄 Intentando ejecutar Kalm AI con ruta alternativa...');
+    console.log('🔄 Intentando ejecutar Kalm AI con ruta directa...');
     
     fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            path: 'system/program/kalm_ai_app.py',
+            path: 'system/Program/kalm_ai_app.py',
             args: ['--kalm']
         })
     })
@@ -1297,7 +1300,7 @@ function notepadLoad() {
         const saved = localStorage.getItem('kalm_notepad_' + name);
         if (saved) {
             content.value = saved;
-            status.textContent = '📂 Cargado: ' + name';
+            status.textContent = '📂 Cargado: ' + name;
         } else {
             status.textContent = '❌ Archivo no encontrado';
         }
@@ -1449,5 +1452,6 @@ window.openKrootCorp = openKrootCorp;
 window.showNotification = showNotification;
 window.waitForKalmAI = waitForKalmAI;
 window.startKalmAIProcess = startKalmAIProcess;
+window.checkKalmAIStatus = checkKalmAIStatus;
 
 console.log('🏰 Kalm OS v4.3 - Aplicación cargada correctamente');
