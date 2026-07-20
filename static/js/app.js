@@ -1260,7 +1260,7 @@ if (document.getElementById('clock-display')) {
 
 
 // ═══════════════════════════════════════════════════════════
-// KROOT CORP IA - VERSIÓN TERMINAL
+// KROOT CORP - VERSIÓN GUI
 // ═══════════════════════════════════════════════════════════
 
 function openKrootCorp() {
@@ -1270,24 +1270,38 @@ function openKrootCorp() {
         showNotification('🏢 Iniciando Kroot Corp IA...', 'info');
     }
     
+    // En Windows, Tkinter necesita entorno gráfico
+    // En Render, no funcionará (por eso detectamos el entorno)
+    const isRender = window.location.hostname.includes('render.com') || 
+                     window.location.hostname.includes('onrender.com');
+    
+    let scriptPath = 'system/Program/kroot_gui.py';
+    if (isRender) {
+        // En Render, usar versión de consola (sin GUI)
+        scriptPath = 'system/Program/kroot_app.py';
+        if (typeof showNotification === 'function') {
+            showNotification('⚠️ Modo consola (entorno headless)', 'warning');
+        }
+    }
+    
     fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            path: 'system/Program/kroot_app.py',
+            path: scriptPath,
             args: []
         })
     })
     .then(r => r.json())
     .then(data => {
-        console.log('📤 Respuesta Kroot Corp:', data);
+        console.log('📤 Respuesta:', data);
         
         if (data.ok && data.session_id) {
             if (typeof showNotification === 'function') {
-                showNotification('✅ Kroot Corp IA iniciado', 'success');
+                showNotification('✅ Aplicación iniciada', 'success');
             }
             if (typeof openTerminalForProcess === 'function') {
-                openTerminalForProcess(data.session_id, 'Kroot Corp IA');
+                openTerminalForProcess(data.session_id, 'Kroot Corp');
             }
         } else {
             if (typeof showNotification === 'function') {
@@ -1304,7 +1318,7 @@ function openKrootCorp() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// CHAT ACADÉMICO - VERSIÓN TERMINAL
+// CHAT ACADÉMICO - VERSIÓN GUI
 // ═══════════════════════════════════════════════════════════
 
 function openChatAcademico() {
@@ -1314,21 +1328,32 @@ function openChatAcademico() {
         showNotification('📚 Iniciando Chat Académico...', 'info');
     }
     
+    const isRender = window.location.hostname.includes('render.com') || 
+                     window.location.hostname.includes('onrender.com');
+    
+    let scriptPath = 'system/Program/chat_gui.py';
+    if (isRender) {
+        scriptPath = 'system/Program/chat_app.py';
+        if (typeof showNotification === 'function') {
+            showNotification('⚠️ Modo consola (entorno headless)', 'warning');
+        }
+    }
+    
     fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            path: 'system/Program/chat_app.py',
+            path: scriptPath,
             args: []
         })
     })
     .then(r => r.json())
     .then(data => {
-        console.log('📤 Respuesta Chat Académico:', data);
+        console.log('📤 Respuesta:', data);
         
         if (data.ok && data.session_id) {
             if (typeof showNotification === 'function') {
-                showNotification('✅ Chat Académico iniciado', 'success');
+                showNotification('✅ Aplicación iniciada', 'success');
             }
             if (typeof openTerminalForProcess === 'function') {
                 openTerminalForProcess(data.session_id, 'Chat Académico');
