@@ -193,3 +193,70 @@ class InternalBrowser:
     </script>
 </body>
 </html>'''
+
+// ═══ FUNCIÓN PARA FORZAR CARGA DE KALM AI ═══
+function forceLoadKalmAI() {
+    console.log('🔄 Force loading Kalm AI...');
+    
+    const frame = document.getElementById('browser-frame');
+    const urlInput = document.getElementById('browser-url');
+    const status = document.getElementById('browser-status');
+    
+    if (frame) {
+        // Limpiar el frame primero
+        frame.srcdoc = '';
+        frame.src = 'about:blank';
+        
+        setTimeout(() => {
+            // Cargar la URL
+            frame.src = '/api/kalm/';
+            console.log('✅ Frame cargado con /api/kalm/');
+            
+            if (status) {
+                status.textContent = '🧠 Cargando Kalm AI...';
+                status.style.color = '#ffaa00';
+            }
+            
+            if (urlInput) {
+                urlInput.value = '/api/kalm/';
+            }
+            
+            // Verificar después de 3 segundos
+            setTimeout(() => {
+                if (frame.contentDocument && frame.contentDocument.body) {
+                    const bodyText = frame.contentDocument.body.innerText || '';
+                    if (bodyText.includes('Kalm AI') || bodyText.includes('Chat Academico')) {
+                        if (status) {
+                            status.textContent = '✅ Kalm AI cargado';
+                            status.style.color = '#00cc66';
+                        }
+                    } else if (bodyText.includes('no disponible') || bodyText.includes('Error')) {
+                        if (status) {
+                            status.textContent = '⚠️ Kalm AI no disponible';
+                            status.style.color = '#ff4444';
+                        }
+                    }
+                }
+            }, 3000);
+            
+            // Verificar el proxy
+            fetch('/api/kalm/health')
+                .then(r => {
+                    if (r.ok) {
+                        console.log('✅ Kalm AI health check OK');
+                        if (status) {
+                            status.textContent = '✅ Kalm AI - Listo';
+                            status.style.color = '#00cc66';
+                        }
+                    }
+                })
+                .catch(() => {
+                    console.log('⚠️ Kalm AI health check falló');
+                });
+            
+        }, 200);
+    }
+}
+
+// Exportar función
+window.forceLoadKalmAI = forceLoadKalmAI;
