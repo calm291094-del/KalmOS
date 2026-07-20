@@ -760,7 +760,7 @@ function startKalmAI() {
 }
 
 function openKalmAIBrowser() {
-    console.log('🌐 Abriendo navegador...');
+    console.log('🌐 Abriendo navegador con Kalm AI integrado...');
     
     openWin('browser');
     
@@ -769,8 +769,9 @@ function openKalmAIBrowser() {
         const frame = document.getElementById('browser-frame');
         const status = document.getElementById('browser-status');
         
-        if (urlInput) urlInput.value = '/api/kalm/';
-        if (frame) frame.src = '/api/kalm/';
+        // La nueva ruta es /kalm-ai
+        if (urlInput) urlInput.value = '/kalm-ai';
+        if (frame) frame.src = '/kalm-ai';
         if (status) {
             status.textContent = '🧠 Kalm AI';
             status.style.color = '#da70d6';
