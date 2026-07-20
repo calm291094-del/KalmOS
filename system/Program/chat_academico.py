@@ -467,11 +467,20 @@ def ejecutar_web(kalm_mode=False):
         # ═══ MODO KALM: ARRANCAR SERVIDOR EN SEGUNDO PLANO ═══
         url = f"http://localhost:{port}"
     
-        # ⚠️ IMPRIMIR LA URL PRIMERO (para que el ScriptRunner la capture)
+        # ═══ ESCRIBIR URL EN UN ARCHIVO (método más confiable) ═══
+        try:
+            signal_dir = Path("kalm_data/persistence")
+            signal_dir.mkdir(parents=True, exist_ok=True)
+            signal_file = signal_dir / "chat_academico_url.txt"
+            signal_file.write_text(url)
+            print(f"✅ URL escrita en {signal_file}")
+        except Exception as e:
+            print(f"⚠️ Error escribiendo archivo de señal: {e}")
+    
+        # También imprimir por si acaso
         print(f"KALM_URL={url}")
         sys.stdout.flush()
     
-        # Luego iniciar el servidor en segundo plano
         print(f"🚀 Iniciando Chat Académico en puerto {port} (modo Kalm)")
         sys.stdout.flush()
     
@@ -486,7 +495,7 @@ def ejecutar_web(kalm_mode=False):
         thread.start()
     
         # Esperar a que el servidor esté listo
-        time.sleep(2)
+        time.sleep(3)
     
         # Mantener el proceso vivo
         try:
@@ -494,6 +503,11 @@ def ejecutar_web(kalm_mode=False):
                 time.sleep(1)
         except KeyboardInterrupt:
             print("⏹️ Cerrando Chat Académico...")
+            # Limpiar archivo de señal
+            try:
+                signal_file.unlink()
+            except:
+                pass
             sys.exit(0)
     
 # ============================================================
