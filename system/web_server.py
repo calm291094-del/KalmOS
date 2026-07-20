@@ -296,17 +296,24 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             if not kalm_path:
                 kalm_path = "/"
             
-            target_url = f"http://localhost:5000{kalm_path}"
+            target_url = f"http://127.0.0.1:5000{kalm_path}"
             if parsed.query:
                 target_url += "?" + parsed.query
             
             log(f"🔄 Proxy Kalm AI: {self.path} -> {target_url}", "DEBUG")
             
             try:
-                req = urllib.request.Request(target_url)
+                req = urllib.request.Request(target_url, method=self.command)
                 for header in ["User-Agent", "Accept", "Accept-Language", "Content-Type"]:
                     if header in self.headers:
                         req.add_header(header, self.headers[header])
+                
+                # Si es GET, no hay body
+                if self.command in ["POST", "PUT", "PATCH"]:
+                    content_length = int(self.headers.get("Content-Length", 0))
+                    if content_length > 0:
+                        body = self.rfile.read(content_length)
+                        req.data = body
                 
                 with urllib.request.urlopen(req, timeout=30) as resp:
                     content = resp.read()
@@ -319,13 +326,21 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(content)
                     log(f"✅ Proxy Kalm AI OK", "DEBUG")
-            except Exception as e:
+            except urllib.error.URLError as e:
                 log(f"❌ Proxy Kalm AI error: {e}", "WARN")
                 self.send_response(503)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
-                html_content = """<html><body><h2>Kalm AI no disponible</h2><p>Inicia la aplicacion desde el menu Program.</p></body></html>"""
+                html_content = """<html><body>
+                    <h2 style="color:#da70d6;">🧠 Kalm AI no disponible</h2>
+                    <p style="color:#9370db;">Inicia la aplicación desde el menú Program o el escritorio.</p>
+                    <p style="color:#6a0dad;font-size:12px;">Ejecuta: <code>python kalm_ai_app.py --kalm</code></p>
+                </body></html>"""
                 self.wfile.write(html_content.encode('utf-8'))
+            except Exception as e:
+                log(f"❌ Proxy Kalm AI exception: {e}", "ERROR")
+                self.send_response(500)
+                self.end_headers()
             return
         
         # ═══ SSE - STREAM DE PROCESOS ═══
@@ -696,17 +711,23 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             if not kalm_path:
                 kalm_path = "/"
             
-            target_url = f"http://localhost:5000{kalm_path}"
+            target_url = f"http://127.0.0.1:5000{kalm_path}"
             if parsed.query:
                 target_url += "?" + parsed.query
             
             log(f"🔄 Proxy Kalm AI: {self.path} -> {target_url}", "DEBUG")
             
             try:
-                req = urllib.request.Request(target_url)
+                req = urllib.request.Request(target_url, method=self.command)
                 for header in ["User-Agent", "Accept", "Accept-Language", "Content-Type"]:
                     if header in self.headers:
                         req.add_header(header, self.headers[header])
+                
+                if self.command in ["POST", "PUT", "PATCH"]:
+                    content_length = int(self.headers.get("Content-Length", 0))
+                    if content_length > 0:
+                        body = self.rfile.read(content_length)
+                        req.data = body
                 
                 with urllib.request.urlopen(req, timeout=30) as resp:
                     content = resp.read()
@@ -719,13 +740,21 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(content)
                     log(f"✅ Proxy Kalm AI OK", "DEBUG")
-            except Exception as e:
+            except urllib.error.URLError as e:
                 log(f"❌ Proxy Kalm AI error: {e}", "WARN")
                 self.send_response(503)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
-                html_content = """<html><body><h2>Kalm AI no disponible</h2><p>Inicia la aplicacion desde el menu Program.</p></body></html>"""
+                html_content = """<html><body>
+                    <h2 style="color:#da70d6;">🧠 Kalm AI no disponible</h2>
+                    <p style="color:#9370db;">Inicia la aplicación desde el menú Program o el escritorio.</p>
+                    <p style="color:#6a0dad;font-size:12px;">Ejecuta: <code>python kalm_ai_app.py --kalm</code></p>
+                </body></html>"""
                 self.wfile.write(html_content.encode('utf-8'))
+            except Exception as e:
+                log(f"❌ Proxy Kalm AI exception: {e}", "ERROR")
+                self.send_response(500)
+                self.end_headers()
             return
         
         # ═══ RUN SCRIPT ═══
@@ -740,6 +769,30 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     return
                 
                 result = ScriptRunner.run(path, args)
+                
+                if result.get("ok") and result.get("viewer_path"):
+                    viewer_path = result["viewer_path"]
+                    viewer_url = f"/api/viewer?path={urllib.parse.quote(viewer_path)}"
+                    result["viewer_url"] = viewer_url
+                
+                self._json(result)
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+            return
+        
+        # ═══ RUN SCRIPT DIRECT ═══
+        if p == "/api/run-direct":
+            try:
+                data = json.loads(body)
+                path = data.get("path", "").strip()
+                args = data.get("args", [])
+                
+                if not path:
+                    self._json({"ok": False, "error": "Ruta requerida"})
+                    return
+                
+                from system.virtual_runner import VirtualRunner
+                result = VirtualRunner.execute(path, args)
                 
                 if result.get("ok") and result.get("viewer_path"):
                     viewer_path = result["viewer_path"]
@@ -937,8 +990,8 @@ class KalmWebHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS, PUT, PATCH")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         self.end_headers()
 
 
