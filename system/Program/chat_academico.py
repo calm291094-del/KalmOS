@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-CHAT ACADÉMICO - VERSIÓN SIMPLE PARA KALM OS
-Usa Flask y Pollinations AI
+CHAT ACADÉMICO - VERSIÓN DEFINITIVA PARA KALM OS
 """
 
 import sys
@@ -13,10 +12,9 @@ import time
 import subprocess
 from pathlib import Path
 
-# Instalar dependencias automáticamente
+# Instalar dependencias
 def instalar_dependencias():
-    dependencias = ["flask", "flask-cors", "requests", "python-docx"]
-    for pkg in dependencias:
+    for pkg in ["flask", "flask-cors", "requests", "python-docx"]:
         try:
             __import__(pkg.replace("-", "_"))
         except ImportError:
@@ -25,12 +23,10 @@ def instalar_dependencias():
 
 instalar_dependencias()
 
-# Importar después de instalar
 from flask import Flask, request, render_template_string, jsonify, send_file
 from flask_cors import CORS
 import requests
 
-# ═══ TEMPLATE HTML ═══
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
@@ -162,7 +158,6 @@ function limpiar() {
 </html>
 """
 
-# ═══ CLIENTE POLLINATIONS ═══
 class PollinationsClient:
     BASE_URL = "https://text.pollinations.ai/openai"
     
@@ -173,7 +168,6 @@ class PollinationsClient:
         data = response.json()
         return data["choices"][0]["message"]["content"]
 
-# ═══ CREAR APP FLASK ═══
 app = Flask(__name__)
 CORS(app)
 client = PollinationsClient()
@@ -208,6 +202,7 @@ def generar():
 
 @app.route('/probar', methods=['POST'])
 def probar():
+    data = request.json
     modelo = data.get('modelo', 'openai')
     try:
         resp = client.chat_completion(modelo, [{"role": "user", "content": "Responde OK"}])
@@ -231,7 +226,6 @@ def exportar():
         buffer.seek(0)
         return send_file(buffer, as_attachment=True, download_name='trabajo.txt', mimetype='text/plain')
     else:
-        # docx
         try:
             from docx import Document
             doc = Document()
@@ -246,17 +240,14 @@ def exportar():
         except ImportError:
             return jsonify({'error': 'python-docx no instalado'}), 500
 
-# ═══ PUNTO DE ENTRADA ═══
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
     
-    # Verificar si es modo Kalm
     if "--kalm" in sys.argv:
         print(f"🚀 Chat Académico iniciado en puerto {port}")
         print(f"http://localhost:{port}")
         sys.stdout.flush()
         
-        # Ejecutar en segundo plano
         def run():
             app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
         
