@@ -1292,7 +1292,42 @@ function musicPrev() {
     if (time) time.textContent = '0:00';
 }
 
-// ═══ CHAT ACADÉMICO ═══
+// ═══════════════════════════════════════════════════════════
+// FUNCIONES PARA RELOJ
+// ═══════════════════════════════════════════════════════════
+
+function updateWorldClocks() {
+    const now = new Date();
+    const localDisplay = document.getElementById('clock-display');
+    if (localDisplay) {
+        localDisplay.textContent = now.toLocaleTimeString('es-ES');
+    }
+    
+    const cities = [
+        { id: 'clock-london', offset: 0 },
+        { id: 'clock-ny', offset: -4 },
+        { id: 'clock-tokyo', offset: 9 },
+        { id: 'clock-sydney', offset: 10 }
+    ];
+    
+    cities.forEach(city => {
+        const el = document.getElementById(city.id);
+        if (el) {
+            const cityTime = new Date(now.getTime() + (now.getTimezoneOffset() + city.offset * 60) * 60000);
+            el.textContent = cityTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        }
+    });
+}
+
+if (document.getElementById('clock-display')) {
+    updateWorldClocks();
+    setInterval(updateWorldClocks, 1000);
+}
+
+// ═══════════════════════════════════════════════════════════
+// CHAT ACADÉMICO
+// ═══════════════════════════════════════════════════════════
+
 function openChatAcademico() {
     console.log('📚 Abriendo Chat Académico...');
     
@@ -1312,6 +1347,7 @@ function openChatAcademico() {
     .then(r => r.json())
     .then(data => {
         console.log('📤 Respuesta Chat Académico:', data);
+        
         if (data.ok && data.viewer_url) {
             // Abrir el navegador con la URL devuelta
             openWin('browser');
@@ -1346,60 +1382,47 @@ function openChatAcademico() {
                     showNotification('✅ Chat Académico iniciado', 'success');
                 }
             } else {
-                showNotification('⚠️ Chat Académico iniciado pero no se pudo abrir el navegador', 'warning');
+                // Si no se encontró URL en stdout, mostrar mensaje
+                if (typeof showNotification === 'function') {
+                    showNotification('⚠️ Chat Académico iniciado, pero no se pudo abrir el navegador', 'warning');
+                }
+                // Intentar abrir en localhost:5000 por defecto
+                openWin('browser');
+                setTimeout(() => {
+                    const urlInput = document.getElementById('browser-url');
+                    if (urlInput) {
+                        urlInput.value = 'http://localhost:5000';
+                        if (typeof browserNavigate === 'function') {
+                            browserNavigate();
+                        }
+                    }
+                }, 500);
             }
         } else {
-            showNotification('❌ Error iniciando Chat Académico: ' + (data.error || 'desconocido'), 'error');
+            if (typeof showNotification === 'function') {
+                showNotification('❌ Error iniciando Chat Académico: ' + (data.error || 'desconocido'), 'error');
+            }
         }
     })
     .catch(err => {
-        showNotification('❌ Error: ' + err.message, 'error');
-    });
-}
-
-// ═══════════════════════════════════════════════════════════
-// FUNCIONES PARA RELOJ
-// ═══════════════════════════════════════════════════════════
-
-function updateWorldClocks() {
-    const now = new Date();
-    const localDisplay = document.getElementById('clock-display');
-    if (localDisplay) {
-        localDisplay.textContent = now.toLocaleTimeString('es-ES');
-    }
-    
-    const cities = [
-        { id: 'clock-london', offset: 0 },
-        { id: 'clock-ny', offset: -4 },
-        { id: 'clock-tokyo', offset: 9 },
-        { id: 'clock-sydney', offset: 10 }
-    ];
-    
-    cities.forEach(city => {
-        const el = document.getElementById(city.id);
-        if (el) {
-            const cityTime = new Date(now.getTime() + (now.getTimezoneOffset() + city.offset * 60) * 60000);
-            el.textContent = cityTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        console.error('❌ Error:', err);
+        if (typeof showNotification === 'function') {
+            showNotification('❌ Error: ' + err.message, 'error');
         }
     });
 }
 
-if (document.getElementById('clock-display')) {
-    updateWorldClocks();
-    setInterval(updateWorldClocks, 1000);
-}
 
 // ═══════════════════════════════════════════════════════════
 // FUNCIONES PARA HERRAMIENTAS Y JUEGOS (desde window)
 // ═══════════════════════════════════════════════════════════
-
 // Estas funciones se cargan desde tools.js y games.js
 // window.runTool y window.runGame ya están definidas
+
 
 // ═══════════════════════════════════════════════════════════
 // EXPORTAR FUNCIONES GLOBALMENTE
 // ═══════════════════════════════════════════════════════════
-
 
 window.runTool = runTool;
 window.runGame = runGame;
