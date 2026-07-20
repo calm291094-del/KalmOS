@@ -11,8 +11,6 @@ import shutil
 from pathlib import Path
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
-from wsgiref.simple_server import make_server
-from wsgiref.handlers import SimpleHandler
 
 from system.config import (
     BASE_DIR, VIEWS_DIR, STATIC_DIR, BG_FILE, DRIVE_D, DATA_DIR, log, IS_CLOUD
@@ -24,14 +22,19 @@ from system.program_detector import ProgramDetector
 from system.registry import get_dns_server, get_proxy_server
 from system.script_runner import ScriptRunner
 
-# ═══ IMPORTAR KALM AI APP ═══
+# ═══ IMPORTAR KALM AI HANDLER ═══
 try:
-    from system.Program.kalm_ai_app import kalm_ai_app
+    from system.Program.kalm_ai_handler import (
+        serve_kalm_ai_page,
+        handle_generar,
+        handle_chat,
+        handle_health
+    )
     KALM_AI_AVAILABLE = True
-    log("Kalm AI App importada correctamente", "INFO")
+    log("Kalm AI Handler importado correctamente", "INFO")
 except Exception as e:
     KALM_AI_AVAILABLE = False
-    log(f"No se pudo importar Kalm AI App: {e}", "WARN")
+    log(f"No se pudo importar Kalm AI Handler: {e}", "WARN")
 
 
 class KalmWebHandler(BaseHTTPRequestHandler):
@@ -103,7 +106,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         return None, None
     
     def _serve_kalm_ai(self, path):
-        """Sirve Kalm AI directamente en el mismo proceso"""
+        """Sirve Kalm AI directamente sin Flask"""
         if not KALM_AI_AVAILABLE:
             self.send_response(503)
             self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -111,72 +114,66 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"<h1>Kalm AI no disponible</h1>")
             return
         
-        try:
-            # Capturar la salida de la app Flask
-            from io import BytesIO
-            import sys
-            from wsgiref.util import setup_testing_defaults
-            
-            # Construir el entorno WSGI
-            env = {}
-            setup_testing_defaults(env)
-            
-            # Headers
-            for header, value in self.headers.items():
-                key = 'HTTP_' + header.upper().replace('-', '_')
-                env[key] = value
-            
-            env['REQUEST_METHOD'] = self.command
-            env['PATH_INFO'] = path[9:] if path.startswith("/kalm-ai") else "/"
-            if not env['PATH_INFO'] or env['PATH_INFO'] == "":
-                env['PATH_INFO'] = "/"
-            env['QUERY_STRING'] = self.path.split('?')[1] if '?' in self.path else ''
-            env['SERVER_NAME'] = 'localhost'
-            env['SERVER_PORT'] = '8080'
-            env['wsgi.input'] = BytesIO(self.rfile.read(int(self.headers.get('Content-Length', 0))))
-            env['wsgi.errors'] = sys.stderr
-            env['wsgi.multithread'] = True
-            env['wsgi.multiprocess'] = False
-            env['wsgi.run_once'] = False
-            
-            # Ejecutar la app
-            response_status = None
-            response_headers = []
-            response_body = []
-            
-            def start_response(status, headers, exc_info=None):
-                nonlocal response_status, response_headers
-                response_status = status
-                response_headers = headers
-                return response_body.append
-            
-            result = kalm_ai_app(env, start_response)
-            
-            # Enviar respuesta
-            if response_status:
-                status_code = int(response_status.split()[0])
-                self.send_response(status_code)
-                for header, value in response_headers:
-                    self.send_header(header, value)
+        # Extraer la ruta
+        route = path[9:] if path.startswith("/kalm-ai") else "/"
+        if not route or route == "":
+            route = "/"
+        
+        log(f"Kalm AI route: {route}", "DEBUG")
+        
+        # GET requests
+        if self.command == "GET":
+            if route == "/" or route == "/index":
+                # Página principal
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
-                
-                for chunk in result:
-                    if chunk:
-                        self.wfile.write(chunk)
-                if response_body:
-                    for chunk in response_body:
-                        if chunk:
-                            self.wfile.write(chunk)
+                self.wfile.write(serve_kalm_ai_page().encode("utf-8"))
+                return
+            
+            elif route == "/health":
+                # Health check
+                result, code = handle_health()
+                self.send_response(code)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode("utf-8"))
+                return
+            
             else:
-                self.send_response(500)
+                # 404
+                self.send_response(404)
                 self.end_headers()
-                
-        except Exception as e:
-            log(f"Error sirviendo Kalm AI: {e}", "ERROR")
-            self.send_response(500)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
+                return
+        
+        # POST requests
+        elif self.command == "POST":
+            # Leer el body
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length).decode("utf-8")
+            
+            try:
+                data = json.loads(body) if body else {}
+            except:
+                data = {}
+            
+            if route == "/generar":
+                result, code = handle_generar(data)
+            elif route == "/chat":
+                result, code = handle_chat(data)
+            else:
+                result, code = {"error": "Ruta no encontrada"}, 404
+            
+            self.send_response(code)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
-            self.wfile.write(f"<h1>Error en Kalm AI</h1><p>{str(e)}</p>".encode("utf-8"))
+            self.wfile.write(json.dumps(result).encode("utf-8"))
+            return
+        
+        else:
+            self.send_response(405)
+            self.end_headers()
     
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
