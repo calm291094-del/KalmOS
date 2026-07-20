@@ -18,6 +18,12 @@ function openWin(id) {
     
     updateTaskbar(id);
     
+    // ═══ SI ES EL NAVEGADOR, NO CARGAR PÁGINA DE INICIO ═══
+    if (id === 'browser') {
+        // No hacer nada, dejar que forceLoadKalmAI maneje la carga
+        return;
+    }
+    
     // Cargar contenido según ventana
     const loaders = {
         'explorer': () => { const grid = document.getElementById('file-grid'); if (grid && grid.children.length === 0) loadFiles('/D'); },
@@ -26,7 +32,6 @@ function openWin(id) {
         'proxy': loadProxy,
         'servers': loadServers,
         'pac': loadPACInfo,
-        'browser': loadBrowserBookmarks,
         'tools': () => { if (typeof loadTools === 'function') loadTools(); },
         'games': () => { if (typeof loadGames === 'function') loadGames(); }
     };
