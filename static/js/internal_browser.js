@@ -341,6 +341,7 @@ function loadBrowserBookmarks() {
         });
 }
 
+// ═══ Inicializar - MODIFICADO ═══
 document.addEventListener('DOMContentLoaded', function() {
     setupBrowserUrlInput();
     
@@ -348,75 +349,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const win = document.getElementById('win-browser');
         if (win && win.style.display !== 'none') {
             setTimeout(loadBrowserBookmarks, 300);
+            // ═══ NO CARGAR PÁGINA DE INICIO AUTOMÁTICAMENTE ═══
+            // La página de inicio solo se muestra si el usuario escribe una URL
         }
     });
     observer.observe(document.body, { childList: true, subtree: true });
     
-    setTimeout(() => {
-        const urlInput = document.getElementById('browser-url');
-        if (urlInput && !urlInput.value) {
-            const frame = document.getElementById('browser-frame');
-            if (frame) {
-                frame.srcdoc = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="UTF-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <title>🏰 Kalm Browser</title>
-                        <style>
-                            * { margin: 0; padding: 0; box-sizing: border-box; }
-                            body {
-                                background: linear-gradient(135deg, #0a0514 0%, #1a0033 100%);
-                                color: #e6e6fa;
-                                font-family: 'Segoe UI', sans-serif;
-                                display: flex;
-                                justify-content: center;
-                                align-items: center;
-                                height: 100vh;
-                                padding: 20px;
-                            }
-                            .container {
-                                text-align: center;
-                                max-width: 600px;
-                            }
-                            .logo { font-size: 80px; margin-bottom: 20px; }
-                            h1 { color: #da70d6; font-size: 28px; margin-bottom: 10px; }
-                            p { color: #9370db; font-size: 14px; margin-bottom: 30px; }
-                            .tips {
-                                background: rgba(75,0,130,0.2);
-                                border: 1px solid #4b0082;
-                                border-radius: 12px;
-                                padding: 20px;
-                                text-align: left;
-                            }
-                            .tips h3 { color: #da70d6; margin-bottom: 10px; font-size: 14px; }
-                            .tips li { color: #d8bfd8; margin: 8px 0; list-style: none; font-size: 13px; }
-                            .tips li::before { content: "🔹 "; }
-                            .info { color: #6a0dad; font-size: 11px; margin-top: 20px; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="container">
-                            <div class="logo">🏰</div>
-                            <h1>Kalm Internal Browser</h1>
-                            <p>Navegador integrado de Kalm OS v4.3</p>
-                            <div class="tips">
-                                <h3>💡 Consejos:</h3>
-                                <li>Escribe una URL en la barra superior</li>
-                                <li>Ej: <b>google.com</b> o <b>github.com</b></li>
-                                <li>Usa marcadores para acceder rápido</li>
-                                <li>Sitios como Google se abren en nueva pestaña</li>
-                            </div>
-                            <div class="info">🔒 Siempre seguro - Proxy integrado</div>
-                        </div>
-                    </body>
-                    </html>
-                `;
-            }
-            urlInput.value = 'https://kalmos.onrender.com';
-        }
-    }, 500);
+    // ═══ YA NO CARGAR PÁGINA DE INICIO ═══
+    // Eliminar el setTimeout que cargaba la página de inicio
 });
 
 window.browserNavigate = browserNavigate;
