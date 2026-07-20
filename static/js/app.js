@@ -729,58 +729,6 @@ function executeProgramFromMenu(path, name) {
     });
 }
 
-// ═══════════════════════════════════════════════════════════
-// KROOT CORP - VERSIÓN TERMINAL
-// ═══════════════════════════════════════════════════════════
-
-function openKrootCorp() {
-    console.log('🏢 Abriendo Kroot Corp IA (modo terminal)...');
-    
-    if (typeof showNotification === 'function') {
-        showNotification('🏢 Iniciando Kroot Corp IA...', 'info');
-    }
-    
-    // Ejecutar la versión de consola de Kroot Corp
-    fetch('/api/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            path: 'system/Program/kroot_app.py',
-            args: []
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        console.log('📤 Respuesta Kroot Corp:', data);
-        
-        if (data.ok && data.session_id) {
-            if (typeof showNotification === 'function') {
-                showNotification('✅ Kroot Corp IA iniciado en terminal', 'success');
-            }
-            
-            // Abrir la terminal
-            if (typeof openTerminalForProcess === 'function') {
-                openTerminalForProcess(data.session_id, 'Kroot Corp IA');
-            }
-        } else if (data.ok && data.stdout) {
-            // Mostrar salida en el runner
-            openWin('runner');
-            const output = document.getElementById('script-out');
-            if (output) output.textContent = data.stdout;
-        } else {
-            if (typeof showNotification === 'function') {
-                showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
-            }
-        }
-    })
-    .catch(err => {
-        console.error('❌ Error:', err);
-        if (typeof showNotification === 'function') {
-            showNotification('❌ Error: ' + err.message, 'error');
-        }
-    });
-}
-
 
 // ═══════════════════════════════════════════════════════════
 // PAC CONFIGURATION
@@ -1312,17 +1260,60 @@ if (document.getElementById('clock-display')) {
 
 
 // ═══════════════════════════════════════════════════════════
+// KROOT CORP IA - VERSIÓN TERMINAL
+// ═══════════════════════════════════════════════════════════
+
+function openKrootCorp() {
+    console.log('🏢 Abriendo Kroot Corp IA...');
+    
+    if (typeof showNotification === 'function') {
+        showNotification('🏢 Iniciando Kroot Corp IA...', 'info');
+    }
+    
+    fetch('/api/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            path: 'system/Program/kroot_app.py',
+            args: []
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        console.log('📤 Respuesta Kroot Corp:', data);
+        
+        if (data.ok && data.session_id) {
+            if (typeof showNotification === 'function') {
+                showNotification('✅ Kroot Corp IA iniciado', 'success');
+            }
+            if (typeof openTerminalForProcess === 'function') {
+                openTerminalForProcess(data.session_id, 'Kroot Corp IA');
+            }
+        } else {
+            if (typeof showNotification === 'function') {
+                showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
+            }
+        }
+    })
+    .catch(err => {
+        console.error('❌ Error:', err);
+        if (typeof showNotification === 'function') {
+            showNotification('❌ Error: ' + err.message, 'error');
+        }
+    });
+}
+
+// ═══════════════════════════════════════════════════════════
 // CHAT ACADÉMICO - VERSIÓN TERMINAL
 // ═══════════════════════════════════════════════════════════
 
 function openChatAcademico() {
-    console.log('📚 Abriendo Chat Académico (modo terminal)...');
+    console.log('📚 Abriendo Chat Académico...');
     
     if (typeof showNotification === 'function') {
         showNotification('📚 Iniciando Chat Académico...', 'info');
     }
     
-    // Ejecutar la versión de consola
     fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1337,18 +1328,11 @@ function openChatAcademico() {
         
         if (data.ok && data.session_id) {
             if (typeof showNotification === 'function') {
-                showNotification('✅ Chat Académico iniciado en terminal', 'success');
+                showNotification('✅ Chat Académico iniciado', 'success');
             }
-            
-            // Abrir la terminal
             if (typeof openTerminalForProcess === 'function') {
                 openTerminalForProcess(data.session_id, 'Chat Académico');
             }
-        } else if (data.ok && data.stdout) {
-            // Mostrar salida en el runner
-            openWin('runner');
-            const output = document.getElementById('script-out');
-            if (output) output.textContent = data.stdout;
         } else {
             if (typeof showNotification === 'function') {
                 showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
