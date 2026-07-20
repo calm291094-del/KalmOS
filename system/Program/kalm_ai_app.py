@@ -21,7 +21,7 @@ def instalar_dependencias():
         try:
             __import__(pkg.replace("-", "_"))
         except ImportError:
-            print(f"Instalando {pkg}...")
+            print(f"📦 Instalando {pkg}...")
             subprocess.check_call([sys.executable, "-m", "pip", "install", pkg])
 
 instalar_dependencias()
@@ -66,17 +66,17 @@ class IAProvider:
         
         for name, func in providers:
             try:
-                print(f"Intentando con {name}...")
+                print(f"🔄 Intentando con {name}...")
                 result = func()
                 if result and len(result.strip()) > 10:
-                    print(f"Exito con {name}")
+                    print(f"✅ Éxito con {name}")
                     return result
             except Exception as e:
-                print(f"{name} fallo: {e}")
+                print(f"❌ {name} falló: {e}")
                 time.sleep(1)
                 continue
         
-        return "Error: Todos los proveedores fallaron. Intenta de nuevo."
+        return "❌ Error: Todos los proveedores fallaron. Intenta de nuevo."
 
 # ============================================================
 # 4. TEMPLATE HTML UNIFICADO
@@ -142,7 +142,7 @@ HTML_TEMPLATE = """
 <div class="container">
     <div class="header">
         <h1>🧠 Kalm AI</h1>
-        <span class="status" id="status">Listo</span>
+        <span class="status" id="status">🟢 Listo</span>
     </div>
     
     <div class="tabs">
@@ -222,7 +222,7 @@ HTML_TEMPLATE = """
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
         document.getElementById(`tab-${tab}`).classList.add('active');
-        document.getElementById('status').textContent = `Listo - ${tab === 'chat' ? 'Chat' : 'Kroot'}`;
+        document.getElementById('status').textContent = `🟢 Listo - ${tab === 'chat' ? 'Chat' : 'Kroot'}`;
     }
 
     function getResultContainer() {
@@ -250,7 +250,7 @@ HTML_TEMPLATE = """
         btn.disabled = loading;
         if (loading) {
             btn.innerHTML = '<span class="loading"></span> Generando...';
-            setStatus('Generando...', 'loading');
+            setStatus('⏳ Generando...', 'loading');
         } else {
             btn.innerHTML = currentTab === 'chat' ? '📝 Generar' : '📝 Generar Informe';
         }
@@ -289,7 +289,7 @@ HTML_TEMPLATE = """
             
             if (data.error) {
                 appendResult(`\n❌ Error: ${data.error}\n`, 'error');
-                setStatus('Error', 'error');
+                setStatus('❌ Error', 'error');
             } else {
                 const lines = data.resultado.split('\n');
                 for (const line of lines) {
@@ -300,11 +300,11 @@ HTML_TEMPLATE = """
                     else { appendResult(line + '\n', 'normal'); }
                 }
                 currentResult = data.resultado;
-                setStatus('Listo', 'success');
+                setStatus('✅ Listo', 'success');
             }
         } catch (error) {
             appendResult(`\n❌ Error: ${error.message}\n`, 'error');
-            setStatus('Error', 'error');
+            setStatus('❌ Error', 'error');
         }
         setLoading(false);
     }
@@ -327,8 +327,8 @@ HTML_TEMPLATE = """
             });
             const data = await response.json();
             if (data.error) { appendResult(`❌ Error: ${data.error}\n`, 'error'); }
-            else { appendResult(`${data.respuesta}\n\n`, 'normal'); setStatus('Listo', 'success'); }
-        } catch (error) { appendResult(`❌ Error: ${error.message}\n`, 'error'); setStatus('Error', 'error'); }
+            else { appendResult(`${data.respuesta}\n\n`, 'normal'); setStatus('✅ Listo', 'success'); }
+        } catch (error) { appendResult(`❌ Error: ${error.message}\n`, 'error'); setStatus('❌ Error', 'error'); }
         getTemaInput().value = '';
         setLoading(false);
     }
@@ -342,7 +342,7 @@ HTML_TEMPLATE = """
         a.download = `${currentTab}_${new Date().toISOString().slice(0,19).replace(/[:-]/g, '')}.txt`;
         a.click();
         URL.revokeObjectURL(url);
-        setStatus('Exportado', 'success');
+        setStatus('📄 Exportado', 'success');
     }
 
     function limpiar() {
@@ -358,7 +358,7 @@ HTML_TEMPLATE = """
         `;
         currentResult = '';
         getTemaInput().value = '';
-        setStatus('Limpiado', 'info');
+        setStatus('🗑️ Limpiado', 'info');
     }
 
     // Event listeners
@@ -430,6 +430,11 @@ def chat():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ═══ RUTA DE SALUD (para verificar que la app está corriendo) ═══
+@app.route('/health')
+def health():
+    return jsonify({'status': 'ok', 'message': 'Kalm AI running'})
+
 # ============================================================
 # 6. PUNTO DE ENTRADA
 # ============================================================
@@ -437,20 +442,23 @@ if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
     
     if "--kalm" in sys.argv:
-        print(f"Kalm AI App iniciada en puerto {port}")
-        print(f"http://localhost:{port}")
+        print(f"🚀 Kalm AI App iniciada en puerto {port}")
+        print(f"   URL: http://127.0.0.1:{port}")
+        print(f"   Proxy: /api/kalm/")
         sys.stdout.flush()
         
         def run():
-            app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+            app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False)
         
         thread = threading.Thread(target=run, daemon=True)
         thread.start()
         
+        # Mantener el proceso vivo
         try:
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
+            print("\n⏹️ Deteniendo Kalm AI...")
             sys.exit(0)
     else:
-        app.run(host='0.0.0.0', port=port, debug=True)
+        app.run(host='127.0.0.1', port=port, debug=True)
