@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-CHAT ACADÉMICO - VERSIÓN WEB BONITA
-Interfaz moderna en el navegador interno de Kalm OS
+CHAT ACADÉMICO - VERSIÓN WEB BONITA (con soporte para proxy)
 """
 
 import sys
@@ -11,7 +10,6 @@ import os
 import threading
 import time
 import subprocess
-from pathlib import Path
 
 # ============================================================
 # 1. INSTALAR DEPENDENCIAS
@@ -32,8 +30,7 @@ instalar_dependencias()
 from flask import Flask, request, render_template_string, jsonify
 from flask_cors import CORS
 import requests
-import json
-import random
+import time
 
 # ============================================================
 # 3. PROVEEDORES DE IA (Múltiples fallbacks)
@@ -41,7 +38,6 @@ import random
 class IAProvider:
     @staticmethod
     def pollinations(prompt, model="openai"):
-        """Proveedor 1: Pollinations AI"""
         url = "https://text.pollinations.ai/openai"
         payload = {"model": model, "messages": [{"role": "user", "content": prompt}], "stream": False}
         response = requests.post(url, json=payload, timeout=60)
@@ -51,7 +47,6 @@ class IAProvider:
     
     @staticmethod
     def duckduckgo(prompt):
-        """Proveedor 2: DuckDuckGo AI (sin API key)"""
         try:
             from duckduckgo_search import DDGS
             with DDGS() as ddgs:
@@ -62,7 +57,6 @@ class IAProvider:
     
     @staticmethod
     def huggingface(prompt):
-        """Proveedor 3: Hugging Face (sin API key)"""
         try:
             from huggingface_hub import InferenceClient
             client = InferenceClient(model="HuggingFaceH4/zephyr-7b-beta")
@@ -73,11 +67,9 @@ class IAProvider:
     
     @staticmethod
     def get_response(prompt, model="openai"):
-        """Intenta con múltiples proveedores en cascada"""
         providers = [
             ("Pollinations", lambda: IAProvider.pollinations(prompt, model)),
             ("DuckDuckGo", lambda: IAProvider.duckduckgo(prompt)),
-            ("HuggingFace", lambda: IAProvider.huggingface(prompt)),
         ]
         
         for name, func in providers:
@@ -95,7 +87,7 @@ class IAProvider:
         raise Exception("Todos los proveedores fallaron. Intenta de nuevo en unos minutos.")
 
 # ============================================================
-# 4. TEMPLATE HTML (Interfaz bonita)
+# 4. TEMPLATE HTML (Interfaz bonita con rutas relativas)
 # ============================================================
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -378,6 +370,9 @@ HTML_TEMPLATE = """
         const btnLimpiar = document.getElementById('btn-limpiar');
         const modeloSelect = document.getElementById('modelo');
         
+        // Usar rutas relativas para el proxy
+        const API_BASE = '/api/chat';
+        
         function setStatus(texto, tipo = 'info') {
             const colors = {
                 'info': '#9370db',
@@ -434,7 +429,7 @@ HTML_TEMPLATE = """
             appendResult('='.repeat(40) + '\n\n', 'normal');
             
             try {
-                const response = await fetch('/generar', {
+                const response = await fetch(`${API_BASE}/generar`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ tema, modelo })
@@ -484,7 +479,7 @@ HTML_TEMPLATE = """
             appendResult(`🤖 IA: `, 'exito');
             
             try {
-                const response = await fetch('/chat', {
+                const response = await fetch(`${API_BASE}/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ mensaje: tema, modelo })
@@ -546,6 +541,7 @@ HTML_TEMPLATE = """
         });
         
         console.log('🤖 Chat Académico - Interfaz cargada');
+        console.log(`📡 API Base: ${API_BASE}`);
     </script>
 </body>
 </html>
