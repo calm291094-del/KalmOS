@@ -31,7 +31,6 @@ class VirtualRunner:
     @classmethod
     def resolve_path(cls, path):
         """Resuelve una ruta - Busca en system/program/ y D:/"""
-        # Si es None o vacío
         if not path:
             return None
         
@@ -42,44 +41,35 @@ class VirtualRunner:
         if path_obj.exists():
             return path_obj
         
-        # ═══ 2. Buscar en system/program/ (minúscula) ═══
+        # ═══ 2. Buscar en system/program/ ═══
         program_dir = BASE_DIR / "system" / "program"
         
-        # 2a. Si la ruta empieza con system/program/
         if path_str.startswith("system/program/") or path_str.startswith("/system/program/"):
             rel_path = path_str.replace("system/program/", "").replace("/system/program/", "")
             test_path = program_dir / rel_path
             if test_path.exists():
                 return test_path
         
-        # 2b. Si la ruta empieza con D:/Scripts/ o D:/Apps/ etc
         if path_str.startswith("D:/") or path_str.startswith("D:\\"):
-            # Extraer solo el nombre del archivo
             filename = Path(path_str).name
             if filename:
-                # Buscar en system/program/
                 test_path = program_dir / filename
                 if test_path.exists():
                     return test_path
-                # Buscar con extensiones comunes
                 for ext in ['.py', '.sh', '.js', '.bat', '.cmd']:
                     test_path = program_dir / f"{filename}{ext}"
                     if test_path.exists():
                         return test_path
         
-        # 2c. Si es solo un nombre de archivo (sin path)
         if path_obj.parent == Path(".") or path_obj.parent == Path("/"):
-            # Buscar en system/program/
             test_path = program_dir / path_str
             if test_path.exists():
                 return test_path
-            # Buscar con extensiones comunes
             for ext in ['.py', '.sh', '.js', '.bat', '.cmd']:
                 test_path = program_dir / f"{path_str}{ext}"
                 if test_path.exists():
                     return test_path
         
-        # 2d. Buscar por nombre en system/program/ recursivamente
         filename = path_obj.name
         if filename:
             for ext in ['', '.py', '.sh', '.js', '.bat', '.cmd']:
@@ -89,19 +79,16 @@ class VirtualRunner:
         
         # ═══ 3. Buscar en D:/ ═══
         if DRIVE_D.exists():
-            # Buscar en D:/Scripts/
             test_path = DRIVE_D / "Scripts" / path_str
             if test_path.exists():
                 return test_path
-            # Buscar en D:/Apps/
             test_path = DRIVE_D / "Apps" / path_str
             if test_path.exists():
                 return test_path
-            # Buscar en D:/Projects/
             test_path = DRIVE_D / "Projects" / path_str
             if test_path.exists():
                 return test_path
-            # Buscar solo con el nombre
+            
             filename = path_obj.name
             if filename:
                 for base in ["Scripts", "Apps", "Projects"]:
@@ -109,7 +96,6 @@ class VirtualRunner:
                     if test_path.exists():
                         return test_path
         
-        # ═══ 4. No se encontró ═══
         log(f"⚠️ No se encontró el archivo: {path_str}", "WARN")
         return path_obj
     
@@ -118,7 +104,6 @@ class VirtualRunner:
         """Ejecuta un programa"""
         cls.init()
         
-        # Resolver la ruta
         resolved = cls.resolve_path(program_path)
         if not resolved:
             return {"ok": False, "error": f"Ruta inválida: {program_path}"}
@@ -168,7 +153,6 @@ class VirtualRunner:
                 "PYTHONUNBUFFERED": "1"
             })
             
-            # Usar el mismo intérprete de Python que ejecuta Kalm
             python_exe = sys.executable
             cmd = [python_exe, "-u", str(py_path)]
             if args:
@@ -194,10 +178,14 @@ class VirtualRunner:
                 bufsize=1
             )
             
+            # ═══ CAPTURAR STDOUT PARA DEVOLVERLO EN LA RESPUESTA ═══
+            stdout_capture = []
+            
             def read_output():
                 try:
                     for line in iter(proc.stdout.readline, ''):
                         if line:
+                            stdout_capture.append(line)
                             output_queue.put({"type": "output", "data": line})
                             with open(log_file, 'a', encoding='utf-8') as f:
                                 f.write(line)
@@ -220,10 +208,12 @@ class VirtualRunner:
                 "log_file": str(log_file)
             }
             
-            # Enviar mensaje de inicio
             output_queue.put({"type": "output", "data": f"▶️ Iniciando {py_path.name}...\n"})
             
             log(f"✅ {py_path.name} ejecutado (PID {proc.pid})")
+            
+            # ═══ COMBINAR STDOUT CAPTURADO ═══
+            stdout_text = ''.join(stdout_capture)
             
             return {
                 "ok": True,
@@ -232,7 +222,8 @@ class VirtualRunner:
                 "is_alive": True,
                 "log_file": str(log_file),
                 "message": f"✅ {py_path.name} ejecutado (PID {proc.pid})",
-                "type": "python"
+                "type": "python",
+                "stdout": stdout_text  # <-- AGREGADO: stdout capturado
             }
             
         except Exception as e:
@@ -267,10 +258,13 @@ class VirtualRunner:
                 bufsize=1
             )
             
+            stdout_capture = []
+            
             def read_output():
                 try:
                     for line in iter(proc.stdout.readline, ''):
                         if line:
+                            stdout_capture.append(line)
                             output_queue.put({"type": "output", "data": line})
                             with open(log_file, 'a', encoding='utf-8') as f:
                                 f.write(line)
@@ -293,6 +287,8 @@ class VirtualRunner:
                 "log_file": str(log_file)
             }
             
+            stdout_text = ''.join(stdout_capture)
+            
             return {
                 "ok": True,
                 "session_id": session_id,
@@ -300,7 +296,8 @@ class VirtualRunner:
                 "is_alive": True,
                 "log_file": str(log_file),
                 "message": f"✅ {sh_path.name} ejecutado (PID {proc.pid})",
-                "type": "bash"
+                "type": "bash",
+                "stdout": stdout_text
             }
             
         except Exception as e:
@@ -338,10 +335,13 @@ class VirtualRunner:
                 bufsize=1
             )
             
+            stdout_capture = []
+            
             def read_output():
                 try:
                     for line in iter(proc.stdout.readline, ''):
                         if line:
+                            stdout_capture.append(line)
                             output_queue.put({"type": "output", "data": line})
                             with open(log_file, 'a', encoding='utf-8') as f:
                                 f.write(line)
@@ -364,6 +364,8 @@ class VirtualRunner:
                 "log_file": str(log_file)
             }
             
+            stdout_text = ''.join(stdout_capture)
+            
             return {
                 "ok": True,
                 "session_id": session_id,
@@ -371,7 +373,8 @@ class VirtualRunner:
                 "is_alive": True,
                 "log_file": str(log_file),
                 "message": f"✅ {js_path.name} ejecutado (PID {proc.pid})",
-                "type": "nodejs"
+                "type": "nodejs",
+                "stdout": stdout_text
             }
             
         except Exception as e:
@@ -409,10 +412,13 @@ class VirtualRunner:
                 creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0
             )
             
+            stdout_capture = []
+            
             def read_output():
                 try:
                     for line in iter(proc.stdout.readline, ''):
                         if line:
+                            stdout_capture.append(line)
                             output_queue.put({"type": "output", "data": line})
                             with open(log_file, 'a', encoding='utf-8') as f:
                                 f.write(line)
@@ -435,6 +441,8 @@ class VirtualRunner:
                 "log_file": str(log_file)
             }
             
+            stdout_text = ''.join(stdout_capture)
+            
             return {
                 "ok": True,
                 "session_id": session_id,
@@ -442,7 +450,8 @@ class VirtualRunner:
                 "is_alive": True,
                 "log_file": str(log_file),
                 "message": f"✅ {file_path.name} ejecutado (PID {proc.pid})",
-                "type": "native"
+                "type": "native",
+                "stdout": stdout_text
             }
             
         except Exception as e:
