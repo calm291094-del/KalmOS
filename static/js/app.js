@@ -1312,49 +1312,55 @@ if (document.getElementById('clock-display')) {
 
 
 // ═══════════════════════════════════════════════════════════
-// CHAT ACADÉMICO - VERSIÓN DEFINITIVA
+// CHAT ACADÉMICO - VERSIÓN TERMINAL
 // ═══════════════════════════════════════════════════════════
 
 function openChatAcademico() {
-    console.log('📚 Abriendo Chat Académico...');
+    console.log('📚 Abriendo Chat Académico (modo terminal)...');
     
     if (typeof showNotification === 'function') {
         showNotification('📚 Iniciando Chat Académico...', 'info');
     }
     
-    // 1. Ejecutar el script en segundo plano
+    // Ejecutar la versión de consola
     fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            path: 'system/Program/chat_academico.py',
-            args: ['--kalm']
+            path: 'system/Program/chat_app.py',
+            args: []
         })
     })
     .then(r => r.json())
     .then(data => {
-        console.log('📤 Respuesta:', data);
-        if (data.ok) {
+        console.log('📤 Respuesta Chat Académico:', data);
+        
+        if (data.ok && data.session_id) {
             if (typeof showNotification === 'function') {
-                showNotification('✅ Chat Académico iniciado', 'success');
+                showNotification('✅ Chat Académico iniciado en terminal', 'success');
+            }
+            
+            // Abrir la terminal
+            if (typeof openTerminalForProcess === 'function') {
+                openTerminalForProcess(data.session_id, 'Chat Académico');
+            }
+        } else if (data.ok && data.stdout) {
+            // Mostrar salida en el runner
+            openWin('runner');
+            const output = document.getElementById('script-out');
+            if (output) output.textContent = data.stdout;
+        } else {
+            if (typeof showNotification === 'function') {
+                showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
             }
         }
     })
-    .catch(err => console.error('❌ Error:', err));
-    
-    // 2. ABRIR EL NAVEGADOR DIRECTAMENTE (sin esperar stdout)
-    setTimeout(() => {
-        openWin('browser');
-        setTimeout(() => {
-            const urlInput = document.getElementById('browser-url');
-            if (urlInput) {
-                urlInput.value = 'http://localhost:5000';
-                if (typeof browserNavigate === 'function') {
-                    browserNavigate();
-                }
-            }
-        }, 500);
-    }, 2000);
+    .catch(err => {
+        console.error('❌ Error:', err);
+        if (typeof showNotification === 'function') {
+            showNotification('❌ Error: ' + err.message, 'error');
+        }
+    });
 }
 
 
