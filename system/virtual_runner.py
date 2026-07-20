@@ -820,87 +820,85 @@ class VirtualRunner:
             }
             for sid, info in cls._active_processes.items()
         ]
+    
+    # ═══ MÉTODOS PARA DETACHED (EJECUCIÓN INDEPENDIENTE) ═══
+    @classmethod
+    def execute_detached(cls, program_path, args=None):
+        """Ejecuta un programa en modo detached (independiente)"""
+        cls.init()
+        
+        resolved = cls.resolve_path(program_path)
+        if not resolved:
+            return {"ok": False, "error": f"Ruta inválida: {program_path}"}
+        
+        if not resolved.exists():
+            return {"ok": False, "error": f"Programa no encontrado: {resolved}"}
+        
+        ext = resolved.suffix.lower()
+        log(f"🔍 Ejecutando detached: {resolved} (ext: {ext})")
+        
+        if ext == ".py":
+            return cls._run_python_detached(resolved, args)
+        
+        return {"ok": False, "error": f"Tipo no soportado para detached: {ext}"}
 
-@classmethod
-@classmethod
-def execute_detached(cls, program_path, args=None):
-    """Ejecuta un programa en modo detached (independiente)"""
-    cls.init()
-    
-    resolved = cls.resolve_path(program_path)
-    if not resolved:
-        return {"ok": False, "error": f"Ruta inválida: {program_path}"}
-    
-    if not resolved.exists():
-        return {"ok": False, "error": f"Programa no encontrado: {resolved}"}
-    
-    ext = resolved.suffix.lower()
-    log(f"🔍 Ejecutando detached: {resolved} (ext: {ext})")
-    
-    if ext == ".py":
-        return cls._run_python_detached(resolved, args)
-    
-    return {"ok": False, "error": f"Tipo no soportado para detached: {ext}"}
-
-@classmethod
-def _run_python_detached(cls, py_path, args=None):
-    """Ejecuta un script Python en modo detached (independiente)"""
-    try:
-        if not py_path.exists():
-            return {"ok": False, "error": f"Python script no encontrado: {py_path}"}
-        
-        env = os.environ.copy()
-        env.update({
-            "PYTHONIOENCODING": "utf-8",
-            "PYTHONUTF8": "1",
-            "PYTHONUNBUFFERED": "1"
-        })
-        
-        python_exe = sys.executable
-        cmd = [python_exe, "-u", str(py_path)]
-        
-        if args:
-            if isinstance(args, list):
-                cmd.extend(args)
-            elif isinstance(args, str):
-                cmd.append(args)
-        
-        log(f"▶️ Ejecutando Python detached: {' '.join(cmd)}")
-        
-        project_root = Path(__file__).parent.parent.parent
-        
-        # ═══ PROCESO DETACHED - INDEPENDIENTE ═══
-        if sys.platform == "win32":
-            proc = subprocess.Popen(
-                cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                stdin=subprocess.DEVNULL,
-                cwd=str(project_root),
-                env=env,
-                creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
-            )
-        else:
-            # Linux: usar doble fork + setsid
-            proc = subprocess.Popen(
-                cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                stdin=subprocess.DEVNULL,
-                cwd=str(project_root),
-                env=env,
-                start_new_session=True,
-                preexec_fn=os.setsid
-            )
-        
-        log(f"✅ {py_path.name} ejecutado en detached (PID {proc.pid})")
-        
-        return {
-            "ok": True,
-            "pid": proc.pid,
-            "message": f"✅ {py_path.name} iniciado (PID {proc.pid})"
-        }
-        
-    except Exception as e:
-        log(f"❌ Error ejecutando Python detached: {e}", "ERROR")
-        return {"ok": False, "error": f"Error ejecutando Python: {str(e)}"}: f"Error ejecutando Python: {str(e)}"}
+    @classmethod
+    def _run_python_detached(cls, py_path, args=None):
+        """Ejecuta un script Python en modo detached (independiente)"""
+        try:
+            if not py_path.exists():
+                return {"ok": False, "error": f"Python script no encontrado: {py_path}"}
+            
+            env = os.environ.copy()
+            env.update({
+                "PYTHONIOENCODING": "utf-8",
+                "PYTHONUTF8": "1",
+                "PYTHONUNBUFFERED": "1"
+            })
+            
+            python_exe = sys.executable
+            cmd = [python_exe, "-u", str(py_path)]
+            
+            if args:
+                if isinstance(args, list):
+                    cmd.extend(args)
+                elif isinstance(args, str):
+                    cmd.append(args)
+            
+            log(f"▶️ Ejecutando Python detached: {' '.join(cmd)}")
+            
+            project_root = Path(__file__).parent.parent.parent
+            
+            # ═══ PROCESO DETACHED - INDEPENDIENTE ═══
+            if sys.platform == "win32":
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    stdin=subprocess.DEVNULL,
+                    cwd=str(project_root),
+                    env=env,
+                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+                )
+            else:
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    stdin=subprocess.DEVNULL,
+                    cwd=str(project_root),
+                    env=env,
+                    start_new_session=True
+                )
+            
+            log(f"✅ {py_path.name} ejecutado en detached (PID {proc.pid})")
+            
+            return {
+                "ok": True,
+                "pid": proc.pid,
+                "message": f"✅ {py_path.name} iniciado (PID {proc.pid})"
+            }
+            
+        except Exception as e:
+            log(f"❌ Error ejecutando Python detached: {e}", "ERROR")
+            return {"ok": False, "error": f"Error ejecutando Python: {str(e)}"}
