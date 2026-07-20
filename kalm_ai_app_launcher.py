@@ -11,15 +11,15 @@ import time
 import threading
 from pathlib import Path
 
+possible_paths = [
+    Path(__file__).parent / "system" / "Program" / "kalm_ai_app.py",
+    Path(__file__).parent / "kalm_ai_app.py",
+    Path("/app/system/Program/kalm_ai_app.py"),
+    Path("/app/kalm_ai_app.py"),
+]
+
 def find_kalm_ai_app():
     """Busca kalm_ai_app.py en varias ubicaciones"""
-    possible_paths = [
-        Path(__file__).parent / "system" / "Program" / "kalm_ai_app.py",
-        Path(__file__).parent / "kalm_ai_app.py",
-        Path("/app/system/Program/kalm_ai_app.py"),
-        Path("/app/kalm_ai_app.py"),
-    ]
-    
     for p in possible_paths:
         if p.exists():
             return p
@@ -42,6 +42,8 @@ def run_kalm_ai():
     
     # Ejecutar con el flag --kalm
     cmd = [sys.executable, str(app_path), "--kalm"]
+    print(f"📝 Comando: {' '.join(cmd)}")
+    sys.stdout.flush()
     
     try:
         subprocess.run(cmd, check=True)
