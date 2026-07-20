@@ -659,6 +659,42 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
             return
+
+        # ═══ LEER LOG DE PROCESO ═══
+        if p == "/api/process/log":
+            try:
+                data = json.loads(body)
+                session_id = data.get("session_id")
+        
+                # Buscar el log file del proceso
+                log_dir = DATA_DIR / "virtual_env" / "output"
+                log_file = None
+        
+                if log_dir.exists():
+                    for f in log_dir.iterdir():
+                        if f.is_file() and session_id in f.name:
+                            log_file = f
+                            break
+        
+                if log_file and log_file.exists():
+                    content = log_file.read_text(encoding="utf-8", errors="replace")
+                    # Limitar a los últimos 5000 caracteres
+                    if len(content) > 5000:
+                        content = content[-5000:]
+                    self._json({"ok": True, "content": content})
+                else:
+                    # Buscar en los archivos de log más recientes
+                    log_files = sorted(log_dir.glob("*.log"), key=lambda x: x.stat().st_mtime, reverse=True)
+                    if log_files:
+                        content = log_files[0].read_text(encoding="utf-8", errors="replace")
+                        if len(content) > 5000:
+                            content = content[-5000:]
+                        self._json({"ok": True, "content": content, "file": str(log_files[0])})
+                    else:
+                        self._json({"ok": False, "error": "Log no encontrado"})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+            return
         
         # ═══ RUN SCRIPT ═══
         if p == "/api/run":
