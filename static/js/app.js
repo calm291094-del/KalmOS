@@ -702,63 +702,18 @@ function executeProgramFromMenu(path, name) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// KALM AI APP - VERSIÓN SIMPLIFICADA Y FUNCIONAL
+// KALM AI APP - SIMPLIFICADA
 // ═══════════════════════════════════════════════════════════
 
 function openKalmAI() {
     console.log('🧠 Abriendo Kalm AI App...');
     
     if (typeof showNotification === 'function') {
-        showNotification('🧠 Iniciando Kalm AI...', 'info');
+        showNotification('🧠 Abriendo Kalm AI...', 'info');
     }
     
-    // Verificar si ya está corriendo
-    fetch('/kalm-ai/health')
-        .then(r => {
-            if (r.ok) {
-                console.log('✅ Kalm AI ya está corriendo');
-                openKalmAIBrowser();
-                return;
-            }
-            startKalmAI();
-        })
-        .catch(() => {
-            startKalmAI();
-        });
-}
-
-function startKalmAI() {
-    console.log('🚀 Iniciando Kalm AI...');
-    
-    // Usar /api/run-direct para ejecutar en detached
-    fetch('/api/run-direct', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            path: 'system/Program/kalm_ai_app.py',
-            args: ['--kalm']
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        console.log('📤 Respuesta:', data);
-        if (data.ok) {
-            if (typeof showNotification === 'function') {
-                showNotification('✅ Kalm AI iniciado', 'success');
-            }
-            // Esperar y abrir el navegador
-            setTimeout(() => {
-                openKalmAIBrowser();
-            }, 3000);
-        } else {
-            console.error('❌ Error:', data.error);
-            openKalmAIBrowser();
-        }
-    })
-    .catch(err => {
-        console.error('❌ Error:', err);
-        openKalmAIBrowser();
-    });
+    // Abrir el navegador directamente
+    openKalmAIBrowser();
 }
 
 function openKalmAIBrowser() {
@@ -768,28 +723,23 @@ function openKalmAIBrowser() {
     let win = document.getElementById('win-browser');
     
     if (!win) {
-        // Si no existe, crearla con openWin
         openWin('browser');
-        // Esperar a que se cree
         setTimeout(() => {
-            forceLoadKalmAI();
+            loadKalmAIInFrame();
         }, 500);
     } else {
-        // Si existe, mostrarla y cargar
         win.style.display = 'flex';
         win.classList.add('active');
         win.style.zIndex = ++windowZIndex;
         updateTaskbar('browser');
-        
-        // Forzar la carga de Kalm AI
         setTimeout(() => {
-            forceLoadKalmAI();
+            loadKalmAIInFrame();
         }, 300);
     }
 }
 
-function forceLoadKalmAI() {
-    console.log('🔄 Forzando carga de Kalm AI...');
+function loadKalmAIInFrame() {
+    console.log('🔄 Cargando Kalm AI...');
     
     const frame = document.getElementById('browser-frame');
     const urlInput = document.getElementById('browser-url');
@@ -800,49 +750,25 @@ function forceLoadKalmAI() {
         return;
     }
     
-    // Limpiar el frame
-    frame.srcdoc = '';
-    frame.src = 'about:blank';
-    
-    // Establecer la URL en la barra
     if (urlInput) {
         urlInput.value = '/kalm-ai';
     }
     
-    // Estado
     if (status) {
         status.textContent = '🧠 Cargando Kalm AI...';
         status.style.color = '#ffaa00';
     }
     
-    // Cargar la URL
-    setTimeout(() => {
-        frame.src = '/kalm-ai';
-        console.log('✅ Frame cargado con /kalm-ai');
-    }, 200);
+    frame.src = '/kalm-ai';
+    console.log('✅ Frame cargado con /kalm-ai');
     
-    // Verificar si se cargó correctamente después de 5 segundos
+    // Verificar si se cargó correctamente
     setTimeout(() => {
-        fetch('/kalm-ai/health')
-            .then(r => {
-                if (r.ok) {
-                    if (status) {
-                        status.textContent = '✅ Kalm AI - Listo';
-                        status.style.color = '#00cc66';
-                    }
-                    // Recargar el frame si es necesario
-                    if (frame && frame.src !== '/kalm-ai') {
-                        frame.src = '/kalm-ai';
-                    }
-                }
-            })
-            .catch(() => {
-                if (status) {
-                    status.textContent = '⚠️ Kalm AI no responde';
-                    status.style.color = '#ffaa00';
-                }
-            });
-    }, 5000);
+        if (status) {
+            status.textContent = '🧠 Kalm AI';
+            status.style.color = '#da70d6';
+        }
+    }, 3000);
 }
 
 // ═══ MANTENER COMPATIBILIDAD ═══
