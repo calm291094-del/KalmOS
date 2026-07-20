@@ -233,41 +233,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self._json({"exists": BG_FILE.exists()})
             return
         
-        # ═══ PROXY PARA KROOT CORP ═══
-        if p.startswith("/api/kroot/"):
-            # Obtener la ruta después de /api/kroot/
-            kroot_path = p[10:]
-            if not kroot_path or kroot_path == "/":
-                kroot_path = "/dashboard"
-    
-            target_url = f"http://localhost:8000{kroot_path}"
-    
-            log(f"🔄 Proxy Kroot: {self.path} -> {target_url}", "DEBUG")
-    
-            try:
-                req = urllib.request.Request(target_url)
-                for header in ["User-Agent", "Accept"]:
-                    if header in self.headers:
-                        req.add_header(header, self.headers[header])
-        
-                with urllib.request.urlopen(req, timeout=10) as resp:
-                    content = resp.read()
-                    content_type = resp.headers.get("Content-Type", "text/html")
-            
-                    self.send_response(resp.status)
-                    self.send_header("Content-Type", content_type)
-                    self.end_headers()
-                    self.wfile.write(content)
-                    log(f"✅ Proxy Kroot OK", "DEBUG")
-            
-            except Exception as e:
-                log(f"❌ Proxy Kroot error: {e}", "WARN")
-                self.send_response(503)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.end_headers()
-                self.wfile.write(b"<html><body><h2>Kroot Corp no disponible</h2></body></html>")
-            return
-        
         # ═══ LISTAR MÚSICA ═══
         if p == "/api/music/list":
             try:
