@@ -31,6 +31,11 @@ function isBlockedInIframe(url) {
     return false;
 }
 
+// ═══ SOPORTE PARA RUTAS LOCALES ═══
+function isLocalPath(url) {
+    return url.startsWith('/') || url.startsWith('#') || url.startsWith('?');
+}
+
 // ═══ VALIDAR Y CORREGIR URL ═══
 function sanitizeUrl(url) {
     if (!url || url.trim() === '') return null;
@@ -43,7 +48,7 @@ function sanitizeUrl(url) {
     }
     
     // Si es una ruta local (empieza con /)
-    if (url.startsWith('/') || url.startsWith('#')) {
+    if (isLocalPath(url)) {
         return url;
     }
     
@@ -80,11 +85,21 @@ function browserNavigate() {
     urlInput.value = url;
     
     // Si es una ruta local
-    if (url.startsWith('/') || url.startsWith('#')) {
+    if (isLocalPath(url)) {
         frame.src = url;
-        if (status) status.textContent = '✅ Cargado';
+        if (status) status.textContent = '✅ Cargando local: ' + url;
         browserHistory.push(url);
         browserIndex = browserHistory.length - 1;
+        
+        // Si es /api/kalm/, verificar estado
+        if (url.startsWith('/api/kalm')) {
+            if (status) status.textContent = '🧠 Cargando Kalm AI...';
+            setTimeout(function() {
+                if (typeof checkKalmAIStatus === 'function') {
+                    checkKalmAIStatus();
+                }
+            }, 2000);
+        }
         return;
     }
     
@@ -338,7 +353,7 @@ function loadBrowserBookmarks() {
                         const urlInput = document.getElementById('browser-url');
                         if (urlInput) {
                             let url = bm.url || bm.domain;
-                            if (url && !url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('/')) {
+                            if (url && !url.startsWith('http://') && !url.startsWith('https://') && !isLocalPath(url)) {
                                 url = 'https://' + url;
                             }
                             urlInput.value = url;
@@ -450,5 +465,6 @@ window.browserOpenExternal = browserOpenExternal;
 window.loadBrowserBookmarks = loadBrowserBookmarks;
 window.sanitizeUrl = sanitizeUrl;
 window.isBlockedInIframe = isBlockedInIframe;
+window.isLocalPath = isLocalPath;
 
 console.log('🌐 Internal Browser cargado - Sitios bloqueados en iframe manejados');
