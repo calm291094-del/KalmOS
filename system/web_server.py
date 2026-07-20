@@ -197,36 +197,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.send_response(404)
                 self.end_headers()
                 return
-
-        # ═══ HEALTH CHECK PARA KALM AI ═══
-        if p == "/api/kalm/health":
-            try:
-                req = urllib.request.Request("http://127.0.0.1:5000/health", method="GET")
-                req.add_header("User-Agent", "KalmOS-HealthCheck/1.0")
-                req.add_header("Accept", "application/json")
-                with urllib.request.urlopen(req, timeout=5) as resp:
-                    content = resp.read()
-                    self.send_response(200)
-                    self.send_header("Content-Type", "application/json")
-                    self.send_header("Access-Control-Allow-Origin", "*")
-                    self.end_headers()
-                    self.wfile.write(content)
-                    log(f"✅ Kalm AI health check OK", "INFO")
-            except urllib.error.URLError as e:
-                log(f"❌ Kalm AI health check FAILED: {e}", "WARN")
-                self.send_response(503)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(b'{"status": "error", "message": "Kalm AI not running"}')
-            except Exception as e:
-                log(f"❌ Kalm AI health check EXCEPTION: {e}", "ERROR")
-                self.send_response(503)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(b'{"status": "error", "message": "Kalm AI not running"}')
-            return
         
         # ═══ PÚBLICAS ═══
         if p in ["/", "/index.html", "/login"]:
@@ -329,69 +299,75 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": str(e)})
             return
         
-        # ═══ PROXY PARA KALM AI (puerto 5000) - VERSIÓN CORREGIDA ═══
+        # ═══ HEALTH CHECK PARA KALM AI ═══
+        if p == "/api/kalm/health":
+            try:
+                with urllib.request.urlopen("http://127.0.0.1:5000/health", timeout=3) as resp:
+                    content = resp.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.end_headers()
+                    self.wfile.write(content)
+                    log(f"✅ Kalm AI health check OK", "INFO")
+            except:
+                self.send_response(503)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(b'{"status": "error", "message": "Kalm AI not running"}')
+            return
+        
+        # ═══ PROXY PARA KALM AI ═══
         if p.startswith("/api/kalm/"):
-            # Extraer la ruta después de /api/kalm/
-            kalm_path = p[10:]  # elimina "/api/kalm/"
-    
-            # Asegurar que la ruta comience con /
+            kalm_path = p[10:]
             if not kalm_path or kalm_path == "":
                 kalm_path = "/"
             elif not kalm_path.startswith("/"):
                 kalm_path = "/" + kalm_path
-    
-            # Construir URL destino correctamente
+            
             target_url = f"http://127.0.0.1:5000{kalm_path}"
             if parsed.query:
                 target_url += "?" + parsed.query
-    
+            
             log(f"🔄 Proxy Kalm AI: {self.path} -> {target_url}", "INFO")
-    
+            
             try:
                 req = urllib.request.Request(target_url, method=self.command)
                 req.add_header("User-Agent", "KalmOS-InternalBrowser/4.3")
                 req.add_header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-                req.add_header("Accept-Language", "es-ES,es;q=0.9,en;q=0.8")
-        
-                # Copiar headers relevantes
-                for header in ["Content-Type"]:
-                    if header in self.headers:
-                        req.add_header(header, self.headers[header])
-        
-                # Si es POST, leer el body
+                
                 if self.command in ["POST", "PUT", "PATCH"]:
                     content_length = int(self.headers.get("Content-Length", 0))
                     if content_length > 0:
                         body = self.rfile.read(content_length)
                         req.data = body
-        
+                
                 with urllib.request.urlopen(req, timeout=30) as resp:
                     content = resp.read()
                     content_type = resp.headers.get("Content-Type", "text/html; charset=utf-8")
-            
+                    
                     self.send_response(resp.status)
                     self.send_header("Content-Type", content_type)
                     self.send_header("Content-Length", str(len(content)))
-                    if "Cache-Control" in resp.headers:
-                        self.send_header("Cache-Control", resp.headers["Cache-Control"])
                     self.send_header("Access-Control-Allow-Origin", "*")
                     self.end_headers()
                     self.wfile.write(content)
                     log(f"✅ Proxy Kalm AI OK: {kalm_path}", "INFO")
-            
+                    
             except urllib.error.URLError as e:
                 log(f"❌ Proxy Kalm AI error: {e}", "WARN")
                 self.send_response(503)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
-        
-                # HTML con mensaje de espera
+                
                 html_content = """<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧠 Kalm AI - Iniciando...</title>
+    <title>🧠 Kalm AI</title>
     <style>
         body {
             background: linear-gradient(135deg, #0a0514 0%, #1a0033 50%, #2e0854 100%);
@@ -459,7 +435,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         <button class="btn" onclick="window.location.reload()">🔄 Reintentar</button>
     </div>
     <script>
-        // Intentar recargar automáticamente cada 2 segundos
         let attempts = 0;
         const checkInterval = setInterval(() => {
             attempts++;
@@ -488,12 +463,73 @@ class KalmWebHandler(BaseHTTPRequestHandler):
 </body>
 </html>"""
                 self.wfile.write(html_content.encode('utf-8'))
-        
+                
             except Exception as e:
                 log(f"❌ Proxy Kalm AI exception: {e}", "ERROR")
                 self.send_response(500)
                 self.end_headers()
-                self.wfile.write(f"<html><body><h2>Error: {e}</h2></body></html>".encode('utf-8'))
+            return
+        
+        # ═══ SSE - STREAM DE PROCESOS ═══
+        if p.startswith("/api/process/stream/"):
+            session = self.require_auth()
+            if not session:
+                return
+            
+            session_id = p.split("/")[-1]
+            
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("Connection", "keep-alive")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("X-Accel-Buffering", "no")
+            self.end_headers()
+            
+            try:
+                self.wfile.write(f"data: {json.dumps({'type': 'connected', 'data': 'Conectado'})}\n\n".encode())
+                self.wfile.flush()
+                
+                no_change_count = 0
+                max_no_change = 60
+                is_alive = True
+                
+                while is_alive:
+                    result = ScriptRunner.get_output(session_id, timeout=0.5)
+                    
+                    if result.get("ok"):
+                        outputs = result.get("outputs", [])
+                        if outputs:
+                            no_change_count = 0
+                            for output in outputs:
+                                self.wfile.write(f"data: {json.dumps(output)}\n\n".encode())
+                                self.wfile.flush()
+                        else:
+                            no_change_count += 1
+                        
+                        is_alive = result.get("is_alive", False)
+                        
+                        if no_change_count > max_no_change and not is_alive:
+                            self.wfile.write(f"data: {json.dumps({'type': 'exit', 'code': 0, 'data': 'Sin actividad'})}\n\n".encode())
+                            self.wfile.flush()
+                            break
+                        
+                        if not is_alive:
+                            self.wfile.write(f"data: {json.dumps({'type': 'exit', 'code': 0})}\n\n".encode())
+                            self.wfile.flush()
+                            break
+                    else:
+                        self.wfile.write(f"data: {json.dumps({'type': 'error', 'data': result.get('error', 'Error')})}\n\n".encode())
+                        self.wfile.flush()
+                        break
+                    
+                    time.sleep(0.3)
+                
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+            except Exception as e:
+                log(f"Error en SSE: {e}", "ERROR")
+            
             return
         
         # ═══ RUTAS PROTEGIDAS ═══
@@ -799,8 +835,10 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         # ═══ PROXY PARA KALM AI (puerto 5000) ═══
         if p.startswith("/api/kalm/"):
             kalm_path = p[10:]
-            if not kalm_path or kalm_path == "/":
+            if not kalm_path or kalm_path == "":
                 kalm_path = "/"
+            elif not kalm_path.startswith("/"):
+                kalm_path = "/" + kalm_path
             
             target_url = f"http://127.0.0.1:5000{kalm_path}"
             if parsed.query:
@@ -812,10 +850,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 req = urllib.request.Request(target_url, method=self.command)
                 req.add_header("User-Agent", "KalmOS-InternalBrowser/4.3")
                 req.add_header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-                
-                for header in ["Content-Type"]:
-                    if header in self.headers:
-                        req.add_header(header, self.headers[header])
                 
                 if self.command in ["POST", "PUT", "PATCH"]:
                     content_length = int(self.headers.get("Content-Length", 0))
@@ -830,16 +864,16 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self.send_response(resp.status)
                     self.send_header("Content-Type", content_type)
                     self.send_header("Content-Length", str(len(content)))
-                    if "Cache-Control" in resp.headers:
-                        self.send_header("Cache-Control", resp.headers["Cache-Control"])
                     self.send_header("Access-Control-Allow-Origin", "*")
                     self.end_headers()
                     self.wfile.write(content)
                     log(f"✅ Proxy Kalm AI OK: {kalm_path}", "INFO")
+                    
             except urllib.error.URLError as e:
                 log(f"❌ Proxy Kalm AI error: {e}", "WARN")
                 self.send_response(503)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
                 
                 html_content = """<!DOCTYPE html>
@@ -847,7 +881,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧠 Kalm AI - Iniciando...</title>
+    <title>🧠 Kalm AI</title>
     <style>
         body {
             background: linear-gradient(135deg, #0a0514 0%, #1a0033 50%, #2e0854 100%);
@@ -912,6 +946,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         <div class="loading"></div>
         <p style="font-size:13px;color:#9370db;">La aplicación está iniciándose en segundo plano</p>
         <p style="font-size:11px;color:#6a0dad;">⏱️ Espera unos segundos...</p>
+        <button class="btn" onclick="window.location.reload()">🔄 Reintentar</button>
     </div>
     <script>
         let attempts = 0;
@@ -925,7 +960,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     }
                 })
                 .catch(() => {
-                    if (attempts > 15) {
+                    if (attempts > 20) {
                         clearInterval(checkInterval);
                         document.querySelector('.status').textContent = '⚠️ No responde';
                         document.querySelector('.status').style.borderColor = '#ff4444';
@@ -942,6 +977,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
 </body>
 </html>"""
                 self.wfile.write(html_content.encode('utf-8'))
+                
             except Exception as e:
                 log(f"❌ Proxy Kalm AI exception: {e}", "ERROR")
                 self.send_response(500)
