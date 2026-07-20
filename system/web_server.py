@@ -695,6 +695,26 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
             return
+
+        # ═══ LEER ARCHIVO DE SEÑAL ═══
+        if p == "/api/read-signal":
+            try:
+                data = json.loads(body)
+                file_path = data.get("file", "")
+        
+                if not file_path:
+                    self._json({"ok": False, "error": "Ruta no especificada"})
+                    return
+        
+                signal_file = Path(file_path)
+                if signal_file.exists():
+                    content = signal_file.read_text(encoding="utf-8").strip()
+                    self._json({"ok": True, "content": content})
+                else:
+                    self._json({"ok": False, "error": "Archivo no encontrado"})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+            return
         
         # ═══ RUN SCRIPT ═══
         if p == "/api/run":
