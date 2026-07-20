@@ -702,7 +702,7 @@ function executeProgramFromMenu(path, name) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// KALM AI APP - FUNCIONAL Y SIMPLIFICADA
+// KALM AI APP - VERSIÓN SIMPLIFICADA Y FUNCIONAL
 // ═══════════════════════════════════════════════════════════
 
 function openKalmAI() {
@@ -720,22 +720,24 @@ function openKalmAI() {
                 openKalmAIBrowser();
                 return;
             }
-            startKalmAI();
+            // No está corriendo, iniciar directamente
+            startKalmAIDirect();
         })
         .catch(() => {
-            startKalmAI();
+            startKalmAIDirect();
         });
 }
 
-function startKalmAI() {
-    console.log('🚀 Iniciando Kalm AI...');
+function startKalmAIDirect() {
+    console.log('🚀 Iniciando Kalm AI directamente...');
     
-    fetch('/api/run', {
+    // Ejecutar kalm_ai_app.py directamente con --kalm
+    fetch('/api/run-direct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            path: 'kalm_ai_app_launcher.py',
-            args: []
+            path: 'system/Program/kalm_ai_app.py',
+            args: ['--kalm']
         })
     })
     .then(r => r.json())
@@ -743,45 +745,27 @@ function startKalmAI() {
         console.log('📤 Respuesta:', data);
         if (data.ok) {
             if (typeof showNotification === 'function') {
-                showNotification('✅ Kalm AI iniciando...', 'success');
+                showNotification('✅ Kalm AI iniciado', 'success');
             }
-            waitForKalmAI();
+            // Esperar y abrir el navegador
+            setTimeout(() => {
+                openKalmAIBrowser();
+            }, 3000);
         } else {
+            console.error('❌ Error iniciando Kalm AI:', data.error);
+            if (typeof showNotification === 'function') {
+                showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
+            }
             openKalmAIBrowser();
         }
     })
-    .catch(() => {
+    .catch(err => {
+        console.error('❌ Error:', err);
+        if (typeof showNotification === 'function') {
+            showNotification('❌ Error: ' + err.message, 'error');
+        }
         openKalmAIBrowser();
     });
-}
-
-function waitForKalmAI() {
-    let attempts = 0;
-    const maxAttempts = 20;
-    
-    const check = setInterval(() => {
-        attempts++;
-        fetch('/api/kalm/health')
-            .then(r => {
-                if (r.ok) {
-                    clearInterval(check);
-                    console.log('✅ Kalm AI listo');
-                    if (typeof showNotification === 'function') {
-                        showNotification('✅ Kalm AI listo', 'success');
-                    }
-                    openKalmAIBrowser();
-                } else if (attempts >= maxAttempts) {
-                    clearInterval(check);
-                    openKalmAIBrowser();
-                }
-            })
-            .catch(() => {
-                if (attempts >= maxAttempts) {
-                    clearInterval(check);
-                    openKalmAIBrowser();
-                }
-            });
-    }, 2000);
 }
 
 function openKalmAIBrowser() {
