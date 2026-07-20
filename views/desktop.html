@@ -95,6 +95,7 @@
 
 <!-- ═══ DESKTOP ICONOS - REDUCIDO A 12 ICONOS ═══ -->
 <div id="desktop">
+    
     <!-- Fila 1 -->
     <div class="desktop-icon" style="top:20px;left:20px" data-win="explorer">
         <div class="ico">💾</div><div class="lbl">Este equipo</div>
@@ -109,6 +110,7 @@
         <div class="ico">📝</div><div class="lbl">Bloc de notas</div>
     </div>
     <!-- Fila 2 -->
+    
     <div class="desktop-icon" style="top:130px;left:20px" data-win="taskmgr">
         <div class="ico">📊</div><div class="lbl">Task Manager</div>
     </div>
@@ -121,6 +123,11 @@
     <div class="desktop-icon" style="top:130px;left:350px" data-win="music">
         <div class="ico">🎵</div><div class="lbl">Reproductor</div>
     </div>
+    <div class="desktop-icon" style="top:460px;left:20px" data-win="chatacademico" ondblclick="openChatAcademico()">
+        <div class="ico">📚</div>
+        <div class="lbl">Chat Académico</div>
+    </div>
+    
     <!-- Fila 3 -->
     <div class="desktop-icon" style="top:240px;left:20px" data-win="settings">
         <div class="ico">⚙️</div><div class="lbl">Configuración</div>
@@ -643,6 +650,7 @@
         <div class="item" onclick="openWin('dns');toggleStart()"><span class="item-icon">🌐</span> DNS Admin</div>
         <div class="item" onclick="openWin('proxy');toggleStart()"><span class="item-icon">🔒</span> Proxy</div>
         <div class="item" onclick="openWin('runner');toggleStart()"><span class="item-icon">⚙️</span> Script Runner</div>
+        <div class="item" onclick="openChatAcademico();toggleStart()"><span class="item-icon">📚</span> Chat Académico</div>
         <div class="item" onclick="openKrootCorp();toggleStart()"><span class="item-icon">🏢</span> Kroot Corp IA</div>
         <div class="sep"></div>
         <div class="submenu-header" onclick="toggleProgramMenu()"><span class="item-icon">📦</span> Program ▸</div>
