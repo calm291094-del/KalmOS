@@ -33,6 +33,62 @@ except Exception as e:
 _kalm_ai_thread = None
 _kalm_ai_port = 5001
 
+# HTML DE ERROR - SIN CARACTERES ESPECIALES
+ERROR_HTML = """<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalm AI</title>
+<style>
+body { background: #0a0514; font-family: 'Segoe UI', sans-serif; min-height: 100vh; display: flex; justify-content: center; align-items: center; color: #e6e6fa; padding: 20px; }
+.container { max-width: 500px; background: rgba(26, 0, 51, 0.8); border-radius: 20px; border: 1px solid rgba(106, 13, 173, 0.3); padding: 40px; text-align: center; }
+.icon { font-size: 64px; margin-bottom: 15px; }
+h1 { color: #da70d6; font-size: 24px; }
+.status { display: inline-block; padding: 6px 16px; border-radius: 20px; background: rgba(255,170,0,0.2); border: 1px solid #ffaa00; color: #ffaa00; margin: 10px 0; font-size: 13px; }
+.loading { display: inline-block; width: 30px; height: 30px; border: 4px solid rgba(106, 13, 173, 0.3); border-radius: 50%; border-top-color: #da70d6; animation: spin 0.8s linear infinite; margin: 15px auto; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.btn { background: linear-gradient(135deg, #6a0dad, #9370db); color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 10px; }
+.btn:hover { transform: scale(1.05); }
+p { font-size: 13px; color: #9370db; }
+.hint { font-size: 11px; color: #6a0dad; margin-top: 15px; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="icon">🧠</div>
+<h1>Kalm AI</h1>
+<div class="status">Starting...</div>
+<div class="loading"></div>
+<p>The server is starting in the background</p>
+<p class="hint">Please wait a few seconds...</p>
+<button class="btn" onclick="window.location.reload()">Retry</button>
+</div>
+<script>
+var attempts = 0;
+var checkInterval = setInterval(function() {
+    attempts++;
+    fetch('/kalm-ai/health')
+        .then(function(r) {
+            if (r.ok) {
+                clearInterval(checkInterval);
+                window.location.reload();
+            }
+        })
+        .catch(function() {
+            if (attempts > 15) {
+                clearInterval(checkInterval);
+                document.querySelector('.status').textContent = 'Not responding';
+                document.querySelector('.status').style.borderColor = '#ff4444';
+                document.querySelector('.status').style.color = '#ff4444';
+                document.querySelector('.loading').style.display = 'none';
+            }
+        });
+}, 2000);
+</script>
+</body>
+</html>"""
+
 def start_kalm_ai_thread():
     global _kalm_ai_thread
     if not KALM_AI_AVAILABLE:
@@ -177,103 +233,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self.send_response(503)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
-            self.wfile.write(b"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Kalm AI</title>
-                <style>
-                    body {
-                        background: #0a0514;
-                        font-family: 'Segoe UI', sans-serif;
-                        min-height: 100vh;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        color: #e6e6fa;
-                        padding: 20px;
-                    }
-                    .container {
-                        max-width: 500px;
-                        background: rgba(26, 0, 51, 0.8);
-                        border-radius: 20px;
-                        border: 1px solid rgba(106, 13, 173, 0.3);
-                        padding: 40px;
-                        text-align: center;
-                    }
-                    .icon { font-size: 64px; margin-bottom: 15px; }
-                    h1 { color: #da70d6; font-size: 24px; }
-                    .status {
-                        display: inline-block;
-                        padding: 6px 16px;
-                        border-radius: 20px;
-                        background: rgba(255,170,0,0.2);
-                        border: 1px solid #ffaa00;
-                        color: #ffaa00;
-                        margin: 10px 0;
-                        font-size: 13px;
-                    }
-                    .loading {
-                        display: inline-block;
-                        width: 30px;
-                        height: 30px;
-                        border: 4px solid rgba(106, 13, 173, 0.3);
-                        border-radius: 50%;
-                        border-top-color: #da70d6;
-                        animation: spin 0.8s linear infinite;
-                        margin: 15px auto;
-                    }
-                    @keyframes spin { to { transform: rotate(360deg); } }
-                    .btn {
-                        background: linear-gradient(135deg, #6a0dad, #9370db);
-                        color: white;
-                        border: none;
-                        padding: 10px 24px;
-                        border-radius: 8px;
-                        font-size: 14px;
-                        cursor: pointer;
-                        margin-top: 10px;
-                    }
-                    .btn:hover { transform: scale(1.05); }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="icon">🧠</div>
-                    <h1>Kalm AI</h1>
-                    <div class="status">Starting...</div>
-                    <div class="loading"></div>
-                    <p style="font-size:13px;color:#9370db;">The server is starting in the background</p>
-                    <p style="font-size:11px;color:#6a0dad;">Please wait a few seconds...</p>
-                    <button class="btn" onclick="window.location.reload()">Retry</button>
-                </div>
-                <script>
-                    let attempts = 0;
-                    const checkInterval = setInterval(() => {
-                        attempts++;
-                        fetch('/kalm-ai/health')
-                            .then(r => {
-                                if (r.ok) {
-                                    clearInterval(checkInterval);
-                                    window.location.reload();
-                                }
-                            })
-                            .catch(() => {
-                                if (attempts > 15) {
-                                    clearInterval(checkInterval);
-                                    document.querySelector('.status').textContent = 'Not responding';
-                                    document.querySelector('.status').style.borderColor = '#ff4444';
-                                    document.querySelector('.status').style.color = '#ff4444';
-                                    document.querySelector('.loading').style.display = 'none';
-                                }
-                            });
-                    }, 2000);
-                </script>
-            </body>
-            </html>
-            """)
+            self.wfile.write(ERROR_HTML.encode("utf-8"))
         except Exception as e:
             log(f"Error en _proxy_kalm_ai: {e}", "ERROR")
             self.send_response(500)
