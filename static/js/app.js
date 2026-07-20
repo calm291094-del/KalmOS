@@ -1326,7 +1326,7 @@ if (document.getElementById('clock-display')) {
 
 
 // ═══════════════════════════════════════════════════════════
-// CHAT ACADÉMICO - CAPTURAR URL DEL STDOUT
+// CHAT ACADÉMICO - LECTURA DE ARCHIVO DE SEÑAL
 // ═══════════════════════════════════════════════════════════
 
 function openChatAcademico() {
@@ -1349,81 +1349,40 @@ function openChatAcademico() {
     .then(data => {
         console.log('📤 Respuesta Chat Académico:', data);
         
-        // ⚠️ BUSCAR URL EN EL STDOUT
-        if (data.ok && data.stdout) {
-            console.log('📄 stdout del script:', data.stdout);
-            
-            // Buscar URL en el stdout (formato KALM_URL=...)
-            const urlMatch = data.stdout.match(/KALM_URL=(https?:\/\/localhost:\d+)/);
-            if (urlMatch) {
-                const url = urlMatch[1];
-                console.log('✅ URL encontrada en stdout:', url);
-                
-                openWin('browser');
-                setTimeout(() => {
-                    const urlInput = document.getElementById('browser-url');
-                    if (urlInput) {
-                        urlInput.value = url;
-                        if (typeof browserNavigate === 'function') {
-                            browserNavigate();
-                        }
-                    }
-                }, 500);
-                
-                if (typeof showNotification === 'function') {
-                    showNotification('✅ Chat Académico iniciado', 'success');
-                }
-                return;
-            }
-            
-            // Buscar cualquier URL en el stdout
-            const anyUrlMatch = data.stdout.match(/https?:\/\/localhost:\d+/);
-            if (anyUrlMatch) {
-                const url = anyUrlMatch[0];
-                console.log('✅ URL encontrada en stdout:', url);
-                
-                openWin('browser');
-                setTimeout(() => {
-                    const urlInput = document.getElementById('browser-url');
-                    if (urlInput) {
-                        urlInput.value = url;
-                        if (typeof browserNavigate === 'function') {
-                            browserNavigate();
-                        }
-                    }
-                }, 500);
-                
-                if (typeof showNotification === 'function') {
-                    showNotification('✅ Chat Académico iniciado', 'success');
-                }
-                return;
-            }
-        }
-        
-        // Si no se encontró URL en el stdout, intentar con el log file
         if (data.ok && data.session_id) {
-            console.log('⚠️ No se encontró URL en stdout. Intentando con el log file...');
-            const sessionId = data.session_id;
+            if (typeof showNotification === 'function') {
+                showNotification('⏳ Chat Académico iniciando...', 'info');
+            }
             
+            // ═══ LEER EL ARCHIVO DE SEÑAL ═══
             let attempts = 0;
-            const maxAttempts = 20;
+            const maxAttempts = 30;
             
-            function checkLogFile() {
+            function readSignalFile() {
                 attempts++;
-                console.log(`🔍 Intentando leer log (${attempts}/${maxAttempts})...`);
+                console.log(`🔍 Leyendo archivo de señal (${attempts}/${maxAttempts})...`);
                 
-                fetch('/api/process/log', {
+                // Leer el archivo usando un endpoint dedicado
+                fetch('/api/read-signal', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: sessionId })
+                    body: JSON.stringify({ 
+                        file: 'kalm_data/persistence/chat_academico_url.txt'
+                    })
                 })
-                .then(r => r.json())
-                .then(logData => {
-                    if (logData.ok && logData.content) {
-                        const urlMatch = logData.content.match(/KALM_URL=(https?:\/\/localhost:\d+)/);
-                        if (urlMatch) {
-                            const url = urlMatch[1];
-                            console.log('✅ URL encontrada en log:', url);
+                .then(r => {
+                    if (r.status === 404) {
+                        return { ok: false, error: 'Archivo no encontrado' };
+                    }
+                    return r.json();
+                })
+                .then(signalData => {
+                    console.log('📄 Señal:', signalData);
+                    
+                    if (signalData.ok && signalData.content) {
+                        const url = signalData.content.trim();
+                        if (url && url.startsWith('http')) {
+                            console.log('✅ URL obtenida:', url);
                             
                             openWin('browser');
                             setTimeout(() => {
@@ -1444,9 +1403,9 @@ function openChatAcademico() {
                     }
                     
                     if (attempts < maxAttempts) {
-                        setTimeout(checkLogFile, 1000);
+                        setTimeout(readSignalFile, 1000);
                     } else {
-                        console.log('⚠️ No se encontró URL. Abriendo localhost:5000');
+                        console.log('⚠️ No se encontró señal. Abriendo localhost:5000');
                         openWin('browser');
                         setTimeout(() => {
                             const urlInput = document.getElementById('browser-url');
@@ -1463,14 +1422,16 @@ function openChatAcademico() {
                     }
                 })
                 .catch(err => {
-                    console.error('❌ Error leyendo log:', err);
+                    console.error('❌ Error leyendo señal:', err);
                     if (attempts < maxAttempts) {
-                        setTimeout(checkLogFile, 1000);
+                        setTimeout(readSignalFile, 1000);
                     }
                 });
             }
             
-            setTimeout(checkLogFile, 2000);
+            // Esperar 2 segundos antes de empezar a leer
+            setTimeout(readSignalFile, 2000);
+            
         } else {
             if (typeof showNotification === 'function') {
                 showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
