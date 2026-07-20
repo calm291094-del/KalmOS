@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-KALM AI APP - Launcher que mantiene el proceso vivo
+KALM AI APP - Launcher simple que mantiene el proceso vivo
 """
 import sys
 import os
@@ -13,10 +13,10 @@ from pathlib import Path
 def find_kalm_ai_app():
     """Busca kalm_ai_app.py en varias ubicaciones"""
     possible_paths = [
-        Path(__file__).parent / "system" / "Program" / "kalm_ai_app.py",
-        Path(__file__).parent / "kalm_ai_app.py",
         Path("/app/system/Program/kalm_ai_app.py"),
         Path("/app/kalm_ai_app.py"),
+        Path(__file__).parent / "system" / "Program" / "kalm_ai_app.py",
+        Path(__file__).parent / "kalm_ai_app.py",
     ]
     
     for p in possible_paths:
@@ -34,7 +34,6 @@ def run_kalm_ai():
         return
     
     print(f"🚀 Iniciando Kalm AI desde: {app_path}")
-    print(f"📂 Directorio: {app_path.parent}")
     sys.stdout.flush()
     
     # Cambiar al directorio del proyecto
@@ -71,7 +70,6 @@ def run_kalm_ai():
     try:
         while True:
             time.sleep(1)
-            # Verificar si el proceso sigue vivo
             if process.poll() is not None:
                 print(f"❌ Kalm AI terminó con código: {process.poll()}")
                 sys.stdout.flush()
