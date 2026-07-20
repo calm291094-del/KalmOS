@@ -7,7 +7,6 @@ import sys
 import os
 import subprocess
 import time
-import signal
 from pathlib import Path
 
 def find_kalm_ai_app():
