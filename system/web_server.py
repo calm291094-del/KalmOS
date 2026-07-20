@@ -130,7 +130,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             
             log(f"🎵 Buscando: {filename} en {music_dir}", "DEBUG")
             
-            # Buscar el archivo
             found_file = None
             if music_dir.exists():
                 for f in music_dir.iterdir():
@@ -144,7 +143,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 return
             
-            # LEER EL ARCHIVO
             try:
                 with open(found_file, "rb") as f:
                     file_content = f.read()
@@ -154,11 +152,9 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 return
             
-            # VERIFICAR QUE EL ARCHIVO NO ESTÉ VACÍO
             if len(file_content) < 100:
                 log(f"⚠️ Archivo sospechosamente pequeño: {len(file_content)} bytes - {found_file.name}", "WARN")
             
-            # Determinar Content-Type
             ext = found_file.suffix.lower()
             if ext == '.mp3':
                 content_type = 'audio/mpeg'
@@ -241,7 +237,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 if music_dir.exists():
                     for f in music_dir.iterdir():
                         if f.is_file() and f.suffix.lower() in ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac']:
-                            # Verificar tamaño del archivo
                             file_size = f.stat().st_size
                             url_path = "/D/Music/" + urllib.parse.quote(f.name)
                             files.append({
@@ -293,6 +288,44 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self._json(result)
                 except Exception as e:
                     self._json({"ok": False, "error": str(e)})
+            return
+        
+        # ═══ PROXY PARA KALM AI (puerto 5000) ═══
+        if p.startswith("/api/kalm/"):
+            kalm_path = p[10:]
+            if not kalm_path:
+                kalm_path = "/"
+            
+            target_url = f"http://localhost:5000{kalm_path}"
+            if parsed.query:
+                target_url += "?" + parsed.query
+            
+            log(f"🔄 Proxy Kalm AI: {self.path} -> {target_url}", "DEBUG")
+            
+            try:
+                req = urllib.request.Request(target_url)
+                for header in ["User-Agent", "Accept", "Accept-Language", "Content-Type"]:
+                    if header in self.headers:
+                        req.add_header(header, self.headers[header])
+                
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    content = resp.read()
+                    content_type = resp.headers.get("Content-Type", "text/html")
+                    
+                    self.send_response(resp.status)
+                    self.send_header("Content-Type", content_type)
+                    if "Cache-Control" in resp.headers:
+                        self.send_header("Cache-Control", resp.headers["Cache-Control"])
+                    self.end_headers()
+                    self.wfile.write(content)
+                    log(f"✅ Proxy Kalm AI OK", "DEBUG")
+            except Exception as e:
+                log(f"❌ Proxy Kalm AI error: {e}", "WARN")
+                self.send_response(503)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                html_content = """<html><body><h2>Kalm AI no disponible</h2><p>Inicia la aplicacion desde el menu Program.</p></body></html>"""
+                self.wfile.write(html_content.encode('utf-8'))
             return
         
         # ═══ SSE - STREAM DE PROCESOS ═══
@@ -429,84 +462,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         if p == "/api/files/search":
             self._json(FileManager.search(q.get('q', [''])[0]))
             return
-
-        # ═══ PROXY PARA CHAT ACADÉMICO (puerto 5000) ═══
-        if p.startswith("/api/chat/"):
-            chat_path = p[10:]
-            if not chat_path:
-                chat_path = "/"
-    
-            target_url = f"http://localhost:5000{chat_path}"
-            if parsed.query:
-                target_url += "?" + parsed.query
-    
-            log(f"🔄 Proxy Chat: {self.path} -> {target_url}", "DEBUG")
-    
-            try:
-                req = urllib.request.Request(target_url)
-                for header in ["User-Agent", "Accept", "Accept-Language", "Content-Type"]:
-                    if header in self.headers:
-                        req.add_header(header, self.headers[header])
-        
-                with urllib.request.urlopen(req, timeout=30) as resp:
-                    content = resp.read()
-                    content_type = resp.headers.get("Content-Type", "text/html")
-            
-                    self.send_response(resp.status)
-                    self.send_header("Content-Type", content_type)
-                    if "Cache-Control" in resp.headers:
-                        self.send_header("Cache-Control", resp.headers["Cache-Control"])
-                    self.end_headers()
-                    self.wfile.write(content)
-                    log(f"✅ Proxy Chat OK", "DEBUG")
-            except Exception as e:
-                log(f"❌ Proxy Chat error: {e}", "WARN")
-                self.send_response(503)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.end_headers()
-                # ⚠️ CORREGIDO: usar string normal y encode
-                html_content = """<html><body><h2>Chat Academico no disponible</h2></body></html>"""
-                self.wfile.write(html_content.encode('utf-8'))
-            return
-
-        # ═══ PROXY PARA KROOT CORP (puerto 5001) ═══
-        if p.startswith("/api/kroot/"):
-            kroot_path = p[10:]
-            if not kroot_path:
-                kroot_path = "/"
-    
-            target_url = f"http://localhost:5001{kroot_path}"
-            if parsed.query:
-                target_url += "?" + parsed.query
-    
-            log(f"🔄 Proxy Kroot: {self.path} -> {target_url}", "DEBUG")
-    
-            try:
-                req = urllib.request.Request(target_url)
-                for header in ["User-Agent", "Accept", "Accept-Language", "Content-Type"]:
-                    if header in self.headers:
-                        req.add_header(header, self.headers[header])
-        
-                with urllib.request.urlopen(req, timeout=30) as resp:
-                    content = resp.read()
-                    content_type = resp.headers.get("Content-Type", "text/html")
-            
-                    self.send_response(resp.status)
-                    self.send_header("Content-Type", content_type)
-                    if "Cache-Control" in resp.headers:
-                        self.send_header("Cache-Control", resp.headers["Cache-Control"])
-                    self.end_headers()
-                    self.wfile.write(content)
-                    log(f"✅ Proxy Kroot OK", "DEBUG")
-            except Exception as e:
-                log(f"❌ Proxy Kroot error: {e}", "WARN")
-                self.send_response(503)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.end_headers()
-                # ⚠️ CORREGIDO: usar string normal y encode
-                html_content = """<html><body><h2>Kroot Corp no disponible</h2></body></html>"""
-                self.wfile.write(html_content.encode('utf-8'))
-            return
         
         # ═══ LOGS ═══
         if p == "/api/last-log":
@@ -534,7 +489,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             try:
                 d = json.loads(body)
             except:
-                self._json({"ok": False, "error": "JSON inválido"})
+                self._json({"ok": False, "error": "JSON invalido"})
                 return
             sid = auth_system.authenticate(d.get("username"), d.get("password"))
             if sid:
@@ -673,7 +628,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 data = json.loads(body)
                 session_id = data.get("session_id")
         
-                # Buscar el log file del proceso
                 log_dir = DATA_DIR / "virtual_env" / "output"
                 log_file = None
         
@@ -685,12 +639,10 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         
                 if log_file and log_file.exists():
                     content = log_file.read_text(encoding="utf-8", errors="replace")
-                    # Limitar a los últimos 5000 caracteres
                     if len(content) > 5000:
                         content = content[-5000:]
                     self._json({"ok": True, "content": content})
                 else:
-                    # Buscar en los archivos de log más recientes
                     log_files = sorted(log_dir.glob("*.log"), key=lambda x: x.stat().st_mtime, reverse=True)
                     if log_files:
                         content = log_files[0].read_text(encoding="utf-8", errors="replace")
@@ -713,7 +665,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": "Ruta no especificada"})
                     return
         
-                # Buscar el archivo en diferentes ubicaciones
                 possible_paths = [
                     BASE_DIR / file_path,
                     DATA_DIR / file_path,
@@ -737,6 +688,44 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": "Archivo no encontrado"})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
+            return
+        
+        # ═══ PROXY PARA KALM AI (puerto 5000) ═══
+        if p.startswith("/api/kalm/"):
+            kalm_path = p[10:]
+            if not kalm_path:
+                kalm_path = "/"
+            
+            target_url = f"http://localhost:5000{kalm_path}"
+            if parsed.query:
+                target_url += "?" + parsed.query
+            
+            log(f"🔄 Proxy Kalm AI: {self.path} -> {target_url}", "DEBUG")
+            
+            try:
+                req = urllib.request.Request(target_url)
+                for header in ["User-Agent", "Accept", "Accept-Language", "Content-Type"]:
+                    if header in self.headers:
+                        req.add_header(header, self.headers[header])
+                
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    content = resp.read()
+                    content_type = resp.headers.get("Content-Type", "text/html")
+                    
+                    self.send_response(resp.status)
+                    self.send_header("Content-Type", content_type)
+                    if "Cache-Control" in resp.headers:
+                        self.send_header("Cache-Control", resp.headers["Cache-Control"])
+                    self.end_headers()
+                    self.wfile.write(content)
+                    log(f"✅ Proxy Kalm AI OK", "DEBUG")
+            except Exception as e:
+                log(f"❌ Proxy Kalm AI error: {e}", "WARN")
+                self.send_response(503)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                html_content = """<html><body><h2>Kalm AI no disponible</h2><p>Inicia la aplicacion desde el menu Program.</p></body></html>"""
+                self.wfile.write(html_content.encode('utf-8'))
             return
         
         # ═══ RUN SCRIPT ═══
@@ -898,85 +887,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
             return
-
-        # ═══ PROXY PARA CHAT ACADÉMICO (puerto 5000) ═══
-        if p.startswith("/api/chat/"):
-            chat_path = p[10:]
-            if not chat_path:
-                chat_path = "/"
-    
-            target_url = f"http://localhost:5000{chat_path}"
-            if parsed.query:
-                target_url += "?" + parsed.query
-    
-            log(f"🔄 Proxy Chat: {self.path} -> {target_url}", "DEBUG")
-    
-            try:
-                req = urllib.request.Request(target_url)
-                for header in ["User-Agent", "Accept", "Accept-Language", "Content-Type"]:
-                    if header in self.headers:
-                        req.add_header(header, self.headers[header])
-        
-                with urllib.request.urlopen(req, timeout=30) as resp:
-                    content = resp.read()
-                    content_type = resp.headers.get("Content-Type", "text/html")
-            
-                    self.send_response(resp.status)
-                    self.send_header("Content-Type", content_type)
-                    if "Cache-Control" in resp.headers:
-                        self.send_header("Cache-Control", resp.headers["Cache-Control"])
-                    self.end_headers()
-                    self.wfile.write(content)
-                    log(f"✅ Proxy Chat OK", "DEBUG")
-            except Exception as e:
-                log(f"❌ Proxy Chat error: {e}", "WARN")
-                self.send_response(503)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.end_headers()
-                # ⚠️ CORREGIDO: usar string normal y encode
-                html_content = """<html><body><h2>Chat Academico no disponible</h2></body></html>"""
-                self.wfile.write(html_content.encode('utf-8'))
-            return
-
-        # ═══ PROXY PARA KROOT CORP (puerto 5001) ═══
-        if p.startswith("/api/kroot/"):
-            kroot_path = p[10:]
-            if not kroot_path:
-                kroot_path = "/"
-    
-            target_url = f"http://localhost:5001{kroot_path}"
-            if parsed.query:
-                target_url += "?" + parsed.query
-    
-            log(f"🔄 Proxy Kroot: {self.path} -> {target_url}", "DEBUG")
-    
-            try:
-                req = urllib.request.Request(target_url)
-                for header in ["User-Agent", "Accept", "Accept-Language", "Content-Type"]:
-                    if header in self.headers:
-                        req.add_header(header, self.headers[header])
-        
-                with urllib.request.urlopen(req, timeout=30) as resp:
-                    content = resp.read()
-                    content_type = resp.headers.get("Content-Type", "text/html")
-            
-                    self.send_response(resp.status)
-                    self.send_header("Content-Type", content_type)
-                    if "Cache-Control" in resp.headers:
-                        self.send_header("Cache-Control", resp.headers["Cache-Control"])
-                    self.end_headers()
-                    self.wfile.write(content)
-                    log(f"✅ Proxy Kroot OK", "DEBUG")
-            except Exception as e:
-                log(f"❌ Proxy Kroot error: {e}", "WARN")
-                self.send_response(503)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.end_headers()
-                # ⚠️ CORREGIDO: usar string normal y encode
-                html_content = """<html><body><h2>Kroot Corp no disponible</h2></body></html>"""
-                self.wfile.write(html_content.encode('utf-8'))
-            return
-        
         
         # ═══ SHUTDOWN ═══
         if p == "/api/shutdown":
