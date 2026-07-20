@@ -1326,8 +1326,9 @@ if (document.getElementById('clock-display')) {
 
 
 // ═══════════════════════════════════════════════════════════
-// CHAT ACADÉMICO - VERSIÓN SIMPLE
+// CHAT ACADÉMICO - VERSIÓN DEFINITIVA
 // ═══════════════════════════════════════════════════════════
+
 function openChatAcademico() {
     console.log('📚 Abriendo Chat Académico...');
     
@@ -1335,6 +1336,7 @@ function openChatAcademico() {
         showNotification('📚 Iniciando Chat Académico...', 'info');
     }
     
+    // 1. Ejecutar el script en segundo plano
     fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1346,48 +1348,27 @@ function openChatAcademico() {
     .then(r => r.json())
     .then(data => {
         console.log('📤 Respuesta:', data);
-        
-        // Buscar URL en stdout
-        if (data.ok && data.stdout) {
-            const urlMatch = data.stdout.match(/http:\/\/localhost:\d+/);
-            if (urlMatch) {
-                const url = urlMatch[0];
-                console.log('✅ URL encontrada:', url);
-                openWin('browser');
-                setTimeout(() => {
-                    const urlInput = document.getElementById('browser-url');
-                    if (urlInput) {
-                        urlInput.value = url;
-                        if (typeof browserNavigate === 'function') browserNavigate();
-                    }
-                }, 500);
-                if (typeof showNotification === 'function') {
-                    showNotification('✅ Chat Académico iniciado', 'success');
-                }
-                return;
+        if (data.ok) {
+            if (typeof showNotification === 'function') {
+                showNotification('✅ Chat Académico iniciado', 'success');
             }
         }
-        
-        // Fallback: localhost:5000
-        console.log('⚠️ Usando fallback localhost:5000');
+    })
+    .catch(err => console.error('❌ Error:', err));
+    
+    // 2. ABRIR EL NAVEGADOR DIRECTAMENTE (sin esperar stdout)
+    setTimeout(() => {
         openWin('browser');
         setTimeout(() => {
             const urlInput = document.getElementById('browser-url');
             if (urlInput) {
                 urlInput.value = 'http://localhost:5000';
-                if (typeof browserNavigate === 'function') browserNavigate();
+                if (typeof browserNavigate === 'function') {
+                    browserNavigate();
+                }
             }
         }, 500);
-        if (typeof showNotification === 'function') {
-            showNotification('⚠️ Chat Académico en localhost:5000', 'warning');
-        }
-    })
-    .catch(err => {
-        console.error('❌ Error:', err);
-        if (typeof showNotification === 'function') {
-            showNotification('❌ Error: ' + err.message, 'error');
-        }
-    });
+    }, 2000);
 }
 
 
