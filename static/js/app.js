@@ -1260,37 +1260,37 @@ if (document.getElementById('clock-display')) {
 
 
 // ═══════════════════════════════════════════════════════════
-// CHAT ACADÉMICO - VERSIÓN CON PROXY
+// KALM AI APP - Aplicación unificada (Chat + Kroot)
 // ═══════════════════════════════════════════════════════════
 
-function openChatAcademico() {
-    console.log('📚 Abriendo Chat Académico...');
+function openKalmAI() {
+    console.log('🧠 Abriendo Kalm AI App...');
     
     if (typeof showNotification === 'function') {
-        showNotification('📚 Iniciando Chat Académico...', 'info');
+        showNotification('🧠 Iniciando Kalm AI...', 'info');
     }
     
-    // Ejecutar el servidor web en segundo plano
+    // Ejecutar la aplicación unificada
     fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            path: 'system/Program/chat_web.py',
+            path: 'system/Program/kalm_ai_app.py',
             args: ['--kalm']
         })
     })
     .then(r => r.json())
     .then(data => {
-        console.log('📤 Respuesta Chat:', data);
+        console.log('📤 Respuesta Kalm AI:', data);
         
         if (data.ok) {
-            // Abrir el navegador interno con la URL del proxy
+            // Abrir el navegador con el proxy
             setTimeout(() => {
                 openWin('browser');
                 setTimeout(() => {
                     const urlInput = document.getElementById('browser-url');
                     if (urlInput) {
-                        urlInput.value = '/api/chat/';
+                        urlInput.value = '/api/kalm/';
                         if (typeof browserNavigate === 'function') {
                             browserNavigate();
                         }
@@ -1299,7 +1299,7 @@ function openChatAcademico() {
             }, 2000);
             
             if (typeof showNotification === 'function') {
-                showNotification('✅ Chat Académico iniciado', 'success');
+                showNotification('✅ Kalm AI iniciado', 'success');
             }
         } else {
             if (typeof showNotification === 'function') {
@@ -1315,58 +1315,30 @@ function openChatAcademico() {
     });
 }
 
-// ═══════════════════════════════════════════════════════════
-// KROOT CORP - VERSIÓN CON PROXY
-// ═══════════════════════════════════════════════════════════
+// Mantener compatibilidad con funciones antiguas
+function openChatAcademico() {
+    openKalmAI();
+    // Cambiar a la pestaña de Chat
+    setTimeout(() => {
+        const urlInput = document.getElementById('browser-url');
+        if (urlInput && urlInput.value === '/api/kalm/') {
+            // La pestaña activa por defecto es Chat
+        }
+    }, 1000);
+}
 
 function openKrootCorp() {
-    console.log('🏢 Abriendo Kroot Corp...');
-    
-    if (typeof showNotification === 'function') {
-        showNotification('🏢 Iniciando Kroot Corp...', 'info');
-    }
-    
-    fetch('/api/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            path: 'system/Program/kroot_web.py',
-            args: ['--kalm']
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        console.log('📤 Respuesta Kroot:', data);
-        
-        if (data.ok) {
-            setTimeout(() => {
-                openWin('browser');
-                setTimeout(() => {
-                    const urlInput = document.getElementById('browser-url');
-                    if (urlInput) {
-                        urlInput.value = '/api/kroot/';
-                        if (typeof browserNavigate === 'function') {
-                            browserNavigate();
-                        }
-                    }
-                }, 500);
-            }, 2000);
-            
-            if (typeof showNotification === 'function') {
-                showNotification('✅ Kroot Corp iniciado', 'success');
-            }
-        } else {
-            if (typeof showNotification === 'function') {
-                showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
-            }
+    openKalmAI();
+    // Cambiar a la pestaña de Kroot después de cargar
+    setTimeout(() => {
+        const iframe = document.getElementById('browser-frame');
+        if (iframe) {
+            // Inyectar script para cambiar a la pestaña Kroot
+            try {
+                iframe.contentWindow.postMessage({ action: 'switchTab', tab: 'kroot' }, '*');
+            } catch(e) {}
         }
-    })
-    .catch(err => {
-        console.error('❌ Error:', err);
-        if (typeof showNotification === 'function') {
-            showNotification('❌ Error: ' + err.message, 'error');
-        }
-    });
+    }, 2000);
 }
 
 
@@ -1387,7 +1359,8 @@ window.loadTools = loadTools;
 window.loadGames = loadGames;
 window.openTerminalForProcess = openTerminalForProcess;
 window.closeTerminalWindow = closeTerminalWindow;
-window.openKrootCorp = openKrootCorp;
+window.openKalmAI = openKalmAI;
 window.openChatAcademico = openChatAcademico;
+window.openKrootCorp = openKrootCorp;
 
 console.log('🏰 Kalm OS v4.3 - Aplicación cargada correctamente');
