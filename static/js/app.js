@@ -702,7 +702,7 @@ function executeProgramFromMenu(path, name) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// KALM AI APP - VERSIÓN FUNCIONAL
+// KALM AI APP - VERSIÓN SIMPLIFICADA Y FUNCIONAL
 // ═══════════════════════════════════════════════════════════
 
 function openKalmAI() {
@@ -713,7 +713,7 @@ function openKalmAI() {
     }
     
     // Verificar si ya está corriendo
-    fetch('/api/kalm/health')
+    fetch('/kalm-ai/health')
         .then(r => {
             if (r.ok) {
                 console.log('✅ Kalm AI ya está corriendo');
@@ -730,6 +730,7 @@ function openKalmAI() {
 function startKalmAI() {
     console.log('🚀 Iniciando Kalm AI...');
     
+    // Usar /api/run-direct para ejecutar en detached
     fetch('/api/run-direct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -745,6 +746,7 @@ function startKalmAI() {
             if (typeof showNotification === 'function') {
                 showNotification('✅ Kalm AI iniciado', 'success');
             }
+            // Esperar y abrir el navegador
             setTimeout(() => {
                 openKalmAIBrowser();
             }, 3000);
@@ -762,23 +764,88 @@ function startKalmAI() {
 function openKalmAIBrowser() {
     console.log('🌐 Abriendo navegador con Kalm AI integrado...');
     
-    openWin('browser');
+    // Obtener la ventana del navegador
+    let win = document.getElementById('win-browser');
     
-    setTimeout(() => {
-        const urlInput = document.getElementById('browser-url');
-        const frame = document.getElementById('browser-frame');
-        const status = document.getElementById('browser-status');
+    if (!win) {
+        // Si no existe, crearla con openWin
+        openWin('browser');
+        // Esperar a que se cree
+        setTimeout(() => {
+            forceLoadKalmAI();
+        }, 500);
+    } else {
+        // Si existe, mostrarla y cargar
+        win.style.display = 'flex';
+        win.classList.add('active');
+        win.style.zIndex = ++windowZIndex;
+        updateTaskbar('browser');
         
-        // La nueva ruta es /kalm-ai
-        if (urlInput) urlInput.value = '/kalm-ai';
-        if (frame) frame.src = '/kalm-ai';
-        if (status) {
-            status.textContent = '🧠 Kalm AI';
-            status.style.color = '#da70d6';
-        }
-    }, 500);
+        // Forzar la carga de Kalm AI
+        setTimeout(() => {
+            forceLoadKalmAI();
+        }, 300);
+    }
 }
 
+function forceLoadKalmAI() {
+    console.log('🔄 Forzando carga de Kalm AI...');
+    
+    const frame = document.getElementById('browser-frame');
+    const urlInput = document.getElementById('browser-url');
+    const status = document.getElementById('browser-status');
+    
+    if (!frame) {
+        console.error('❌ Frame no encontrado');
+        return;
+    }
+    
+    // Limpiar el frame
+    frame.srcdoc = '';
+    frame.src = 'about:blank';
+    
+    // Establecer la URL en la barra
+    if (urlInput) {
+        urlInput.value = '/kalm-ai';
+    }
+    
+    // Estado
+    if (status) {
+        status.textContent = '🧠 Cargando Kalm AI...';
+        status.style.color = '#ffaa00';
+    }
+    
+    // Cargar la URL
+    setTimeout(() => {
+        frame.src = '/kalm-ai';
+        console.log('✅ Frame cargado con /kalm-ai');
+    }, 200);
+    
+    // Verificar si se cargó correctamente después de 5 segundos
+    setTimeout(() => {
+        fetch('/kalm-ai/health')
+            .then(r => {
+                if (r.ok) {
+                    if (status) {
+                        status.textContent = '✅ Kalm AI - Listo';
+                        status.style.color = '#00cc66';
+                    }
+                    // Recargar el frame si es necesario
+                    if (frame && frame.src !== '/kalm-ai') {
+                        frame.src = '/kalm-ai';
+                    }
+                }
+            })
+            .catch(() => {
+                if (status) {
+                    status.textContent = '⚠️ Kalm AI no responde';
+                    status.style.color = '#ffaa00';
+                }
+            });
+    }, 5000);
+}
+
+// ═══ MANTENER COMPATIBILIDAD ═══
 function openChatAcademico() {
     openKalmAI();
 }
