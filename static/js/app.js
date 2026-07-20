@@ -1260,48 +1260,46 @@ if (document.getElementById('clock-display')) {
 
 
 // ═══════════════════════════════════════════════════════════
-// KROOT CORP - VERSIÓN GUI
+// CHAT ACADÉMICO - VERSIÓN WEB BONITA
 // ═══════════════════════════════════════════════════════════
 
-function openKrootCorp() {
-    console.log('🏢 Abriendo Kroot Corp IA...');
+function openChatAcademico() {
+    console.log('📚 Abriendo Chat Académico...');
     
     if (typeof showNotification === 'function') {
-        showNotification('🏢 Iniciando Kroot Corp IA...', 'info');
+        showNotification('📚 Iniciando Chat Académico...', 'info');
     }
     
-    // En Windows, Tkinter necesita entorno gráfico
-    // En Render, no funcionará (por eso detectamos el entorno)
-    const isRender = window.location.hostname.includes('render.com') || 
-                     window.location.hostname.includes('onrender.com');
-    
-    let scriptPath = 'system/Program/kroot_gui.py';
-    if (isRender) {
-        // En Render, usar versión de consola (sin GUI)
-        scriptPath = 'system/Program/kroot_app.py';
-        if (typeof showNotification === 'function') {
-            showNotification('⚠️ Modo consola (entorno headless)', 'warning');
-        }
-    }
-    
+    // Ejecutar el servidor web en segundo plano
     fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            path: scriptPath,
-            args: []
+            path: 'system/Program/chat_web.py',
+            args: ['--kalm']
         })
     })
     .then(r => r.json())
     .then(data => {
         console.log('📤 Respuesta:', data);
         
-        if (data.ok && data.session_id) {
+        if (data.ok) {
+            // Abrir el navegador interno con la URL
+            setTimeout(() => {
+                openWin('browser');
+                setTimeout(() => {
+                    const urlInput = document.getElementById('browser-url');
+                    if (urlInput) {
+                        urlInput.value = 'http://localhost:5000';
+                        if (typeof browserNavigate === 'function') {
+                            browserNavigate();
+                        }
+                    }
+                }, 500);
+            }, 2000);
+            
             if (typeof showNotification === 'function') {
-                showNotification('✅ Aplicación iniciada', 'success');
-            }
-            if (typeof openTerminalForProcess === 'function') {
-                openTerminalForProcess(data.session_id, 'Kroot Corp');
+                showNotification('✅ Chat Académico iniciado', 'success');
             }
         } else {
             if (typeof showNotification === 'function') {
@@ -1318,45 +1316,44 @@ function openKrootCorp() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// CHAT ACADÉMICO - VERSIÓN GUI
+// KROOT CORP - VERSIÓN WEB BONITA
 // ═══════════════════════════════════════════════════════════
 
-function openChatAcademico() {
-    console.log('📚 Abriendo Chat Académico...');
+function openKrootCorp() {
+    console.log('🏢 Abriendo Kroot Corp...');
     
     if (typeof showNotification === 'function') {
-        showNotification('📚 Iniciando Chat Académico...', 'info');
-    }
-    
-    const isRender = window.location.hostname.includes('render.com') || 
-                     window.location.hostname.includes('onrender.com');
-    
-    let scriptPath = 'system/Program/chat_gui.py';
-    if (isRender) {
-        scriptPath = 'system/Program/chat_app.py';
-        if (typeof showNotification === 'function') {
-            showNotification('⚠️ Modo consola (entorno headless)', 'warning');
-        }
+        showNotification('🏢 Iniciando Kroot Corp...', 'info');
     }
     
     fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            path: scriptPath,
-            args: []
+            path: 'system/Program/kroot_web.py',
+            args: ['--kalm']
         })
     })
     .then(r => r.json())
     .then(data => {
         console.log('📤 Respuesta:', data);
         
-        if (data.ok && data.session_id) {
+        if (data.ok) {
+            setTimeout(() => {
+                openWin('browser');
+                setTimeout(() => {
+                    const urlInput = document.getElementById('browser-url');
+                    if (urlInput) {
+                        urlInput.value = 'http://localhost:5001';
+                        if (typeof browserNavigate === 'function') {
+                            browserNavigate();
+                        }
+                    }
+                }, 500);
+            }, 2000);
+            
             if (typeof showNotification === 'function') {
-                showNotification('✅ Aplicación iniciada', 'success');
-            }
-            if (typeof openTerminalForProcess === 'function') {
-                openTerminalForProcess(data.session_id, 'Chat Académico');
+                showNotification('✅ Kroot Corp iniciado', 'success');
             }
         } else {
             if (typeof showNotification === 'function') {
