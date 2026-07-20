@@ -604,6 +604,26 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         if p == "/api/files/search":
             self._json(FileManager.search(q.get('q', [''])[0]))
             return
+
+        # ═══ RUN SCRIPT DIRECT (CON ESPERA) ═══
+        if p == "/api/run-direct":
+            try:
+                data = json.loads(body)
+                path = data.get("path", "").strip()
+                args = data.get("args", [])
+        
+                if not path:
+                    self._json({"ok": False, "error": "Ruta requerida"})
+                    return
+        
+                # Usar VirtualRunner pero en modo detached
+                from system.virtual_runner import VirtualRunner
+                result = VirtualRunner.execute_detached(path, args)
+        
+                self._json(result)
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+            return
         
         # ═══ LOGS ═══
         if p == "/api/last-log":
