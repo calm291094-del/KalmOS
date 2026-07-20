@@ -706,12 +706,12 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": "Ruta no especificada"})
                     return
         
-                # Buscar el archivo en varias ubicaciones
+                # Buscar el archivo en diferentes ubicaciones
                 possible_paths = [
-                    Path(file_path),
-                    DATA_DIR / "persistence" / Path(file_path).name,
                     BASE_DIR / file_path,
-                    DATA_DIR / file_path
+                    DATA_DIR / file_path,
+                    DATA_DIR / "persistence" / Path(file_path).name,
+                    Path(file_path)
                 ]
         
                 found_content = None
@@ -722,23 +722,11 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                             log(f"✅ Señal encontrada en: {path}", "DEBUG")
                             break
                         except:
-                            continue
+                            pass
         
                 if found_content:
                     self._json({"ok": True, "content": found_content})
                 else:
-                    # Buscar en cualquier archivo .txt dentro de persistence
-                    persistence_dir = DATA_DIR / "persistence"
-                    if persistence_dir.exists():
-                        for f in persistence_dir.glob("*.txt"):
-                            try:
-                                content = f.read_text(encoding="utf-8").strip()
-                                if content.startswith("http"):
-                                    self._json({"ok": True, "content": content})
-                                    return
-                            except:
-                                pass
-            
                     self._json({"ok": False, "error": "Archivo no encontrado"})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
