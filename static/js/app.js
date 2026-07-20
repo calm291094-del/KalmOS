@@ -730,71 +730,57 @@ function executeProgramFromMenu(path, name) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// KrootCorp
+// KROOT CORP - VERSIÓN TERMINAL
 // ═══════════════════════════════════════════════════════════
-// ═══ KROOT CORP - CORREGIDO PARA RENDER ═══
+
 function openKrootCorp() {
-    console.log('🏢 Abriendo Kroot Corp IA...');
+    console.log('🏢 Abriendo Kroot Corp IA (modo terminal)...');
     
     if (typeof showNotification === 'function') {
-        showNotification('🏢 Abriendo Kroot Corp IA...', 'info');
+        showNotification('🏢 Iniciando Kroot Corp IA...', 'info');
     }
     
-    // Usar el proxy de Kalm OS en lugar de localhost:8000
-    const krootUrl = '/api/kroot/dashboard';
-    
-    // Abrir el navegador interno
-    openWin('browser');
-    
-    setTimeout(() => {
-        const urlInput = document.getElementById('browser-url');
-        if (urlInput) {
-            urlInput.value = krootUrl;
-            if (typeof browserNavigate === 'function') {
-                browserNavigate();
-            }
-        }
-    }, 1500);
-    
-    // Intentar iniciar Kroot Corp en segundo plano
+    // Ejecutar la versión de consola de Kroot Corp
     fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            path: 'system/Program/kroot_corp/run.py',
-            args: ['--no-browser']
+            path: 'system/Program/kroot_app.py',
+            args: []
         })
     })
     .then(r => r.json())
     .then(data => {
         console.log('📤 Respuesta Kroot Corp:', data);
-        if (data.ok) {
+        
+        if (data.ok && data.session_id) {
             if (typeof showNotification === 'function') {
-                showNotification('✅ Kroot Corp IA iniciado', 'success');
+                showNotification('✅ Kroot Corp IA iniciado en terminal', 'success');
+            }
+            
+            // Abrir la terminal
+            if (typeof openTerminalForProcess === 'function') {
+                openTerminalForProcess(data.session_id, 'Kroot Corp IA');
+            }
+        } else if (data.ok && data.stdout) {
+            // Mostrar salida en el runner
+            openWin('runner');
+            const output = document.getElementById('script-out');
+            if (output) output.textContent = data.stdout;
+        } else {
+            if (typeof showNotification === 'function') {
+                showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
             }
         }
     })
     .catch(err => {
-        console.warn('⚠️ Error iniciando Kroot Corp:', err);
-        // Si no se puede iniciar, mostrar mensaje
+        console.error('❌ Error:', err);
         if (typeof showNotification === 'function') {
-            showNotification('⚠️ Kroot Corp no disponible. Usando proxy.', 'warning');
+            showNotification('❌ Error: ' + err.message, 'error');
         }
-        // Intentar cargar desde el proxy de todos modos
-        setTimeout(() => {
-            const urlInput = document.getElementById('browser-url');
-            if (urlInput) {
-                urlInput.value = '/api/kroot/dashboard';
-                if (typeof browserNavigate === 'function') {
-                    browserNavigate();
-                }
-            }
-        }, 1000);
     });
 }
 
-// Exportar función globalmente
-window.openKrootCorp = openKrootCorp;
 
 // ═══════════════════════════════════════════════════════════
 // PAC CONFIGURATION
@@ -1389,6 +1375,7 @@ window.loadTools = loadTools;
 window.loadGames = loadGames;
 window.openTerminalForProcess = openTerminalForProcess;
 window.closeTerminalWindow = closeTerminalWindow;
+window.openKrootCorp = openKrootCorp;
 window.openChatAcademico = openChatAcademico;
 
 console.log('🏰 Kalm OS v4.3 - Aplicación cargada correctamente');
