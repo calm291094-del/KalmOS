@@ -1260,7 +1260,7 @@ if (document.getElementById('clock-display')) {
 
 
 // ═══════════════════════════════════════════════════════════
-// KALM AI APP - Aplicación unificada (Chat + Kroot)
+// KALM AI APP - UNIFICADA (Chat + Kroot)
 // ═══════════════════════════════════════════════════════════
 
 function openKalmAI() {
@@ -1270,7 +1270,7 @@ function openKalmAI() {
         showNotification('🧠 Iniciando Kalm AI...', 'info');
     }
     
-    // Ejecutar la aplicación unificada
+    // Ejecutar la aplicación unificada en segundo plano
     fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1315,31 +1315,13 @@ function openKalmAI() {
     });
 }
 
-// Mantener compatibilidad con funciones antiguas
+// ═══ MANTENER COMPATIBILIDAD ═══
 function openChatAcademico() {
     openKalmAI();
-    // Cambiar a la pestaña de Chat
-    setTimeout(() => {
-        const urlInput = document.getElementById('browser-url');
-        if (urlInput && urlInput.value === '/api/kalm/') {
-            // La pestaña activa por defecto es Chat
-        }
-    }, 1000);
 }
 
 function openKrootCorp() {
     openKalmAI();
-    // Cambiar a la pestaña de Kroot después de cargar
-    setTimeout(() => {
-        const iframe = document.getElementById('browser-frame');
-        if (iframe) {
-            // Inyectar script para cambiar a la pestaña Kroot
-            try {
-                iframe.contentWindow.postMessage({ action: 'switchTab', tab: 'kroot' }, '*');
-            } catch(e) {}
-        }
-    }, 2000);
-}
 
 
 // ═══════════════════════════════════════════════════════════
