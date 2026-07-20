@@ -1325,7 +1325,7 @@ if (document.getElementById('clock-display')) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// CHAT ACADÉMICO
+// CHAT ACADÉMICO - VERSIÓN MEJORADA
 // ═══════════════════════════════════════════════════════════
 
 function openChatAcademico() {
@@ -1348,8 +1348,8 @@ function openChatAcademico() {
     .then(data => {
         console.log('📤 Respuesta Chat Académico:', data);
         
+        // ⚠️ CASO 1: El script devolvió viewer_url
         if (data.ok && data.viewer_url) {
-            // Abrir el navegador con la URL devuelta
             openWin('browser');
             setTimeout(() => {
                 const urlInput = document.getElementById('browser-url');
@@ -1363,11 +1363,17 @@ function openChatAcademico() {
             if (typeof showNotification === 'function') {
                 showNotification('✅ Chat Académico iniciado', 'success');
             }
-        } else if (data.ok && data.stdout) {
-            // Si el script devolvió la URL en stdout, usarla
-            const urlMatch = data.stdout.match(/http:\/\/localhost:\d+/);
+            return;
+        }
+        
+        // ⚠️ CASO 2: El script devolvió stdout con la URL
+        if (data.ok && data.stdout) {
+            console.log('📄 stdout del script:', data.stdout);
+            // Buscar URL en el stdout (http://localhost:puerto)
+            const urlMatch = data.stdout.match(/https?:\/\/localhost:\d+/);
             if (urlMatch) {
                 const url = urlMatch[0];
+                console.log('✅ URL encontrada en stdout:', url);
                 openWin('browser');
                 setTimeout(() => {
                     const urlInput = document.getElementById('browser-url');
@@ -1381,27 +1387,30 @@ function openChatAcademico() {
                 if (typeof showNotification === 'function') {
                     showNotification('✅ Chat Académico iniciado', 'success');
                 }
-            } else {
-                // Si no se encontró URL en stdout, mostrar mensaje
-                if (typeof showNotification === 'function') {
-                    showNotification('⚠️ Chat Académico iniciado, pero no se pudo abrir el navegador', 'warning');
-                }
-                // Intentar abrir en localhost:5000 por defecto
-                openWin('browser');
-                setTimeout(() => {
-                    const urlInput = document.getElementById('browser-url');
-                    if (urlInput) {
-                        urlInput.value = 'http://localhost:5000';
-                        if (typeof browserNavigate === 'function') {
-                            browserNavigate();
-                        }
+                return;
+            }
+            
+            // Si no se encontró URL, intentar con localhost:5000
+            console.log('⚠️ No se encontró URL en stdout. Intentando con localhost:5000');
+            openWin('browser');
+            setTimeout(() => {
+                const urlInput = document.getElementById('browser-url');
+                if (urlInput) {
+                    urlInput.value = 'http://localhost:5000';
+                    if (typeof browserNavigate === 'function') {
+                        browserNavigate();
                     }
-                }, 500);
-            }
-        } else {
+                }
+            }, 500);
             if (typeof showNotification === 'function') {
-                showNotification('❌ Error iniciando Chat Académico: ' + (data.error || 'desconocido'), 'error');
+                showNotification('⚠️ Chat Académico iniciado en localhost:5000', 'warning');
             }
+            return;
+        }
+        
+        // ⚠️ CASO 3: Error
+        if (typeof showNotification === 'function') {
+            showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
         }
     })
     .catch(err => {
@@ -1428,8 +1437,8 @@ window.runTool = runTool;
 window.runGame = runGame;
 window.loadTools = loadTools;
 window.loadGames = loadGames;
-window.openChatAcademico = openChatAcademico;
 window.openTerminalForProcess = openTerminalForProcess;
 window.closeTerminalWindow = closeTerminalWindow;
+window.openChatAcademico = openChatAcademico;
 
 console.log('🏰 Kalm OS v4.3 - Aplicación cargada correctamente');
