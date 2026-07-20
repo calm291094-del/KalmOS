@@ -240,11 +240,12 @@ function browserNavigate() {
 // ═══ VERIFICAR ESTADO DE KALM AI DESDE EL NAVEGADOR ═══
 function checkKalmAIStatus() {
     let attempts = 0;
-    const maxAttempts = 20;
+    const maxAttempts = 30;
     const status = document.getElementById('browser-status');
     
     if (status) {
         status.textContent = '🧠 Verificando Kalm AI...';
+        status.style.color = '#ffaa00';
     }
     
     const checkInterval = setInterval(() => {
@@ -330,7 +331,7 @@ function checkKalmAIStatus() {
                     }
                 }
             });
-    }, 1500);
+    }, 2000);
 }
 
 // ═══ LIMPIAR URL AL PRESIONAR ENTER ═══
