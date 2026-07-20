@@ -1,4 +1,4 @@
-// Kalm OS v4.3 - Aplicación Principal (VERSIÓN OPTIMIZADA)
+// Kalm OS v4.3 - Aplicación Principal (VERSIÓN DEFINITIVA)
 
 // ═══════════════════════════════════════════════════════════
 // VARIABLES GLOBALES
@@ -8,7 +8,7 @@ let bookmarksLoadedFlag = false;
 let bookmarksLoading = false;
 let resourceUpdateInterval = null;
 let clockUpdateInterval = null;
-// windowZIndex ya está declarado en window_manager.js - NO redeclarar
+// windowZIndex ya está declarado en window_manager.js
 
 // ═══════════════════════════════════════════════════════════
 // CONSTANTES - MAPAS GLOBALES
@@ -47,7 +47,6 @@ window.GAME_MAP = {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🏰 Kalm OS v4.3 iniciado');
     
-    // Cargar wallpaper
     fetch('/api/background-check')
         .then(r => r.json())
         .then(data => {
@@ -57,20 +56,16 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(() => {});
     
-    // Iniciar monitor de recursos (intervalo más largo para rendimiento)
     updateResourceMonitor();
     if (resourceUpdateInterval) clearInterval(resourceUpdateInterval);
     resourceUpdateInterval = setInterval(updateResourceMonitor, 5000);
     
-    // Iniciar reloj
     updateClock();
     if (clockUpdateInterval) clearInterval(clockUpdateInterval);
     clockUpdateInterval = setInterval(updateClock, 1000);
     
-    // Cargar menú de programas
     loadProgramMenu();
     
-    // Cerrar menú al hacer clic fuera
     document.addEventListener('click', function(e) {
         const menu = document.getElementById('start-menu');
         const startBtn = document.getElementById('start-btn');
@@ -103,7 +98,7 @@ function toggleStart() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MONITOR DE RECURSOS (OPTIMIZADO)
+// MONITOR DE RECURSOS
 // ═══════════════════════════════════════════════════════════
 
 let isUpdating = false;
@@ -120,29 +115,24 @@ async function updateResourceMonitor() {
         }
         const data = await response.json();
         
-        // CPU
         const cpuVal = document.getElementById('rm-cpu-val');
         const cpuBar = document.getElementById('rm-cpu-bar');
         if (cpuVal) cpuVal.textContent = data.cpu + '%';
         if (cpuBar) cpuBar.style.width = Math.min(data.cpu, 100) + '%';
         
-        // RAM
         const ramVal = document.getElementById('rm-ram-val');
         const ramBar = document.getElementById('rm-ram-bar');
         if (ramVal) ramVal.textContent = `${data.ram_used} / ${data.ram_total}`;
         if (ramBar) ramBar.style.width = Math.min(data.ram_percent, 100) + '%';
         
-        // Disco
         const diskVal = document.getElementById('rm-disk-val');
         const diskBar = document.getElementById('rm-disk-bar');
         if (diskVal) diskVal.textContent = `${data.disk_used} / ${data.disk_total}`;
         if (diskBar) diskBar.style.width = Math.min(data.disk_percent, 100) + '%';
         
-        // Procesos
         const procs = document.getElementById('rm-procs');
         if (procs) procs.textContent = data.processes || 0;
         
-        // Red
         const netUp = document.getElementById('rm-net-up');
         const netDown = document.getElementById('rm-net-down');
         const netSent = document.getElementById('rm-net-total-sent');
@@ -165,7 +155,6 @@ async function updateResourceMonitor() {
             netDownBar.style.width = downPercent + '%';
         }
         
-        // Servidores
         try {
             const sr = await fetch('/api/running-procs');
             if (sr.ok) {
@@ -175,9 +164,7 @@ async function updateResourceMonitor() {
             }
         } catch (e) {}
         
-    } catch (error) {
-        // Silenciar errores de red
-    }
+    } catch (error) {}
     isUpdating = false;
 }
 
@@ -212,9 +199,7 @@ async function loadProcs() {
             `;
             tbody.appendChild(tr);
         });
-    } catch (error) {
-        // Silenciar errores
-    }
+    } catch (error) {}
 }
 
 async function killProc(pid) {
@@ -262,9 +247,7 @@ async function loadDNS() {
             `;
             tbody.appendChild(tr);
         }
-    } catch (error) {
-        // Silenciar errores
-    }
+    } catch (error) {}
 }
 
 async function addDNS() {
@@ -341,9 +324,7 @@ async function loadProxy() {
             `;
             tbody.appendChild(tr);
         }
-    } catch (error) {
-        // Silenciar errores
-    }
+    } catch (error) {}
 }
 
 async function addProxy() {
@@ -431,9 +412,7 @@ async function loadServers() {
         if (info) {
             info.textContent = `🟢 ${data.length} procesos activos`;
         }
-    } catch (error) {
-        // Silenciar errores
-    }
+    } catch (error) {}
 }
 
 async function stopProcess(pid) {
@@ -672,7 +651,6 @@ function executeProgramFromMenu(path, name) {
         showNotification(`⏳ Ejecutando ${name}...`, 'info');
     }
     
-    // Abrir terminal inmediatamente para feedback visual
     let terminalOpened = false;
     
     fetch('/api/run', {
@@ -685,7 +663,6 @@ function executeProgramFromMenu(path, name) {
         console.log('📤 Respuesta de /api/run:', data);
         
         if (data.ok && data.stdout) {
-            // Script terminó rápido, mostrar salida
             if (typeof showNotification === 'function') {
                 showNotification(`✅ ${name} ejecutado correctamente`, 'success');
             }
@@ -693,17 +670,13 @@ function executeProgramFromMenu(path, name) {
             if (output) output.textContent = data.stdout;
             openWin('runner');
         } else if (data.ok && data.session_id) {
-            // Script en ejecución - abrir terminal
             if (typeof showNotification === 'function') {
                 showNotification(`✅ ${name} ejecutado (PID ${data.pid})`, 'success');
             }
-            
-            // Abrir terminal solo una vez
             if (!terminalOpened && typeof openTerminalForProcess === 'function') {
                 terminalOpened = true;
                 openTerminalForProcess(data.session_id, name);
             }
-            
             if (typeof loadServers === 'function') loadServers();
         } else if (data.ok && data.viewer_url) {
             window.open(data.viewer_url, '_blank');
@@ -729,6 +702,68 @@ function executeProgramFromMenu(path, name) {
     });
 }
 
+// ═══════════════════════════════════════════════════════════
+// KALM AI APP - UNIFICADA (Chat + Kroot)
+// ═══════════════════════════════════════════════════════════
+
+function openKalmAI() {
+    console.log('🧠 Abriendo Kalm AI App...');
+    
+    if (typeof showNotification === 'function') {
+        showNotification('🧠 Iniciando Kalm AI...', 'info');
+    }
+    
+    fetch('/api/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            path: 'system/Program/kalm_ai_app.py',
+            args: ['--kalm']
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        console.log('📤 Respuesta Kalm AI:', data);
+        
+        if (data.ok) {
+            setTimeout(() => {
+                openWin('browser');
+                setTimeout(() => {
+                    const urlInput = document.getElementById('browser-url');
+                    if (urlInput) {
+                        urlInput.value = '/api/kalm/';
+                        if (typeof browserNavigate === 'function') {
+                            browserNavigate();
+                        }
+                    }
+                }, 500);
+            }, 2000);
+            
+            if (typeof showNotification === 'function') {
+                showNotification('✅ Kalm AI iniciado', 'success');
+            }
+        } else {
+            if (typeof showNotification === 'function') {
+                showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
+            }
+        }
+    })
+    .catch(err => {
+        console.error('❌ Error:', err);
+        if (typeof showNotification === 'function') {
+            showNotification('❌ Error: ' + err.message, 'error');
+        }
+    });
+}
+
+// ═══ MANTENER COMPATIBILIDAD ═══
+function openChatAcademico() {
+    openKalmAI();
+}
+
+function openKrootCorp() {
+    openKalmAI();
+}
 
 // ═══════════════════════════════════════════════════════════
 // PAC CONFIGURATION
@@ -1258,91 +1293,64 @@ if (document.getElementById('clock-display')) {
     setInterval(updateWorldClocks, 1000);
 }
 
-
-// ═══════════════════════════════════════════════════════════
-// KALM AI APP - UNIFICADA (Chat + Kroot)
-// ═══════════════════════════════════════════════════════════
-
-function openKalmAI() {
-    console.log('🧠 Abriendo Kalm AI App...');
-    
-    if (typeof showNotification === 'function') {
-        showNotification('🧠 Iniciando Kalm AI...', 'info');
-    }
-    
-    // Ejecutar la aplicación unificada en segundo plano
-    fetch('/api/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            path: 'system/Program/kalm_ai_app.py',
-            args: ['--kalm']
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        console.log('📤 Respuesta Kalm AI:', data);
-        
-        if (data.ok) {
-            // Abrir el navegador con el proxy
-            setTimeout(() => {
-                openWin('browser');
-                setTimeout(() => {
-                    const urlInput = document.getElementById('browser-url');
-                    if (urlInput) {
-                        urlInput.value = '/api/kalm/';
-                        if (typeof browserNavigate === 'function') {
-                            browserNavigate();
-                        }
-                    }
-                }, 500);
-            }, 2000);
-            
-            if (typeof showNotification === 'function') {
-                showNotification('✅ Kalm AI iniciado', 'success');
-            }
-        } else {
-            if (typeof showNotification === 'function') {
-                showNotification('❌ Error: ' + (data.error || 'desconocido'), 'error');
-            }
-        }
-    })
-    .catch(err => {
-        console.error('❌ Error:', err);
-        if (typeof showNotification === 'function') {
-            showNotification('❌ Error: ' + err.message, 'error');
-        }
-    });
-}
-
-// ═══ MANTENER COMPATIBILIDAD ═══
-function openChatAcademico() {
-    openKalmAI();
-}
-
-function openKrootCorp() {
-    openKalmAI();
-
-
 // ═══════════════════════════════════════════════════════════
 // FUNCIONES PARA HERRAMIENTAS Y JUEGOS (desde window)
 // ═══════════════════════════════════════════════════════════
-// Estas funciones se cargan desde tools.js y games.js
-// window.runTool y window.runGame ya están definidas
 
+// Estas funciones se cargan desde tools.js y games.js
+
+// ═══════════════════════════════════════════════════════════
+// NOTIFICACIONES
+// ═══════════════════════════════════════════════════════════
+
+function showNotification(message, type = 'info') {
+    const colors = {
+        info: '#9370db',
+        success: '#00cc66',
+        error: '#ff4444',
+        warning: '#ffaa00'
+    };
+    
+    const div = document.createElement('div');
+    div.style.cssText = `
+        position: fixed;
+        bottom: 60px;
+        right: 20px;
+        background: rgba(10,5,20,0.95);
+        border: 1px solid ${colors[type] || '#9370db'};
+        color: #fff;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        max-width: 400px;
+        font-size: 13px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        animation: slideIn 0.3s ease;
+        font-family: 'Segoe UI', sans-serif;
+    `;
+    div.textContent = message;
+    document.body.appendChild(div);
+    
+    setTimeout(() => {
+        div.style.opacity = '0';
+        div.style.transition = 'opacity 0.5s';
+        setTimeout(() => div.remove(), 500);
+    }, 5000);
+}
 
 // ═══════════════════════════════════════════════════════════
 // EXPORTAR FUNCIONES GLOBALMENTE
 // ═══════════════════════════════════════════════════════════
 
-window.runTool = runTool;
-window.runGame = runGame;
-window.loadTools = loadTools;
-window.loadGames = loadGames;
-window.openTerminalForProcess = openTerminalForProcess;
-window.closeTerminalWindow = closeTerminalWindow;
+window.runTool = runTool || function() {};
+window.runGame = runGame || function() {};
+window.loadTools = loadTools || function() {};
+window.loadGames = loadGames || function() {};
+window.openTerminalForProcess = openTerminalForProcess || function() {};
+window.closeTerminalWindow = closeTerminalWindow || function() {};
 window.openKalmAI = openKalmAI;
 window.openChatAcademico = openChatAcademico;
 window.openKrootCorp = openKrootCorp;
+window.showNotification = showNotification;
 
 console.log('🏰 Kalm OS v4.3 - Aplicación cargada correctamente');
