@@ -706,11 +706,39 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": "Ruta no especificada"})
                     return
         
-                signal_file = Path(file_path)
-                if signal_file.exists():
-                    content = signal_file.read_text(encoding="utf-8").strip()
-                    self._json({"ok": True, "content": content})
+                # Buscar el archivo en varias ubicaciones
+                possible_paths = [
+                    Path(file_path),
+                    DATA_DIR / "persistence" / Path(file_path).name,
+                    BASE_DIR / file_path,
+                    DATA_DIR / file_path
+                ]
+        
+                found_content = None
+                for path in possible_paths:
+                    if path.exists():
+                        try:
+                            found_content = path.read_text(encoding="utf-8").strip()
+                            log(f"✅ Señal encontrada en: {path}", "DEBUG")
+                            break
+                        except:
+                            continue
+        
+                if found_content:
+                    self._json({"ok": True, "content": found_content})
                 else:
+                    # Buscar en cualquier archivo .txt dentro de persistence
+                    persistence_dir = DATA_DIR / "persistence"
+                    if persistence_dir.exists():
+                        for f in persistence_dir.glob("*.txt"):
+                            try:
+                                content = f.read_text(encoding="utf-8").strip()
+                                if content.startswith("http"):
+                                    self._json({"ok": True, "content": content})
+                                    return
+                            except:
+                                pass
+            
                     self._json({"ok": False, "error": "Archivo no encontrado"})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
