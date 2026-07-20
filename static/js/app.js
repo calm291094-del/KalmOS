@@ -1260,7 +1260,7 @@ if (document.getElementById('clock-display')) {
 
 
 // ═══════════════════════════════════════════════════════════
-// CHAT ACADÉMICO - VERSIÓN WEB BONITA
+// CHAT ACADÉMICO - VERSIÓN CON PROXY
 // ═══════════════════════════════════════════════════════════
 
 function openChatAcademico() {
@@ -1281,16 +1281,16 @@ function openChatAcademico() {
     })
     .then(r => r.json())
     .then(data => {
-        console.log('📤 Respuesta:', data);
+        console.log('📤 Respuesta Chat:', data);
         
         if (data.ok) {
-            // Abrir el navegador interno con la URL
+            // Abrir el navegador interno con la URL del proxy
             setTimeout(() => {
                 openWin('browser');
                 setTimeout(() => {
                     const urlInput = document.getElementById('browser-url');
                     if (urlInput) {
-                        urlInput.value = 'http://localhost:5000';
+                        urlInput.value = '/api/chat/';
                         if (typeof browserNavigate === 'function') {
                             browserNavigate();
                         }
@@ -1316,7 +1316,7 @@ function openChatAcademico() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// KROOT CORP - VERSIÓN WEB BONITA
+// KROOT CORP - VERSIÓN CON PROXY
 // ═══════════════════════════════════════════════════════════
 
 function openKrootCorp() {
@@ -1336,7 +1336,7 @@ function openKrootCorp() {
     })
     .then(r => r.json())
     .then(data => {
-        console.log('📤 Respuesta:', data);
+        console.log('📤 Respuesta Kroot:', data);
         
         if (data.ok) {
             setTimeout(() => {
@@ -1344,7 +1344,7 @@ function openKrootCorp() {
                 setTimeout(() => {
                     const urlInput = document.getElementById('browser-url');
                     if (urlInput) {
-                        urlInput.value = 'http://localhost:5001';
+                        urlInput.value = '/api/kroot/';
                         if (typeof browserNavigate === 'function') {
                             browserNavigate();
                         }
