@@ -2,118 +2,153 @@
 # -*- coding: utf-8 -*-
 
 """
-KROOT CORP - APLICACIÓN NATIVA PARA KALM OS
-Versión que funciona sin navegador, usando solo consola/terminal
+KROOT CORP - VERSIÓN AUTÓNOMA PARA KALM OS
+Sin dependencias externas, usa solo requests y Pollinations AI
 """
 
 import sys
 import os
 import json
 import time
+import subprocess
 from datetime import datetime
 
-# Intentar importar los módulos de Kroot
+# ============================================================
+# 1. INSTALAR DEPENDENCIAS
+# ============================================================
+def instalar_dependencias():
+    dependencias = ["requests"]
+    for pkg in dependencias:
+        try:
+            __import__(pkg.replace("-", "_"))
+        except ImportError:
+            print(f"📦 Instalando {pkg}...")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", pkg])
+
+instalar_dependencias()
+
+# ============================================================
+# 2. IMPORTAR MÓDULOS
+# ============================================================
 try:
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'kroot_corp'))
-    from app.crew import ejecutar_empresa
-    from app.memory import guardar_aprendizaje, obtener_lessons_learned
-except ImportError as e:
-    print(f"❌ Error importando Kroot Corp: {e}")
-    print("📦 Intentando instalar dependencias...")
-    import subprocess
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "fastapi uvicorn jinja2 python-multipart itsdangerous langchain langchain-core requests duckduckgo-search huggingface-hub"])
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'kroot_corp'))
-    from app.crew import ejecutar_empresa
-    from app.memory import guardar_aprendizaje, obtener_lessons_learned
+    import requests
+except ImportError:
+    print("❌ Error: requests no instalado")
+    sys.exit(1)
 
-
-def mostrar_menu():
-    """Muestra el menú principal"""
-    print("\n" + "=" * 50)
-    print("🏢 KROOT CORP IA - Menú Principal")
-    print("=" * 50)
-    print("1. 📝 Generar nuevo informe")
-    print("2. 📋 Ver historial de informes")
-    print("3. 🗑️ Limpiar historial")
-    print("4. 💾 Guardar informe en archivo")
-    print("5. ❓ Ayuda")
-    print("0. 🚪 Salir")
-    print("=" * 50)
-
-
-def generar_informe():
-    """Genera un nuevo informe"""
-    tema = input("📝 Tema del informe: ").strip()
-    if not tema:
-        print("❌ Tema vacío")
-        return None
+# ============================================================
+# 3. CLIENTE POLLINATIONS AI
+# ============================================================
+class PollinationsClient:
+    BASE_URL = "https://text.pollinations.ai/openai"
     
-    print(f"\n⏳ Generando informe sobre: {tema}")
-    print("   (Esto puede tomar unos segundos...)\n")
+    def __init__(self):
+        self.session = requests.Session()
+        self.session.headers.update({"Content-Type": "application/json"})
     
-    try:
-        # Función para actualizar estado
-        def update_status(phase):
-            print(f"   📡 {phase}")
-        
-        # Ejecutar los agentes
-        resultado = ejecutar_empresa(tema, update_status)
-        
-        print("\n" + "=" * 50)
-        print("📊 INFORME GENERADO")
-        print("=" * 50)
-        print(resultado)
-        print("=" * 50)
-        
-        return {
-            "tema": tema,
-            "resultado": resultado,
-            "estado": "Éxito",
-            "fecha": datetime.now().isoformat()
-        }
-        
-    except Exception as e:
-        print(f"❌ Error generando informe: {e}")
-        return {
-            "tema": tema,
-            "resultado": f"Error: {e}",
-            "estado": "Fallo",
-            "fecha": datetime.now().isoformat()
-        }
+    def chat_completion(self, model, messages):
+        payload = {"model": model, "messages": messages, "stream": False}
+        try:
+            response = self.session.post(self.BASE_URL, json=payload, timeout=60)
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"]
+        except Exception as e:
+            raise Exception(f"Error en Pollinations: {str(e)}")
 
-
-def guardar_informe(informe):
-    """Guarda el informe en un archivo"""
-    if not informe:
-        print("❌ No hay informe para guardar")
-        return
+# ============================================================
+# 4. FUNCIONES DE KROOT CORP
+# ============================================================
+def generar_informe(tema, client, modelo="openai"):
+    """Genera un informe completo usando Pollinations AI"""
     
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"informe_{timestamp}.txt"
+    # Prompt para el investigador
+    prompt_investigador = f"""
+    INVESTIGA a fondo sobre: '{tema}'
+    
+    Responde SOLO con hechos y datos clave:
+    - 5 puntos clave
+    - Datos relevantes
+    - Tendencias actuales
+    """
+    
+    # Prompt para el redactor
+    prompt_redactor = f"""
+    Basado en esta investigación, redacta un informe ejecutivo profesional:
+    
+    INVESTIGACIÓN:
+    {{investigacion}}
+    
+    Estructura:
+    ## INTRODUCCIÓN
+    ## PUNTOS CLAVE
+    ## CONCLUSIONES
+    ## RECOMENDACIONES
+    """
     
     try:
-        with open(filename, 'w', encoding='utf-8') as f:
-            f.write(f"INFORME: {informe['tema']}\n")
-            f.write(f"FECHA: {informe['fecha']}\n")
-            f.write(f"ESTADO: {informe['estado']}\n")
-            f.write("=" * 50 + "\n\n")
-            f.write(informe['resultado'])
+        # Fase 1: Investigación
+        print("   🔍 Fase 1: Investigando...")
+        investigacion = client.chat_completion(modelo, [{"role": "user", "content": prompt_investigador}])
         
-        print(f"✅ Informe guardado en: {filename}")
+        # Fase 2: Redacción
+        print("   ✍️ Fase 2: Redactando informe...")
+        prompt_completo = prompt_redactor.replace("{investigacion}", investigacion)
+        informe = client.chat_completion(modelo, [{"role": "user", "content": prompt_completo}])
+        
+        # Fase 3: QA
+        print("   🔎 Fase 3: Revisión de calidad...")
+        prompt_critica = f"""
+        Revisa este informe y da feedback:
+        
+        INFORME:
+        {informe}
+        
+        Si es bueno, APRUÉBALO.
+        Si es malo, explica por qué y cómo mejorarlo.
+        """
+        critica = client.chat_completion(modelo, [{"role": "user", "content": prompt_critica}])
+        
+        resultado = f"""
+📊 INFORME EJECUTIVO: {tema.upper()}
+{'=' * 50}
+
+{informe}
+
+{'=' * 50}
+📝 VEREDICTO DE CALIDAD:
+{critica}
+{'=' * 50}
+"""
+        return resultado
+        
     except Exception as e:
-        print(f"❌ Error guardando informe: {e}")
+        return f"❌ Error: {str(e)}"
 
-
+# ============================================================
+# 5. FUNCIÓN PRINCIPAL
+# ============================================================
 def main():
-    """Función principal"""
+    print("\n" + "=" * 50)
     print("🏢 KROOT CORP IA - Sistema de Agentes")
-    print("   v1.0 - Modo Consola para Kalm OS")
+    print("   v2.0 - Modo Consola para Kalm OS")
     print("   Usa Pollinations AI (gratuito, sin API key)\n")
     
+    client = PollinationsClient()
     historial = []
     
     while True:
-        mostrar_menu()
+        print("\n" + "=" * 50)
+        print("🏢 KROOT CORP IA - Menú Principal")
+        print("=" * 50)
+        print("1. 📝 Generar nuevo informe")
+        print("2. 📋 Ver historial")
+        print("3. 🗑️ Limpiar historial")
+        print("4. 💾 Guardar informe en archivo")
+        print("5. 🔍 Probar modelo")
+        print("0. 🚪 Salir")
+        print("=" * 50)
+        
         opcion = input("Selecciona una opción: ").strip()
         
         if opcion == "0":
@@ -121,23 +156,45 @@ def main():
             break
         
         elif opcion == "1":
-            informe = generar_informe()
-            if informe:
-                historial.append(informe)
-                guardar = input("💾 ¿Guardar informe en archivo? (s/n): ").strip().lower()
-                if guardar == 's':
-                    guardar_informe(informe)
+            tema = input("📝 Tema del informe: ").strip()
+            if not tema:
+                print("❌ Tema vacío")
+                continue
+            
+            print(f"\n⏳ Generando informe sobre: {tema}")
+            print("   (Esto puede tomar 30-60 segundos...)\n")
+            
+            resultado = generar_informe(tema, client)
+            
+            print("\n" + "=" * 50)
+            print("📊 INFORME GENERADO")
+            print("=" * 50)
+            print(resultado)
+            print("=" * 50)
+            
+            historial.append({
+                "tema": tema,
+                "resultado": resultado,
+                "fecha": datetime.now().isoformat()
+            })
+            
+            guardar = input("\n💾 ¿Guardar informe en archivo? (s/n): ").strip().lower()
+            if guardar == 's':
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"informe_{timestamp}.txt"
+                with open(filename, 'w', encoding='utf-8') as f:
+                    f.write(resultado)
+                print(f"✅ Informe guardado en: {filename}")
         
         elif opcion == "2":
             if not historial:
                 print("📋 No hay informes en el historial")
             else:
                 print("\n" + "=" * 50)
-                print("📋 HISTORIAL DE INFORMES")
+                print("📋 HISTORIAL")
                 print("=" * 50)
                 for i, info in enumerate(historial, 1):
-                    estado = "✅" if info['estado'] == 'Éxito' else "❌"
-                    print(f"{i}. {estado} {info['tema']} ({info['fecha'][:16]})")
+                    print(f"{i}. 📝 {info['tema']} ({info['fecha'][:16]})")
                 print("=" * 50)
         
         elif opcion == "3":
@@ -153,28 +210,30 @@ def main():
             if not historial:
                 print("📋 No hay informes para guardar")
             else:
-                # Guardar el último informe
-                guardar_informe(historial[-1])
+                ultimo = historial[-1]
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"informe_{timestamp}.txt"
+                with open(filename, 'w', encoding='utf-8') as f:
+                    f.write(ultimo['resultado'])
+                print(f"✅ Informe guardado en: {filename}")
         
         elif opcion == "5":
-            print("\n" + "=" * 50)
-            print("❓ AYUDA")
-            print("=" * 50)
-            print("Kroot Corp IA es un sistema de agentes que genera informes")
-            print("sobre cualquier tema usando IA gratuita (Pollinations).")
-            print("\n📝 Para generar un informe:")
-            print("   1. Selecciona la opción 1")
-            print("   2. Escribe el tema")
-            print("   3. Espera a que los agentes trabajen")
-            print("   4. El informe se mostrará en pantalla")
-            print("\n💾 Los informes se guardan en archivos .txt")
-            print("   en el directorio actual.")
-            print("=" * 50)
+            print("\n🔍 Probando modelo...")
+            try:
+                resp = client.chat_completion("openai", [{"role": "user", "content": "Responde OK"}])
+                print(f"✅ Modelo responde: {resp}")
+            except Exception as e:
+                print(f"❌ Error: {e}")
         
         else:
             print("❌ Opción inválida")
-        
-        input("\nPresiona Enter para continuar...")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n\n👋 Saliendo...")
+        sys.exit(0)
+    except Exception as e:
+        print(f"\n❌ Error: {e}")
+        sys.exit(1)
