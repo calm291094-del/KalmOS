@@ -805,7 +805,6 @@ function openKalmAIBrowserDirect() {
     const win = document.getElementById('win-browser');
     if (!win) {
         console.error('❌ Ventana del navegador no encontrada');
-        // Intentar abrir de otra forma
         openWin('browser');
     } else {
         win.style.display = 'flex';
@@ -829,12 +828,6 @@ function openKalmAIBrowserDirect() {
             console.log('🔄 Cargando frame con /api/kalm/');
             // Forzar recarga del frame
             frame.src = '/api/kalm/';
-            // También intentar con srcdoc como fallback
-            setTimeout(() => {
-                if (frame.src !== '/api/kalm/') {
-                    frame.src = '/api/kalm/';
-                }
-            }, 100);
         }
         
         if (status) {
@@ -849,16 +842,7 @@ function openKalmAIBrowserDirect() {
             }
         }, 3000);
         
-        // Forzar verificación adicional
-        setTimeout(() => {
-            const frameCheck = document.getElementById('browser-frame');
-            if (frameCheck && frameCheck.src && !frameCheck.src.includes('/api/kalm/')) {
-                console.log('🔄 Forzando recarga de frame...');
-                frameCheck.src = '/api/kalm/';
-            }
-        }, 2000);
-        
-    }, 300);
+    }, 500);
 }
 
 function fallbackRunKalmAI() {
