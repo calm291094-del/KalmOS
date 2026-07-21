@@ -22,7 +22,7 @@ def instalar_dependencias():
         try:
             __import__(pkg.replace("-", "_"))
         except ImportError:
-            print(f"Instalando {pkg}...")
+            print(f"[KalmAI] Instalando {pkg}...")
             subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "--quiet"])
 
 instalar_dependencias()
@@ -183,6 +183,9 @@ def get_html_template():
     </footer>
 </div>
 <script>
+    // ═══════════════════════════════════════════════════════
+    // ESTADO GLOBAL
+    // ═══════════════════════════════════════════════════════
     var currentResult = '';
     var currentTab = 'chat';
     var isGenerating = false;
@@ -510,7 +513,7 @@ def serve_kalm_ai_page():
         return get_html_template()
 
 def handle_generar(data):
-    """Genera trabajos/informes"""
+    """Genera trabajos/informes - DEVUELVE JSON VALIDO"""
     tema = data.get('tema', '').strip()
     modelo = data.get('modelo', 'openai')
     tipo = data.get('tipo', 'chat')
@@ -526,8 +529,7 @@ def handle_generar(data):
 ESTRUCTURA EXACTA:
 ## INTRODUCCION
 ## INTRODUCTION (in English)
-## DESARROLLO
-## CONCLUSIONES
+## DESARROLLO## CONCLUSIONES
 ## BIBLIOGRAFIA
 
 El trabajo debe ser completo, bien estructurado, con lenguaje formal y academico."""
@@ -544,12 +546,15 @@ El informe debe ser ejecutivo, directo y orientado a la toma de decisiones."""
     
     try:
         resultado = IAProvider.get_response(prompt, modelo)
+        print(f"[KalmAI] Resultado obtenido: {len(resultado)} caracteres")
+        # Asegurar que devolvemos JSON valido
         return {"resultado": resultado}, 200
     except Exception as e:
+        print(f"[KalmAI] Error: {e}")
         return {"error": str(e)}, 500
 
 def handle_chat(data):
-    """Chat libre"""
+    """Chat libre - DEVUELVE JSON VALIDO"""
     mensaje = data.get('mensaje', '').strip()
     modelo = data.get('modelo', 'openai')
     
@@ -560,8 +565,10 @@ def handle_chat(data):
     
     try:
         respuesta = IAProvider.get_response(mensaje, modelo)
+        print(f"[KalmAI] Respuesta obtenida: {len(respuesta)} caracteres")
         return {"respuesta": respuesta}, 200
     except Exception as e:
+        print(f"[KalmAI] Error: {e}")
         return {"error": str(e)}, 500
 
 def handle_health():
