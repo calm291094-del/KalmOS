@@ -3,7 +3,7 @@
 
 """
 KALM AI - Handler para integrar en el servidor principal
-VERSION FUNCIONAL CON POLLINATIONS AI
+VERSION CON LOGS PARA DEPURACION
 """
 
 import json
@@ -38,7 +38,7 @@ class IAProvider:
         payload = {"model": model, "messages": [{"role": "user", "content": prompt}], "stream": False}
         
         try:
-            print(f"🔄 Llamando a Pollinations AI...")
+            print(f"[KalmAI] Llamando a Pollinations AI...")
             response = requests.post(url, json=payload, timeout=120)
             response.raise_for_status()
             data = response.json()
@@ -47,12 +47,12 @@ class IAProvider:
                 raise Exception("Respuesta sin choices")
             
             resultado = data["choices"][0]["message"]["content"]
-            print(f"✅ Pollinations respondió con {len(resultado)} caracteres")
+            print(f"[KalmAI] Pollinations respondio con {len(resultado)} caracteres")
             return resultado
         except requests.exceptions.Timeout:
-            raise Exception("Timeout conectando con Pollinations (más de 120 segundos)")
+            raise Exception("Timeout conectando con Pollinations (mas de 120 segundos)")
         except Exception as e:
-            raise Exception(f"Pollinations falló: {str(e)}")
+            raise Exception(f"Pollinations fallo: {str(e)}")
     
     @staticmethod
     def duckduckgo(prompt):
@@ -63,7 +63,7 @@ class IAProvider:
                 response = ddgs.chat(prompt)
                 return response
         except Exception as e:
-            raise Exception(f"DuckDuckGo falló: {str(e)}")
+            raise Exception(f"DuckDuckGo fallo: {str(e)}")
     
     @staticmethod
     def get_response(prompt, model="openai"):
@@ -75,20 +75,20 @@ class IAProvider:
         
         for name, func in providers:
             try:
-                print(f"🔄 Intentando con {name}...")
+                print(f"[KalmAI] Intentando con {name}...")
                 result = func()
                 if result and len(result.strip()) > 10:
-                    print(f"✅ Éxito con {name}")
+                    print(f"[KalmAI] Exito con {name}")
                     return result
             except Exception as e:
-                print(f"❌ {name} falló: {e}")
+                print(f"[KalmAI] {name} fallo: {e}")
                 time.sleep(1)
                 continue
         
         return "Error: Todos los proveedores fallaron. Intenta de nuevo."
 
 # ============================================================
-# 3. HTML TEMPLATE CON TODAS LAS FUNCIONALIDADES
+# 3. HTML TEMPLATE SIMPLIFICADO CON LOGS
 # ============================================================
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="es">
@@ -110,7 +110,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         ::-webkit-scrollbar-thumb { background: #6a0dad; border-radius: 3px; }
 
         .app-container {
-            max-width: 1100px;
+            max-width: 1000px;
             margin: 0 auto;
             background: rgba(26, 0, 51, 0.7);
             backdrop-filter: blur(20px);
@@ -424,7 +424,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     <div class="tabs">
         <div class="tab active" data-tab="chat" onclick="switchTab('chat')">
-            💬 Chat Académico <span class="badge">IA</span>
+            💬 Chat Academico <span class="badge">IA</span>
         </div>
         <div class="tab" data-tab="kroot" onclick="switchTab('kroot')">
             🏢 Kroot Corp <span class="badge">Empresarial</span>
@@ -502,24 +502,24 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 <div style="background:rgba(10,5,20,0.4);border-radius:12px;padding:20px;border:1px solid rgba(106,13,173,0.15);">
                     <div style="font-size:32px;margin-bottom:10px;">🔵</div>
                     <h3 style="color:#da70d6;margin-bottom:6px;">DeepSeek</h3>
-                    <p style="color:#9370db;font-size:13px;margin-bottom:12px;">IA avanzada con razonamiento profundo. Gratuita y sin limites.</p>
+                    <p style="color:#9370db;font-size:13px;margin-bottom:12px;">IA avanzada con razonamiento profundo.</p>
                     <button class="btn btn-external" onclick="window.open('https://chat.deepseek.com/a/chat/','_blank')">Abrir DeepSeek →</button>
                 </div>
                 <div style="background:rgba(10,5,20,0.4);border-radius:12px;padding:20px;border:1px solid rgba(106,13,173,0.15);">
                     <div style="font-size:32px;margin-bottom:10px;">🟣</div>
                     <h3 style="color:#da70d6;margin-bottom:6px;">Qwen AI</h3>
-                    <p style="color:#9370db;font-size:13px;margin-bottom:12px;">IA de Alibaba Cloud. Multimodal y con capacidad de contexto largo.</p>
+                    <p style="color:#9370db;font-size:13px;margin-bottom:12px;">IA de Alibaba Cloud.</p>
                     <button class="btn btn-external" onclick="window.open('https://chat.qwen.ai/c/','_blank')">Abrir Qwen →</button>
                 </div>
                 <div style="background:rgba(10,5,20,0.4);border-radius:12px;padding:20px;border:1px solid rgba(106,13,173,0.15);">
                     <div style="font-size:32px;margin-bottom:10px;">🤖</div>
                     <h3 style="color:#da70d6;margin-bottom:6px;">Pollinations AI</h3>
-                    <p style="color:#9370db;font-size:13px;margin-bottom:12px;">IA integrada en Kalm OS. Usa las pestañas Chat Academico y Kroot Corp.</p>
+                    <p style="color:#9370db;font-size:13px;margin-bottom:12px;">IA integrada en Kalm OS.</p>
                     <button class="btn btn-secondary" onclick="switchTab('chat')">Usar Pollinations →</button>
                 </div>
             </div>
             <div style="margin-top:16px;padding:12px 16px;background:rgba(0,100,200,0.08);border-radius:8px;border:1px solid rgba(0,100,200,0.15);">
-                <p style="color:#9370db;font-size:12px;">💡 <b>Consejo:</b> DeepSeek y Qwen son servicios externos. Al hacer clic se abriran en una nueva pestaña. Pollinations AI esta integrado directamente en Kalm OS.</p>
+                <p style="color:#9370db;font-size:12px;">💡 <b>Consejo:</b> DeepSeek y Qwen son servicios externos. Pollinations AI esta integrado directamente.</p>
             </div>
         </div>
     </div>
@@ -542,67 +542,57 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     var isGenerating = false;
     var API_BASE = '/kalm-ai';
 
-    var $ = function(id) { return document.getElementById(id); };
-    var statusText = $('status-text');
-    var progressContainer = $('progress-container');
-    var progressBar = $('progress-bar');
+    function $(id) { return document.getElementById(id); }
+
+    function getResultContainer() {
+        if (currentTab === 'chat') return $('chat-result');
+        if (currentTab === 'kroot') return $('kroot-result');
+        return null;
+    }
+
+    function getTemaInput() {
+        if (currentTab === 'chat') return $('chat-tema');
+        if (currentTab === 'kroot') return $('kroot-tema');
+        return null;
+    }
+
+    function getModeloSelect() {
+        if (currentTab === 'chat') return $('chat-modelo');
+        if (currentTab === 'kroot') return $('kroot-modelo');
+        return null;
+    }
+
+    function getGenerarBtn() {
+        if (currentTab === 'chat') return $('chat-generar');
+        if (currentTab === 'kroot') return $('kroot-generar');
+        return null;
+    }
 
     function setStatus(text, type) {
         type = type || 'info';
         var colors = { info: '#9370db', success: '#00cc66', error: '#ff4444', loading: '#ffaa00' };
-        statusText.textContent = text;
-        statusText.style.color = colors[type] || '#9370db';
+        var el = $('status-text');
+        if (el) {
+            el.textContent = text;
+            el.style.color = colors[type] || '#9370db';
+        }
         var dot = document.querySelector('.dot');
-        if (dot) dot.style.background = type === 'error' ? '#ff4444' : type === 'loading' ? '#ffaa00' : '#00cc66';
+        if (dot) {
+            dot.style.background = type === 'error' ? '#ff4444' : type === 'loading' ? '#ffaa00' : '#00cc66';
+        }
     }
 
     function setProgress(pct) {
+        var container = $('progress-container');
+        var bar = $('progress-bar');
+        if (!container || !bar) return;
         if (pct > 0) {
-            progressContainer.classList.add('active');
-            progressBar.style.width = Math.min(pct, 100) + '%';
+            container.classList.add('active');
+            bar.style.width = Math.min(pct, 100) + '%';
         } else {
-            progressContainer.classList.remove('active');
-            progressBar.style.width = '0%';
+            container.classList.remove('active');
+            bar.style.width = '0%';
         }
-    }
-
-    function getResultContainer() {
-        return $(currentTab === 'chat' ? 'chat-result' : (currentTab === 'kroot' ? 'kroot-result' : null));
-    }
-
-    function getTemaInput() {
-        return $(currentTab === 'chat' ? 'chat-tema' : 'kroot-tema');
-    }
-
-    function getModeloSelect() {
-        return $(currentTab === 'chat' ? 'chat-modelo' : 'kroot-modelo');
-    }
-
-    function getGenerarBtn() {
-        return $(currentTab === 'chat' ? 'chat-generar' : 'kroot-generar');
-    }
-
-    function switchTab(tab) {
-        currentTab = tab;
-        
-        document.querySelectorAll('.tab').forEach(function(t) {
-            t.classList.remove('active');
-        });
-        var tabEl = document.querySelector('.tab[data-tab="' + tab + '"]');
-        if (tabEl) tabEl.classList.add('active');
-        
-        document.querySelectorAll('.tab-content').forEach(function(c) {
-            c.classList.remove('active');
-            c.style.display = 'none';
-        });
-        var contentEl = document.getElementById('tab-' + tab);
-        if (contentEl) {
-            contentEl.classList.add('active');
-            contentEl.style.display = 'flex';
-        }
-        
-        setStatus('Listo', 'info');
-        setProgress(0);
     }
 
     function appendResult(text, type) {
@@ -648,14 +638,44 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         setProgress(0);
     }
 
+    function switchTab(tab) {
+        console.log('[KalmAI] Cambiando a tab:', tab);
+        currentTab = tab;
+        
+        document.querySelectorAll('.tab').forEach(function(t) {
+            t.classList.remove('active');
+        });
+        var tabEl = document.querySelector('.tab[data-tab="' + tab + '"]');
+        if (tabEl) tabEl.classList.add('active');
+        
+        document.querySelectorAll('.tab-content').forEach(function(c) {
+            c.classList.remove('active');
+            c.style.display = 'none';
+        });
+        var contentEl = $('tab-' + tab);
+        if (contentEl) {
+            contentEl.classList.add('active');
+            contentEl.style.display = 'flex';
+        }
+        
+        setStatus('Listo', 'info');
+        setProgress(0);
+    }
+
     function generar() {
-        var tema = getTemaInput().value.trim();
+        console.log('[KalmAI] Click en Generar');
+        var input = getTemaInput();
+        if (!input) { console.error('[KalmAI] Input no encontrado'); return; }
+        
+        var tema = input.value.trim();
         if (!tema) { alert('Escribe un tema.'); return; }
         if (isGenerating) return;
 
         var modelo = getModeloSelect().value;
         var tipo = currentTab;
         var btn = getGenerarBtn();
+
+        console.log('[KalmAI] Generando:', { tema: tema, modelo: modelo, tipo: tipo });
 
         isGenerating = true;
         btn.disabled = true;
@@ -685,21 +705,28 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             }
         }, 700);
 
-        fetch(API_BASE + '/generar', {
+        var url = API_BASE + '/generar';
+        var data = { tema: tema, modelo: modelo, tipo: tipo };
+        console.log('[KalmAI] Enviando POST a:', url, data);
+
+        fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tema: tema, modelo: modelo, tipo: tipo })
+            body: JSON.stringify(data)
         })
         .then(function(response) {
+            console.log('[KalmAI] Respuesta recibida, status:', response.status);
             return response.text();
         })
         .then(function(text) {
+            console.log('[KalmAI] Texto respuesta:', text.substring(0, 200));
             clearInterval(stepInterval);
             var data;
             try {
                 data = JSON.parse(text);
             } catch (e) {
-                throw new Error('Error del servidor (' + text.substring(0, 100) + '). Asegurate de que Kalm AI este ejecutandose.');
+                console.error('[KalmAI] Error parseando JSON:', e);
+                throw new Error('Error del servidor: ' + text.substring(0, 100));
             }
             setProgress(95);
 
@@ -729,6 +756,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             }
         })
         .catch(function(error) {
+            console.error('[KalmAI] Error:', error);
             clearInterval(stepInterval);
             appendResult('\nError: ' + error.message + '\n', 'error');
             setStatus('Error', 'error');
@@ -742,12 +770,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }
 
     function chatLibre() {
-        var mensaje = getTemaInput().value.trim();
+        console.log('[KalmAI] Click en Chat');
+        var input = getTemaInput();
+        if (!input) { console.error('[KalmAI] Input no encontrado'); return; }
+        
+        var mensaje = input.value.trim();
         if (!mensaje) { alert('Escribe un mensaje.'); return; }
         if (isGenerating) return;
 
         var modelo = getModeloSelect().value;
         var btn = getGenerarBtn();
+
+        console.log('[KalmAI] Chat:', { mensaje: mensaje, modelo: modelo });
 
         isGenerating = true;
         btn.disabled = true;
@@ -762,20 +796,27 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         appendResult('\nTu: ' + mensaje + '\n', 'subtitulo');
         appendResult('IA: ', 'exito');
 
-        fetch(API_BASE + '/chat', {
+        var url = API_BASE + '/chat';
+        var data = { mensaje: mensaje, modelo: modelo };
+        console.log('[KalmAI] Enviando POST a:', url, data);
+
+        fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mensaje: mensaje, modelo: modelo })
+            body: JSON.stringify(data)
         })
         .then(function(response) {
+            console.log('[KalmAI] Respuesta recibida, status:', response.status);
             return response.text();
         })
         .then(function(text) {
+            console.log('[KalmAI] Texto respuesta:', text.substring(0, 200));
             var data;
             try {
                 data = JSON.parse(text);
             } catch (e) {
-                throw new Error('Error del servidor (' + text.substring(0, 100) + '). Verifica que Kalm AI este corriendo.');
+                console.error('[KalmAI] Error parseando JSON:', e);
+                throw new Error('Error del servidor: ' + text.substring(0, 100));
             }
             setProgress(80);
 
@@ -790,6 +831,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             }
         })
         .catch(function(error) {
+            console.error('[KalmAI] Error:', error);
             appendResult('Error: ' + error.message + '\n', 'error');
             setStatus('Error', 'error');
             setProgress(0);
@@ -798,7 +840,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             isGenerating = false;
             btn.disabled = false;
             btn.innerHTML = currentTab === 'chat' ? 'Generar' : 'Generar Informe';
-            getTemaInput().value = '';
+            input.value = '';
         });
     }
 
@@ -819,13 +861,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     function limpiar() {
         clearResult();
-        getTemaInput().value = '';
+        var input = getTemaInput();
+        if (input) input.value = '';
         setStatus('Limpiado', 'info');
         setProgress(0);
     }
 
-    // Inicializar
+    // ═══════════════════════════════════════════════════════
+    // INICIALIZACION
+    // ═══════════════════════════════════════════════════════
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('[KalmAI] DOM cargado, inicializando...');
+        
         // Asegurar que solo el tab activo se muestra
         var activeTab = document.querySelector('.tab.active');
         if (activeTab) {
@@ -834,18 +881,32 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 c.classList.remove('active');
                 c.style.display = 'none';
             });
-            var activeContent = document.getElementById('tab-' + tabName);
+            var activeContent = $('tab-' + tabName);
             if (activeContent) {
                 activeContent.classList.add('active');
                 activeContent.style.display = 'flex';
             }
         }
 
-        $('chat-generar').addEventListener('click', generar);
-        $('chat-chat').addEventListener('click', chatLibre);
-        $('kroot-generar').addEventListener('click', generar);
-        $('btn-export').addEventListener('click', exportarTxt);
-        $('btn-limpiar').addEventListener('click', limpiar);
+        var btnGenerar = $('chat-generar');
+        var btnChat = $('chat-chat');
+        var btnKroot = $('kroot-generar');
+        var btnExport = $('btn-export');
+        var btnLimpiar = $('btn-limpiar');
+
+        console.log('[KalmAI] Botones:', { 
+            generar: btnGenerar, 
+            chat: btnChat, 
+            kroot: btnKroot,
+            export: btnExport,
+            limpiar: btnLimpiar
+        });
+
+        if (btnGenerar) btnGenerar.addEventListener('click', generar);
+        if (btnChat) btnChat.addEventListener('click', chatLibre);
+        if (btnKroot) btnKroot.addEventListener('click', generar);
+        if (btnExport) btnExport.addEventListener('click', exportarTxt);
+        if (btnLimpiar) btnLimpiar.addEventListener('click', limpiar);
 
         document.querySelectorAll('#chat-tema, #kroot-tema').forEach(function(el) {
             el.addEventListener('keydown', function(e) {
@@ -856,8 +917,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             });
         });
 
-        console.log('Kalm AI v3.0 cargado');
-        console.log('API Base: ' + API_BASE);
+        console.log('[KalmAI] Inicializacion completada');
+        console.log('[KalmAI] API Base: ' + API_BASE);
     });
 
     // Exponer funciones globalmente
@@ -880,11 +941,13 @@ def serve_kalm_ai_page():
         views_dir = Path(__file__).parent.parent.parent / "views"
         html_file = views_dir / "kalm_ai.html"
         if html_file.exists():
+            print("[KalmAI] Sirviendo desde views/kalm_ai.html")
             return html_file.read_text(encoding="utf-8")
         else:
+            print("[KalmAI] views/kalm_ai.html no existe, usando template interno")
             return HTML_TEMPLATE
     except Exception as e:
-        print(f"Error sirviendo pagina: {e}")
+        print(f"[KalmAI] Error sirviendo pagina: {e}")
         return HTML_TEMPLATE
 
 def handle_generar(data):
@@ -892,6 +955,8 @@ def handle_generar(data):
     tema = data.get('tema', '').strip()
     modelo = data.get('modelo', 'openai')
     tipo = data.get('tipo', 'chat')
+    
+    print(f"[KalmAI] handle_generar: tema='{tema}', modelo='{modelo}', tipo='{tipo}'")
     
     if not tema:
         return {"error": "El tema no puede estar vacio"}, 400
@@ -919,12 +984,12 @@ ESTRUCTURA EXACTA:
 El informe debe ser ejecutivo, directo y orientado a la toma de decisiones."""
     
     try:
-        print(f"Generando: {tema[:50]}...")
+        print(f"[KalmAI] Enviando prompt a IA...")
         resultado = IAProvider.get_response(prompt, modelo)
-        print(f"Resultado obtenido: {len(resultado)} caracteres")
+        print(f"[KalmAI] Resultado obtenido: {len(resultado)} caracteres")
         return {"resultado": resultado}, 200
     except Exception as e:
-        print(f"Error en handle_generar: {e}")
+        print(f"[KalmAI] Error en handle_generar: {e}")
         return {"error": str(e)}, 500
 
 def handle_chat(data):
@@ -932,16 +997,18 @@ def handle_chat(data):
     mensaje = data.get('mensaje', '').strip()
     modelo = data.get('modelo', 'openai')
     
+    print(f"[KalmAI] handle_chat: mensaje='{mensaje[:50]}...', modelo='{modelo}'")
+    
     if not mensaje:
         return {"error": "El mensaje no puede estar vacio"}, 400
     
     try:
-        print(f"Chat: {mensaje[:50]}...")
+        print(f"[KalmAI] Enviando chat a IA...")
         respuesta = IAProvider.get_response(mensaje, modelo)
-        print(f"Respuesta obtenida: {len(respuesta)} caracteres")
+        print(f"[KalmAI] Respuesta obtenida: {len(respuesta)} caracteres")
         return {"respuesta": respuesta}, 200
     except Exception as e:
-        print(f"Error en handle_chat: {e}")
+        print(f"[KalmAI] Error en handle_chat: {e}")
         return {"error": str(e)}, 500
 
 def handle_health():
