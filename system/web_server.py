@@ -8,6 +8,7 @@ import threading
 import time
 import os
 import shutil
+import requests as http_requests
 from pathlib import Path
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
@@ -22,7 +23,7 @@ from system.program_detector import ProgramDetector
 from system.registry import get_dns_server, get_proxy_server
 from system.script_runner import ScriptRunner
 
-# ═══ IMPORTAR KALM AI HANDLER ═══
+# ═══ KALM AI - IMPORTAR HANDLER ═══
 try:
     from system.Program.kalm_ai_handler import (
         serve_kalm_ai_page,
@@ -104,10 +105,9 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                             data = part[he+4:]
                             return (data[:-2] if data.endswith(b"\r\n") else data), fn
         return None, None
-
     
     def _serve_kalm_ai(self, path):
-        """Sirve Kalm AI - CORREGIDO"""
+        """Sirve Kalm AI directamente"""
         if not KALM_AI_AVAILABLE:
             self.send_response(503)
             self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -124,12 +124,11 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         if not route or route == "":
             route = "/"
 
-        print(f"[KalmAI] Ruta: {route}, Metodo: {self.command}")
+        log(f"Kalm AI route: {route}", "DEBUG")
 
         # ═══ GET ═══
         if self.command == "GET":
             if route == "/" or route == "/index" or route == "/index.html":
-                from system.Program.kalm_ai_handler import serve_kalm_ai_page
                 content = serve_kalm_ai_page()
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -140,10 +139,9 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 return
 
             elif route == "/health":
-                from system.Program.kalm_ai_handler import handle_health
                 result, code = handle_health()
                 self.send_response(code)
-                self.send_header("Content-Type", "application/json")    
+                self.send_header("Content-Type", "application/json")
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
                 self.wfile.write(json.dumps(result).encode("utf-8"))
@@ -162,14 +160,12 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             try:
                 data = json.loads(body) if body else {}
             except Exception as e:
-                print(f"[KalmAI] Error JSON: {e}")
+                log(f"Error JSON: {e}", "ERROR")
                 self.send_response(400)
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
-                self.wfile.write(json.dumps({"error": "JSON invalido"}).encode("utf-8"))    
+                self.wfile.write(json.dumps({"error": "JSON invalido"}).encode("utf-8"))
                 return
-
-            from system.Program.kalm_ai_handler import handle_generar, handle_chat
 
             if route == "/generar":
                 result, code = handle_generar(data)
@@ -188,7 +184,6 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         else:
             self.send_response(405)
             self.end_headers()
-
     
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
@@ -200,7 +195,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self.end_headers()
             return
         
-        # ═══ KALM AI - SERVIDO DIRECTAMENTE ═══
+        # ═══ KALM AI ═══
         if p.startswith("/kalm-ai"):
             self._serve_kalm_ai(p)
             return
@@ -526,7 +521,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         p = parsed.path
         q = urllib.parse.parse_qs(parsed.query)
         
-        # ═══ KALM AI - SERVIDO DIRECTAMENTE ═══
+        # ═══ KALM AI ═══
         if p.startswith("/kalm-ai"):
             self._serve_kalm_ai(p)
             return
