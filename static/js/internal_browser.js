@@ -372,8 +372,8 @@ function forceLoadKalmAI() {
         return;
     }
     
-    // La ruta CORRECTA es /kalm-ai
-    const kalmUrl = '/kalm-ai';
+    // ═══ USAR /api/kalm/ QUE FUNCIONABA ANTES ═══
+    const kalmUrl = '/api/kalm/';
     
     if (urlInput) {
         urlInput.value = kalmUrl;
@@ -384,7 +384,6 @@ function forceLoadKalmAI() {
         status.style.color = '#ffaa00';
     }
     
-    // Limpiar y cargar
     frame.srcdoc = '';
     frame.src = 'about:blank';
     
@@ -393,7 +392,6 @@ function forceLoadKalmAI() {
         console.log('✅ Frame cargado con ' + kalmUrl);
     }, 200);
     
-    // Verificar después de 3 segundos
     setTimeout(function() {
         if (frame.contentDocument && frame.contentDocument.body) {
             var bodyText = frame.contentDocument.body.innerText || '';
@@ -402,17 +400,11 @@ function forceLoadKalmAI() {
                     status.textContent = '✅ Kalm AI cargado';
                     status.style.color = '#00cc66';
                 }
-            } else if (bodyText.includes('no disponible') || bodyText.includes('Error')) {
-                if (status) {
-                    status.textContent = '⚠️ Kalm AI no disponible';
-                    status.style.color = '#ff4444';
-                }
             }
         }
     }, 3000);
     
-    // Verificar health check
-    fetch('/kalm-ai/health')
+    fetch('/api/kalm/health')
         .then(function(r) {
             if (r.ok) {
                 console.log('✅ Kalm AI health check OK');
