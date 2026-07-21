@@ -519,18 +519,18 @@
     function switchTab(tab) {
         currentTab = tab;
 
-        // Actualizar tabs
-        document.querySelectorAll('.tab').forEach(function(t) {
-            t.classList.remove('active');
-        });
+        var tabs = document.querySelectorAll('.tab');
+        for (var i = 0; i < tabs.length; i++) {
+            tabs[i].classList.remove('active');
+        }
         var tabEl = document.querySelector('.tab[data-tab="' + tab + '"]');
         if (tabEl) tabEl.classList.add('active');
 
-        // Actualizar contenidos
-        document.querySelectorAll('.tab-content').forEach(function(c) {
-            c.classList.remove('active');
-            c.style.display = 'none';
-        });
+        var contents = document.querySelectorAll('.tab-content');
+        for (var j = 0; j < contents.length; j++) {
+            contents[j].classList.remove('active');
+            contents[j].style.display = 'none';
+        }
         var contentEl = $('tab-' + tab);
         if (contentEl) {
             contentEl.classList.add('active');
@@ -568,13 +568,10 @@
         appendResult('📝 Generando ' + (tipo === 'chat' ? 'trabajo academico' : 'informe ejecutivo') + ' sobre: "' + tema + '"\n', 'titulo');
         appendResult('═══════════════════════════════════════════════\n\n', 'normal');
 
-        var url = API_BASE + '/generar';
-        var data = { tema: tema, modelo: modelo, tipo: tipo };
-
-        fetch(url, {
+        fetch(API_BASE + '/generar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify({ tema: tema, modelo: modelo, tipo: tipo })
         })
         .then(function(response) {
             if (!response.ok) throw new Error('Error ' + response.status);
@@ -587,8 +584,8 @@
                 setStatus('Error', 'error');
             } else {
                 var lines = data.resultado.split('\n');
-                for (var i = 0; i < lines.length; i++) {
-                    var line = lines[i];
+                for (var k = 0; k < lines.length; k++) {
+                    var line = lines[k];
                     if (line.startsWith('##') || line.startsWith('#')) {
                         appendResult(line + '\n', 'titulo');
                     } else if (line.startsWith('**') || line.startsWith('*')) {
@@ -646,13 +643,10 @@
         appendResult('\n🧑 Tú: ' + mensaje + '\n', 'subtitulo');
         appendResult('🤖 IA: ', 'exito');
 
-        var url = API_BASE + '/chat';
-        var data = { mensaje: mensaje, modelo: modelo };
-
-        fetch(url, {
+        fetch(API_BASE + '/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify({ mensaje: mensaje, modelo: modelo })
         })
         .then(function(response) {
             if (!response.ok) throw new Error('Error ' + response.status);
