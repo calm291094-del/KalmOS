@@ -3,6 +3,7 @@
 
 """
 KALM AI - Handler para integrar en el servidor principal
+SOLO CORREGIDO: DEVUELVE JSON EN LUGAR DE HTML
 """
 
 import json
@@ -21,7 +22,7 @@ def instalar_dependencias():
         try:
             __import__(pkg.replace("-", "_"))
         except ImportError:
-            print(f"Instalando {pkg}...")
+            print(f"[KalmAI] Instalando {pkg}...")
             subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "--quiet"])
 
 instalar_dependencias()
@@ -86,7 +87,7 @@ class IAProvider:
         return "Error: Todos los proveedores fallaron. Intenta de nuevo."
 
 # ============================================================
-# 4. FUNCIONES HANDLER
+# 4. FUNCIONES HANDLER - CORREGIDAS PARA DEVOLVER JSON
 # ============================================================
 
 def serve_kalm_ai_page():
@@ -110,7 +111,7 @@ def handle_generar(data):
     modelo = data.get('modelo', 'openai')
     tipo = data.get('tipo', 'chat')
 
-    print(f"[KalmAI] generar: tema='{tema}', modelo='{modelo}', tipo='{tipo}'")
+    print(f"[KalmAI] generar: tema='{tema}'")
 
     if not tema:
         return {"error": "El tema no puede estar vacio"}, 400
@@ -140,6 +141,7 @@ El informe debe ser ejecutivo, directo y orientado a la toma de decisiones."""
     try:
         resultado = IAProvider.get_response(prompt, modelo)
         print(f"[KalmAI] Resultado obtenido: {len(resultado)} caracteres")
+        # ═══ ESTO ES LO QUE SE CORRIGIO: DEVOLVER JSON ═══
         return {"resultado": resultado}, 200
     except Exception as e:
         print(f"[KalmAI] Error: {e}")
@@ -158,6 +160,7 @@ def handle_chat(data):
     try:
         respuesta = IAProvider.get_response(mensaje, modelo)
         print(f"[KalmAI] Respuesta obtenida: {len(respuesta)} caracteres")
+        # ═══ ESTO ES LO QUE SE CORRIGIO: DEVOLVER JSON ═══
         return {"respuesta": respuesta}, 200
     except Exception as e:
         print(f"[KalmAI] Error: {e}")
