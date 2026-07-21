@@ -51,6 +51,318 @@
             user-select: none;
             -webkit-user-select: none;
         }
+
+        /* ═══ FILE MANAGER - ESTILOS PROFESIONALES ═══ */
+        .file-toolbar {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            padding: 6px 12px;
+            background: rgba(10,5,20,0.7);
+            border-bottom: 1px solid rgba(106,13,173,0.25);
+            flex-wrap: wrap;
+            min-height: 40px;
+        }
+        .file-toolbar .act {
+            padding: 4px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: rgba(75,0,130,0.3);
+            color: #e6e6fa;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .file-toolbar .act:hover {
+            background: rgba(106,13,173,0.5);
+        }
+        .file-toolbar input[type="text"] {
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid rgba(106,13,173,0.25);
+            background: rgba(10,5,20,0.6);
+            color: #e6e6fa;
+            font-size: 12px;
+            outline: none;
+            height: 30px;
+            transition: border-color 0.3s;
+        }
+        .file-toolbar input[type="text"]:focus {
+            border-color: #6a0dad;
+            box-shadow: 0 0 15px rgba(106,13,173,0.15);
+        }
+        .file-path {
+            flex: 1;
+            min-width: 150px;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            color: #9370db !important;
+            background: rgba(10,5,20,0.4) !important;
+        }
+        #file-grid {
+            padding: 6px 8px;
+            overflow-y: auto;
+            height: calc(100% - 50px);
+            background: rgba(0,0,0,0.15);
+        }
+        #file-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+        #file-grid::-webkit-scrollbar-track {
+            background: rgba(10,5,20,0.5);
+            border-radius: 3px;
+        }
+        #file-grid::-webkit-scrollbar-thumb {
+            background: #6a0dad;
+            border-radius: 3px;
+        }
+        #file-grid::-webkit-scrollbar-thumb:hover {
+            background: #9370db;
+        }
+        .file-row {
+            display: grid;
+            grid-template-columns: 36px 1fr 90px 140px auto;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 4px;
+            margin: 1px 0;
+            cursor: default;
+            transition: background 0.15s ease;
+            align-items: center;
+            border-left: 3px solid transparent;
+        }
+        .file-row:hover {
+            background: rgba(106,13,173,0.2) !important;
+        }
+        .file-row .file-icon {
+            text-align: center;
+            font-size: 20px;
+            line-height: 1;
+        }
+        .file-row .file-name {
+            font-size: 13px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #e6e6fa;
+        }
+        .file-row .file-name.dir {
+            color: #da70d6;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .file-row .file-size {
+            font-size: 12px;
+            text-align: right;
+            color: #9370db;
+        }
+        .file-row .file-size.dir-size {
+            color: #6a0dad;
+        }
+        .file-row .file-modified {
+            font-size: 11px;
+            text-align: right;
+            color: #6a0dad;
+        }
+        .file-row .file-actions {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .file-btn {
+            padding: 3px 7px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(75,0,130,0.25);
+            color: #e6e6fa;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 26px;
+            height: 26px;
+        }
+        .file-btn:hover {
+            transform: scale(1.08);
+            background: rgba(106,13,173,0.4);
+        }
+        .file-btn-success {
+            background: rgba(0,136,0,0.3);
+            color: #00cc66;
+        }
+        .file-btn-success:hover {
+            background: rgba(0,136,0,0.5);
+        }
+        .file-btn-danger {
+            background: rgba(139,0,0,0.3);
+            color: #ff4444;
+        }
+        .file-btn-danger:hover {
+            background: rgba(139,0,0,0.5);
+        }
+        .file-btn-info {
+            background: rgba(75,0,130,0.3);
+            color: #9370db;
+        }
+        .file-btn-info:hover {
+            background: rgba(75,0,130,0.5);
+        }
+        .file-btn-warning {
+            background: rgba(255,170,0,0.2);
+            color: #ffaa00;
+        }
+        .file-btn-warning:hover {
+            background: rgba(255,170,0,0.35);
+        }
+        .file-btn-open {
+            background: rgba(0,100,200,0.25);
+            color: #4da6ff;
+        }
+        .file-btn-open:hover {
+            background: rgba(0,100,200,0.45);
+        }
+        .file-header {
+            display: grid;
+            grid-template-columns: 36px 1fr 90px 140px auto;
+            gap: 6px;
+            padding: 5px 12px;
+            background: rgba(75,0,130,0.2);
+            border-bottom: 2px solid rgba(106,13,173,0.3);
+            font-size: 11px;
+            color: #9370db;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-radius: 4px 4px 0 0;
+            margin-bottom: 2px;
+        }
+        .file-header div {
+            display: flex;
+            align-items: center;
+        }
+        .file-header div:not(:first-child):not(:last-child) {
+            padding-left: 4px;
+        }
+        .file-header div:last-child {
+            justify-content: center;
+        }
+        .file-header div:first-child {
+            justify-content: center;
+        }
+        #file-status {
+            color: #9370db;
+            font-size: 12px;
+            margin-left: auto;
+            padding: 0 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        @media (max-width: 768px) {
+            .file-row {
+                grid-template-columns: 30px 1fr 60px auto !important;
+                padding: 4px 8px !important;
+            }
+            .file-row .file-modified {
+                display: none;
+            }
+            .file-header {
+                grid-template-columns: 30px 1fr 60px auto !important;
+            }
+            .file-header div:nth-child(4) {
+                display: none;
+            }
+            .file-toolbar {
+                padding: 4px 8px;
+                gap: 4px;
+                min-height: 34px;
+            }
+            .file-toolbar .act {
+                font-size: 10px;
+                padding: 3px 8px;
+                height: 26px;
+            }
+            .file-toolbar input[type="text"] {
+                font-size: 10px;
+                padding: 3px 6px;
+                height: 26px;
+            }
+            .file-path {
+                min-width: 80px;
+                font-size: 10px;
+            }
+            .file-btn {
+                padding: 2px 5px;
+                font-size: 10px;
+                min-width: 22px;
+                height: 22px;
+            }
+            .file-row .file-icon {
+                font-size: 18px;
+            }
+            .file-row .file-name {
+                font-size: 12px;
+            }
+            .file-row .file-size {
+                font-size: 10px;
+            }
+            #file-status {
+                font-size: 10px;
+                padding: 0 6px;
+            }
+        }
+        @media (max-width: 480px) {
+            .file-row {
+                grid-template-columns: 28px 1fr auto !important;
+                gap: 4px !important;
+                padding: 3px 6px !important;
+            }
+            .file-row .file-size {
+                display: none;
+            }
+            .file-header {
+                grid-template-columns: 28px 1fr auto !important;
+            }
+            .file-header div:nth-child(3) {
+                display: none;
+            }
+            .file-toolbar {
+                gap: 3px;
+                padding: 3px 6px;
+                min-height: 30px;
+            }
+            .file-toolbar input[type="text"] {
+                min-width: 50px;
+                font-size: 9px;
+            }
+            .file-toolbar .act {
+                font-size: 9px;
+                padding: 2px 6px;
+                height: 22px;
+            }
+            .file-btn {
+                font-size: 9px;
+                min-width: 18px;
+                height: 18px;
+                padding: 1px 3px;
+            }
+            .file-row .file-icon {
+                font-size: 16px;
+            }
+            .file-row .file-name {
+                font-size: 11px;
+            }
+            #file-status {
+                font-size: 9px;
+                padding: 0 4px;
+            }
+        }
     </style>
 </head>
 <body>
