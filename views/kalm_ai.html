@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧠 Kalm AI - Asistente Inteligente</title>
+    <title>🧠 Kalm AI</title>
     <style>
-        /* ═══ RESET Y BASE ═══ */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: linear-gradient(135deg, #0a0514 0%, #1a0033 50%, #2e0854 100%);
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             min-height: 100vh;
             padding: 20px;
             color: #e6e6fa;
@@ -17,102 +16,85 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: rgba(10,5,20,0.5); border-radius: 3px; }
         ::-webkit-scrollbar-thumb { background: #6a0dad; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #9370db; }
 
-        /* ═══ CONTENEDOR PRINCIPAL ═══ */
         .app-container {
-            max-width: 1100px;
+            max-width: 1000px;
             margin: 0 auto;
-            background: rgba(26, 0, 51, 0.65);
-            backdrop-filter: blur(24px);
+            background: rgba(26, 0, 51, 0.7);
+            backdrop-filter: blur(20px);
             border-radius: 24px;
             border: 1px solid rgba(106, 13, 173, 0.25);
             box-shadow: 0 25px 80px rgba(0,0,0,0.6);
             overflow: hidden;
-            min-height: 90vh;
+            min-height: 85vh;
             display: flex;
             flex-direction: column;
         }
 
-        /* ═══ HEADER ═══ */
         .app-header {
-            padding: 20px 30px;
+            padding: 20px 28px;
             background: linear-gradient(135deg, rgba(75,0,130,0.3), rgba(106,13,173,0.1));
-            border-bottom: 1px solid rgba(106,13,173,0.2);
+            border-bottom: 1px solid rgba(106,13,173,0.15);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 12px;
         }
-        .app-header .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+        .app-header .logo { display: flex; align-items: center; gap: 12px; }
         .app-header .logo-icon {
-            font-size: 32px;
+            font-size: 28px;
             background: linear-gradient(135deg, #6a0dad, #da70d6);
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         .app-header h1 {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
             background: linear-gradient(135deg, #da70d6, #9370db);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .app-header .subtitle {
-            font-size: 12px;
-            color: #9370db;
-            font-weight: 400;
-            -webkit-text-fill-color: #9370db;
-        }
-        .app-header .status-badge {
+        .app-header .subtitle { font-size: 12px; color: #9370db; }
+        .status-badge {
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 6px 16px;
+            padding: 5px 14px;
             border-radius: 20px;
-            background: rgba(0,204,102,0.15);
-            border: 1px solid rgba(0,204,102,0.3);
+            background: rgba(0,204,102,0.12);
+            border: 1px solid rgba(0,204,102,0.25);
             font-size: 12px;
             color: #00cc66;
         }
-        .app-header .status-badge .dot {
+        .status-badge .dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
             background: #00cc66;
-            animation: pulse-dot 1.5s ease-in-out infinite;
+            animation: pulse 1.5s ease-in-out infinite;
         }
-        @keyframes pulse-dot {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.4; transform: scale(0.8); }
-        }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-        /* ═══ TABS ═══ */
         .tabs {
             display: flex;
-            background: rgba(10,5,20,0.4);
-            border-bottom: 1px solid rgba(106,13,173,0.15);
-            padding: 0 20px;
+            background: rgba(10,5,20,0.3);
+            border-bottom: 1px solid rgba(106,13,173,0.1);
+            padding: 0 16px;
             gap: 4px;
         }
         .tab {
-            padding: 14px 24px;
+            padding: 12px 20px;
             cursor: pointer;
             color: #9370db;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
             border-bottom: 3px solid transparent;
             transition: all 0.3s;
-            position: relative;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -124,71 +106,52 @@
             background: rgba(106,13,173,0.1);
         }
         .tab .badge {
-            font-size: 10px;
-            background: rgba(106,13,173,0.3);
+            font-size: 9px;
+            background: rgba(106,13,173,0.25);
             padding: 1px 8px;
             border-radius: 10px;
             color: #9370db;
         }
-        .tab.active .badge {
-            background: rgba(218,112,214,0.2);
-            color: #da70d6;
-        }
+        .tab.active .badge { background: rgba(218,112,214,0.15); color: #da70d6; }
 
-        /* ═══ PANEL DE CONTROLES ═══ */
         .controls-panel {
-            padding: 16px 24px;
-            background: rgba(10,5,20,0.3);
-            border-bottom: 1px solid rgba(106,13,173,0.1);
+            padding: 14px 20px;
+            background: rgba(10,5,20,0.25);
+            border-bottom: 1px solid rgba(106,13,173,0.08);
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
             align-items: center;
         }
-        .controls-panel label {
-            color: #9370db;
-            font-size: 12px;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+        .controls-panel label { color: #9370db; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         .controls-panel select {
-            padding: 8px 14px;
+            padding: 7px 12px;
             border-radius: 8px;
-            border: 1px solid rgba(106,13,173,0.25);
+            border: 1px solid rgba(106,13,173,0.2);
             background: rgba(10,5,20,0.7);
             color: #e6e6fa;
             font-size: 13px;
             outline: none;
             cursor: pointer;
-            min-width: 120px;
-            transition: border-color 0.3s;
+            min-width: 110px;
         }
-        .controls-panel select:focus {
-            border-color: #6a0dad;
-            box-shadow: 0 0 20px rgba(106,13,173,0.1);
-        }
+        .controls-panel select:focus { border-color: #6a0dad; }
         .controls-panel input[type="text"] {
             flex: 1;
-            min-width: 180px;
-            padding: 8px 16px;
+            min-width: 160px;
+            padding: 7px 14px;
             border-radius: 8px;
-            border: 1px solid rgba(106,13,173,0.25);
+            border: 1px solid rgba(106,13,173,0.2);
             background: rgba(10,5,20,0.7);
             color: #e6e6fa;
             font-size: 13px;
             outline: none;
-            transition: border-color 0.3s;
         }
-        .controls-panel input[type="text"]:focus {
-            border-color: #6a0dad;
-            box-shadow: 0 0 20px rgba(106,13,173,0.1);
-        }
-        .controls-panel input[type="text"]::placeholder {
-            color: #4b0082;
-        }
+        .controls-panel input[type="text"]:focus { border-color: #6a0dad; }
+        .controls-panel input[type="text"]::placeholder { color: #4b0082; }
+
         .btn {
-            padding: 8px 20px;
+            padding: 7px 18px;
             border-radius: 8px;
             border: none;
             font-weight: 600;
@@ -205,55 +168,31 @@
             color: #fff;
             box-shadow: 0 4px 15px rgba(106,13,173,0.3);
         }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(106,13,173,0.5);
-        }
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(106,13,173,0.5); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         .btn-secondary {
-            background: rgba(75,0,130,0.25);
+            background: rgba(75,0,130,0.2);
             color: #e6e6fa;
-            border: 1px solid rgba(106,13,173,0.2);
+            border: 1px solid rgba(106,13,173,0.15);
         }
-        .btn-secondary:hover {
-            background: rgba(75,0,130,0.4);
-        }
+        .btn-secondary:hover { background: rgba(75,0,130,0.35); }
         .btn-success {
             background: linear-gradient(135deg, #008800, #00cc66);
             color: #fff;
         }
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,204,102,0.3);
-        }
-        .btn-danger {
-            background: rgba(139,0,0,0.3);
-            color: #ff4444;
-            border: 1px solid rgba(139,0,0,0.2);
-        }
-        .btn-danger:hover {
-            background: rgba(139,0,0,0.5);
-        }
-        .btn-sm {
-            padding: 4px 12px;
-            font-size: 11px;
-        }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,204,102,0.3); }
+        .btn-sm { padding: 4px 12px; font-size: 11px; }
 
-        /* ═══ RESULTADOS ═══ */
         .result-area {
             flex: 1;
-            padding: 16px 24px;
-            min-height: 350px;
-            max-height: 550px;
+            padding: 16px 20px;
+            min-height: 320px;
+            max-height: 520px;
             overflow-y: auto;
-            background: rgba(0,0,0,0.15);
-            margin: 0 16px 16px 16px;
+            background: rgba(0,0,0,0.12);
+            margin: 0 14px 14px 14px;
             border-radius: 12px;
-            border: 1px solid rgba(106,13,173,0.08);
+            border: 1px solid rgba(106,13,173,0.06);
         }
         .result-area .result-content {
             white-space: pre-wrap;
@@ -263,36 +202,17 @@
             color: #d8bfd8;
             font-family: 'Segoe UI', system-ui, sans-serif;
         }
-        .result-area .result-content .titulo {
-            color: #da70d6;
-            font-weight: 700;
-            font-size: 1.15em;
-        }
-        .result-area .result-content .subtitulo {
-            color: #9370db;
-            font-weight: 600;
-        }
-        .result-area .result-content .error {
-            color: #ff4444;
-        }
-        .result-area .result-content .exito {
-            color: #00cc66;
-        }
-        .result-area .result-content .loading-text {
-            color: #ffaa00;
-            animation: pulse-text 1.2s ease-in-out infinite;
-        }
-        @keyframes pulse-text {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
+        .result-area .result-content .titulo { color: #da70d6; font-weight: 700; font-size: 1.1em; }
+        .result-area .result-content .subtitulo { color: #9370db; font-weight: 600; }
+        .result-area .result-content .error { color: #ff4444; }
+        .result-area .result-content .exito { color: #00cc66; }
         .result-area .result-content .step {
             color: #9370db;
             font-size: 12px;
             display: flex;
             align-items: center;
             gap: 8px;
-            margin: 4px 0;
+            margin: 3px 0;
         }
         .result-area .result-content .step .spinner-small {
             display: inline-block;
@@ -303,113 +223,84 @@
             border-top-color: #da70d6;
             animation: spin 0.8s linear infinite;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ═══ EMPTY STATE ═══ */
         .empty-state {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100%;
-            min-height: 280px;
+            min-height: 250px;
             text-align: center;
             color: #9370db;
         }
-        .empty-state .icon {
-            font-size: 56px;
-            margin-bottom: 16px;
-        }
-        .empty-state .title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #da70d6;
-        }
-        .empty-state .desc {
-            font-size: 13px;
-            margin-top: 6px;
-            max-width: 400px;
-            color: #6a0dad;
-        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-state .title { font-size: 17px; font-weight: 600; color: #da70d6; }
+        .empty-state .desc { font-size: 13px; margin-top: 4px; max-width: 380px; color: #6a0dad; }
 
-        /* ═══ FOOTER ═══ */
         .app-footer {
-            padding: 12px 24px;
-            border-top: 1px solid rgba(106,13,173,0.12);
+            padding: 10px 20px;
+            border-top: 1px solid rgba(106,13,173,0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 10px;
-            background: rgba(10,5,20,0.2);
+            gap: 8px;
+            background: rgba(10,5,20,0.15);
         }
-        .app-footer .info {
-            font-size: 11px;
-            color: #6a0dad;
-        }
-        .app-footer .actions {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
+        .app-footer .info { font-size: 11px; color: #6a0dad; }
+        .app-footer .actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
-        /* ═══ PROGRESS BAR ═══ */
         .progress-container {
             height: 3px;
-            background: rgba(106,13,173,0.15);
+            background: rgba(106,13,173,0.12);
             border-radius: 2px;
             overflow: hidden;
-            margin: 0 16px 4px 16px;
+            margin: 0 14px 2px 14px;
             opacity: 0;
             transition: opacity 0.4s;
         }
-        .progress-container.active {
-            opacity: 1;
-        }
+        .progress-container.active { opacity: 1; }
         .progress-container .progress-bar {
             height: 100%;
             width: 0%;
-            background: linear-gradient(to right, #6a0dad, #da70d6, #9370db);
+            background: linear-gradient(to right, #6a0dad, #da70d6);
             border-radius: 2px;
             transition: width 0.5s ease;
         }
 
-        /* ═══ RESPONSIVE ═══ */
         @media (max-width: 768px) {
             .app-header { padding: 14px 16px; }
-            .app-header h1 { font-size: 18px; }
-            .tabs { padding: 0 12px; overflow-x: auto; }
+            .app-header h1 { font-size: 17px; }
+            .tabs { padding: 0 10px; overflow-x: auto; }
             .tab { padding: 10px 14px; font-size: 12px; white-space: nowrap; }
-            .controls-panel { padding: 12px 16px; }
-            .controls-panel input[type="text"] { min-width: 120px; font-size: 12px; }
-            .result-area { padding: 12px 16px; margin: 0 10px 10px 10px; min-height: 250px; max-height: 400px; }
-            .btn { font-size: 12px; padding: 6px 14px; }
-            .app-footer { padding: 10px 16px; }
+            .controls-panel { padding: 10px 14px; }
+            .controls-panel input[type="text"] { min-width: 100px; font-size: 12px; }
+            .result-area { padding: 12px 14px; margin: 0 10px 10px 10px; min-height: 220px; max-height: 380px; }
+            .btn { font-size: 12px; padding: 6px 12px; }
         }
         @media (max-width: 480px) {
             body { padding: 10px; }
-            .app-header .logo-icon { width: 36px; height: 36px; font-size: 20px; }
-            .app-header h1 { font-size: 16px; }
+            .app-header .logo-icon { width: 34px; height: 34px; font-size: 18px; }
+            .app-header h1 { font-size: 15px; }
             .controls-panel { flex-direction: column; align-items: stretch; }
             .controls-panel input[type="text"] { min-width: unset; }
             .controls-panel .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
             .controls-panel .btn-group .btn { flex: 1; justify-content: center; }
-            .result-area { min-height: 200px; max-height: 350px; }
+            .result-area { min-height: 180px; max-height: 320px; }
         }
     </style>
 </head>
 <body>
 <div class="app-container">
 
-    <!-- ═══ HEADER ═══ -->
     <header class="app-header">
         <div class="logo">
             <div class="logo-icon">🧠</div>
             <div>
                 <h1>Kalm AI</h1>
-                <span class="subtitle">Asistente Inteligente v2.0</span>
+                <span class="subtitle">Asistente Inteligente</span>
             </div>
         </div>
         <div class="status-badge">
@@ -418,24 +309,19 @@
         </div>
     </header>
 
-    <!-- ═══ TABS ═══ -->
     <div class="tabs">
         <div class="tab active" data-tab="chat" onclick="switchTab('chat')">
-            💬 Chat Académico
-            <span class="badge">IA</span>
+            💬 Chat Académico <span class="badge">IA</span>
         </div>
         <div class="tab" data-tab="kroot" onclick="switchTab('kroot')">
-            🏢 Kroot Corp
-            <span class="badge">Empresarial</span>
+            🏢 Kroot Corp <span class="badge">Empresarial</span>
         </div>
     </div>
 
-    <!-- ═══ PROGRESS BAR ═══ -->
     <div class="progress-container" id="progress-container">
         <div class="progress-bar" id="progress-bar"></div>
     </div>
 
-    <!-- ═══ TAB: CHAT ACADÉMICO ═══ -->
     <div class="tab-content active" id="tab-chat">
         <div class="controls-panel">
             <label>🧠 Modelo</label>
@@ -447,7 +333,7 @@
                 <option value="llama">Llama</option>
                 <option value="mistral">Mistral</option>
             </select>
-            <input type="text" id="chat-tema" placeholder="Escribe el tema de tu trabajo académico..." />
+            <input type="text" id="chat-tema" placeholder="Escribe el tema del trabajo académico..." />
             <div class="btn-group">
                 <button class="btn btn-primary" id="chat-generar">📝 Generar</button>
                 <button class="btn btn-secondary" id="chat-chat">💬 Chat</button>
@@ -457,12 +343,11 @@
             <div class="empty-state">
                 <div class="icon">📚</div>
                 <div class="title">Chat Académico</div>
-                <div class="desc">Escribe un tema y pulsa "Generar" para crear un trabajo académico completo con estructura profesional.</div>
+                <div class="desc">Escribe un tema y pulsa "Generar" para crear un trabajo académico profesional.</div>
             </div>
         </div>
     </div>
 
-    <!-- ═══ TAB: KROOT CORP ═══ -->
     <div class="tab-content" id="tab-kroot">
         <div class="controls-panel">
             <label>🧠 Modelo</label>
@@ -483,12 +368,11 @@
             <div class="empty-state">
                 <div class="icon">🏢</div>
                 <div class="title">Kroot Corp IA</div>
-                <div class="desc">Genera informes ejecutivos profesionales con estructura: Introducción, Puntos Clave, Conclusiones y Recomendaciones.</div>
+                <div class="desc">Genera informes ejecutivos profesionales con estructura definida.</div>
             </div>
         </div>
     </div>
 
-    <!-- ═══ FOOTER ═══ -->
     <footer class="app-footer">
         <span class="info">🔒 Pollinations AI · DuckDuckGo · Sin API Key</span>
         <div class="actions">
@@ -507,56 +391,29 @@
     let isGenerating = false;
     const API_BASE = '/kalm-ai';
 
-    // ═══ REFERENCIAS DOM ═══
     const $ = id => document.getElementById(id);
     const statusText = $('status-text');
     const progressContainer = $('progress-container');
     const progressBar = $('progress-bar');
 
-    // ═══ FUNCIONES DE UTILIDAD ═══
     function setStatus(text, type = 'info') {
-        const colors = {
-            info: '#9370db',
-            success: '#00cc66',
-            error: '#ff4444',
-            loading: '#ffaa00'
-        };
+        const colors = { info: '#9370db', success: '#00cc66', error: '#ff4444', loading: '#ffaa00' };
         statusText.textContent = text;
         statusText.style.color = colors[type] || '#9370db';
-        // Actualizar badge
         const dot = document.querySelector('.dot');
-        if (dot) {
-            dot.style.background = type === 'error' ? '#ff4444' : type === 'loading' ? '#ffaa00' : '#00cc66';
-        }
+        if (dot) dot.style.background = type === 'error' ? '#ff4444' : type === 'loading' ? '#ffaa00' : '#00cc66';
     }
 
     function setProgress(pct) {
-        if (pct > 0) {
-            progressContainer.classList.add('active');
-            progressBar.style.width = Math.min(pct, 100) + '%';
-        } else {
-            progressContainer.classList.remove('active');
-            progressBar.style.width = '0%';
-        }
+        if (pct > 0) { progressContainer.classList.add('active'); progressBar.style.width = Math.min(pct, 100) + '%'; }
+        else { progressContainer.classList.remove('active'); progressBar.style.width = '0%'; }
     }
 
-    function getResultContainer() {
-        return $(currentTab === 'chat' ? 'chat-result' : 'kroot-result');
-    }
+    function getResultContainer() { return $(currentTab === 'chat' ? 'chat-result' : 'kroot-result'); }
+    function getTemaInput() { return $(currentTab === 'chat' ? 'chat-tema' : 'kroot-tema'); }
+    function getModeloSelect() { return $(currentTab === 'chat' ? 'chat-modelo' : 'kroot-modelo'); }
+    function getGenerarBtn() { return $(currentTab === 'chat' ? 'chat-generar' : 'kroot-generar'); }
 
-    function getTemaInput() {
-        return $(currentTab === 'chat' ? 'chat-tema' : 'kroot-tema');
-    }
-
-    function getModeloSelect() {
-        return $(currentTab === 'chat' ? 'chat-modelo' : 'kroot-modelo');
-    }
-
-    function getGenerarBtn() {
-        return $(currentTab === 'chat' ? 'chat-generar' : 'kroot-generar');
-    }
-
-    // ═══ SWITCH TAB ═══
     function switchTab(tab) {
         currentTab = tab;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -567,59 +424,27 @@
         setProgress(0);
     }
 
-    // ═══ APPEND RESULT ═══
     function appendResult(text, type = 'normal') {
         const container = getResultContainer();
-        const classes = {
-            titulo: 'titulo',
-            subtitulo: 'subtitulo',
-            error: 'error',
-            exito: 'exito',
-            loading: 'loading-text',
-            step: 'step',
-            normal: ''
-        };
+        const classes = { titulo: 'titulo', subtitulo: 'subtitulo', error: 'error', exito: 'exito', step: 'step', normal: '' };
         const cls = classes[type] || '';
         let content = container.querySelector('.result-content');
-        if (!content) {
-            content = document.createElement('div');
-            content.className = 'result-content';
-            container.innerHTML = '';
-            container.appendChild(content);
-        }
-        if (cls) {
-            content.innerHTML += `<span class="${cls}">${text}</span>`;
-        } else {
-            content.innerHTML += text;
-        }
-        container.scrollTop = container.scrollHeight;
-    }
-
-    function setResultContent(html) {
-        const container = getResultContainer();
-        container.innerHTML = `<div class="result-content">${html}</div>`;
+        if (!content) { content = document.createElement('div'); content.className = 'result-content'; container.innerHTML = ''; container.appendChild(content); }
+        if (cls) { content.innerHTML += `<span class="${cls}">${text}</span>`; }
+        else { content.innerHTML += text; }
         container.scrollTop = container.scrollHeight;
     }
 
     function clearResult() {
         const container = getResultContainer();
-        container.innerHTML = '';
-        const emptyState = document.createElement('div');
-        emptyState.className = 'empty-state';
-        emptyState.innerHTML = `
-            <div class="icon">${currentTab === 'chat' ? '📚' : '🏢'}</div>
-            <div class="title">${currentTab === 'chat' ? 'Chat Académico' : 'Kroot Corp IA'}</div>
-            <div class="desc">${currentTab === 'chat' ? 'Escribe un tema y pulsa "Generar" para crear un trabajo académico completo.' : 'Genera informes ejecutivos profesionales con estructura definida.'}</div>
-        `;
-        container.appendChild(emptyState);
+        container.innerHTML = `<div class="empty-state"><div class="icon">${currentTab === 'chat' ? '📚' : '🏢'}</div><div class="title">${currentTab === 'chat' ? 'Chat Académico' : 'Kroot Corp IA'}</div><div class="desc">${currentTab === 'chat' ? 'Escribe un tema y pulsa "Generar".' : 'Genera informes ejecutivos profesionales.'}</div></div>`;
         currentResult = '';
         setProgress(0);
     }
 
-    // ═══ GENERAR (CON PROGRESO Y PASOS) ═══
     async function generar() {
         const tema = getTemaInput().value.trim();
-        if (!tema) { alert('✏️ Escribe un tema para generar.'); return; }
+        if (!tema) { alert('✏️ Escribe un tema.'); return; }
         if (isGenerating) return;
 
         const modelo = getModeloSelect().value;
@@ -630,8 +455,7 @@
         btn.disabled = true;
         btn.innerHTML = '⏳ Generando...';
 
-        // Limpiar y mostrar progreso
-        setProgress(5);
+        setProgress(10);
         setStatus('⏳ Generando...', 'loading');
 
         const container = getResultContainer();
@@ -639,15 +463,12 @@
         appendResult(`📝 Generando ${tipo === 'chat' ? 'trabajo académico' : 'informe ejecutivo'} sobre: "${tema}"\n`, 'titulo');
         appendResult('═══════════════════════════════════════════════\n\n', 'normal');
 
-        // Pasos de progreso
         const steps = [
-            { pct: 15, msg: '🔍 Conectando con el proveedor de IA...' },
-            { pct: 30, msg: '🧠 Procesando tu solicitud...' },
-            { pct: 50, msg: '✍️ Generando contenido...' },
-            { pct: 70, msg: '📊 Estructurando el resultado...' },
-            { pct: 85, msg: '✅ Finalizando...' }
+            { pct: 20, msg: '🔍 Conectando con proveedores de IA...' },
+            { pct: 40, msg: '🧠 Procesando tu solicitud...' },
+            { pct: 60, msg: '✍️ Generando contenido...' },
+            { pct: 80, msg: '📊 Estructurando el resultado...' }
         ];
-
         let stepIndex = 0;
         const stepInterval = setInterval(() => {
             if (stepIndex < steps.length) {
@@ -656,7 +477,7 @@
                 appendResult(`  ${step.msg}\n`, 'step');
                 stepIndex++;
             }
-        }, 600);
+        }, 700);
 
         try {
             const response = await fetch(`${API_BASE}/generar`, {
@@ -665,14 +486,10 @@
                 body: JSON.stringify({ tema, modelo, tipo })
             });
 
-            // Verificar si la respuesta es JSON válido
             const text = await response.text();
             let data;
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                throw new Error(`El servidor respondió con un error (${response.status}). Asegúrate de que Kalm AI esté ejecutándose.`);
-            }
+            try { data = JSON.parse(text); }
+            catch (e) { throw new Error(`Error del servidor (${response.status}). Asegúrate de que Kalm AI esté ejecutándose.`); }
 
             clearInterval(stepInterval);
             setProgress(95);
@@ -681,20 +498,13 @@
                 appendResult(`\n❌ Error: ${data.error}\n`, 'error');
                 setStatus('❌ Error', 'error');
             } else {
-                // Mostrar resultado formateado
                 const lines = data.resultado.split('\n');
                 for (const line of lines) {
-                    if (line.startsWith('##') || line.startsWith('#')) {
-                        appendResult(line + '\n', 'titulo');
-                    } else if (line.startsWith('**') || line.startsWith('*')) {
-                        appendResult(line + '\n', 'subtitulo');
-                    } else if (line.match(/^[✅📊📝📌🔹]/)) {
-                        appendResult(line + '\n', 'exito');
-                    } else if (line.startsWith('❌')) {
-                        appendResult(line + '\n', 'error');
-                    } else {
-                        appendResult(line + '\n', 'normal');
-                    }
+                    if (line.startsWith('##') || line.startsWith('#')) appendResult(line + '\n', 'titulo');
+                    else if (line.startsWith('**') || line.startsWith('*')) appendResult(line + '\n', 'subtitulo');
+                    else if (line.match(/^[✅📊📝📌🔹]/)) appendResult(line + '\n', 'exito');
+                    else if (line.startsWith('❌')) appendResult(line + '\n', 'error');
+                    else appendResult(line + '\n', 'normal');
                 }
                 currentResult = data.resultado;
                 setStatus('✅ Listo', 'success');
@@ -703,7 +513,7 @@
             }
         } catch (error) {
             clearInterval(stepInterval);
-            appendResult(`\n❌ Error de conexión: ${error.message}\n`, 'error');
+            appendResult(`\n❌ Error: ${error.message}\n`, 'error');
             setStatus('❌ Error', 'error');
             setProgress(0);
         }
@@ -713,10 +523,9 @@
         btn.innerHTML = currentTab === 'chat' ? '📝 Generar' : '📊 Generar Informe';
     }
 
-    // ═══ CHAT LIBRE ═══
     async function chatLibre() {
         const mensaje = getTemaInput().value.trim();
-        if (!mensaje) { alert('✏️ Escribe un mensaje para la IA.'); return; }
+        if (!mensaje) { alert('✏️ Escribe un mensaje.'); return; }
         if (isGenerating) return;
 
         const modelo = getModeloSelect().value;
@@ -725,7 +534,6 @@
         isGenerating = true;
         btn.disabled = true;
         btn.innerHTML = '⏳ Pensando...';
-
         setStatus('💬 Pensando...', 'loading');
         setProgress(20);
 
@@ -745,11 +553,8 @@
 
             const text = await response.text();
             let data;
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                throw new Error(`Error del servidor (${response.status}). Verifica que Kalm AI esté corriendo.`);
-            }
+            try { data = JSON.parse(text); }
+            catch (e) { throw new Error(`Error del servidor (${response.status}). Verifica que Kalm AI esté corriendo.`); }
 
             setProgress(80);
 
@@ -774,12 +579,8 @@
         getTemaInput().value = '';
     }
 
-    // ═══ EXPORTAR ═══
     function exportarTxt() {
-        if (!currentResult) {
-            alert('📋 No hay contenido para exportar. Genera un trabajo o informe primero.');
-            return;
-        }
+        if (!currentResult) { alert('📋 No hay contenido para exportar.'); return; }
         const blob = new Blob([currentResult], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -793,7 +594,6 @@
         setStatus('📄 Exportado', 'success');
     }
 
-    // ═══ LIMPIAR ═══
     function limpiar() {
         clearResult();
         getTemaInput().value = '';
@@ -801,7 +601,6 @@
         setProgress(0);
     }
 
-    // ═══ EVENT LISTENERS ═══
     document.addEventListener('DOMContentLoaded', function() {
         $('chat-generar').addEventListener('click', generar);
         $('chat-chat').addEventListener('click', chatLibre);
@@ -809,13 +608,9 @@
         $('btn-export').addEventListener('click', exportarTxt);
         $('btn-limpiar').addEventListener('click', limpiar);
 
-        // Enter para generar
         document.querySelectorAll('#chat-tema, #kroot-tema').forEach(el => {
             el.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    generar();
-                }
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generar(); }
             });
         });
 
@@ -823,7 +618,6 @@
         console.log(`📡 API Base: ${API_BASE}`);
     });
 
-    // ═══ EXPORTAR GLOBAL ═══
     window.switchTab = switchTab;
     window.generar = generar;
     window.chatLibre = chatLibre;
