@@ -359,6 +359,75 @@ document.addEventListener('DOMContentLoaded', function() {
     // Eliminar el setTimeout que cargaba la página de inicio
 });
 
+// ═══ FUNCIÓN PARA FORZAR CARGA DE KALM AI ═══
+function forceLoadKalmAI() {
+    console.log('🔄 Force loading Kalm AI...');
+    
+    const frame = document.getElementById('browser-frame');
+    const urlInput = document.getElementById('browser-url');
+    const status = document.getElementById('browser-status');
+    
+    if (!frame) {
+        console.error('❌ Frame no encontrado');
+        return;
+    }
+    
+    // La ruta CORRECTA es /kalm-ai
+    const kalmUrl = '/kalm-ai';
+    
+    if (urlInput) {
+        urlInput.value = kalmUrl;
+    }
+    
+    if (status) {
+        status.textContent = '🧠 Cargando Kalm AI...';
+        status.style.color = '#ffaa00';
+    }
+    
+    // Limpiar y cargar
+    frame.srcdoc = '';
+    frame.src = 'about:blank';
+    
+    setTimeout(function() {
+        frame.src = kalmUrl;
+        console.log('✅ Frame cargado con ' + kalmUrl);
+    }, 200);
+    
+    // Verificar después de 3 segundos
+    setTimeout(function() {
+        if (frame.contentDocument && frame.contentDocument.body) {
+            var bodyText = frame.contentDocument.body.innerText || '';
+            if (bodyText.includes('Kalm AI') || bodyText.includes('Chat Academico')) {
+                if (status) {
+                    status.textContent = '✅ Kalm AI cargado';
+                    status.style.color = '#00cc66';
+                }
+            } else if (bodyText.includes('no disponible') || bodyText.includes('Error')) {
+                if (status) {
+                    status.textContent = '⚠️ Kalm AI no disponible';
+                    status.style.color = '#ff4444';
+                }
+            }
+        }
+    }, 3000);
+    
+    // Verificar health check
+    fetch('/kalm-ai/health')
+        .then(function(r) {
+            if (r.ok) {
+                console.log('✅ Kalm AI health check OK');
+                if (status) {
+                    status.textContent = '✅ Kalm AI - Listo';
+                    status.style.color = '#00cc66';
+                }
+            }
+        })
+        .catch(function() {
+            console.log('⚠️ Kalm AI health check falló');
+        });
+}
+
+
 window.browserNavigate = browserNavigate;
 window.browserBack = browserBack;
 window.browserForward = browserForward;
@@ -368,5 +437,6 @@ window.loadBrowserBookmarks = loadBrowserBookmarks;
 window.sanitizeUrl = sanitizeUrl;
 window.isBlockedInIframe = isBlockedInIframe;
 window.isLocalPath = isLocalPath;
+window.forceLoadKalmAI = forceLoadKalmAI;
 
 console.log('🌐 Internal Browser cargado');
