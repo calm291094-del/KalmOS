@@ -424,21 +424,21 @@
 
 <script>
     // ═══════════════════════════════════════════════════════
-    // FUNCIONES GLOBALES
+    // ESTADO GLOBAL
     // ═══════════════════════════════════════════════════════
     var currentResult = '';
     var currentTab = 'chat';
     var isGenerating = false;
     var API_BASE = '/kalm-ai';
 
-    function getElement(id) {
+    function $(id) {
         return document.getElementById(id);
     }
 
     function setStatus(text, type) {
         type = type || 'info';
         var colors = { info: '#9370db', success: '#00cc66', error: '#ff4444', loading: '#ffaa00' };
-        var el = getElement('status-text');
+        var el = $('status-text');
         if (el) {
             el.textContent = text;
             el.style.color = colors[type] || '#9370db';
@@ -446,8 +446,8 @@
     }
 
     function setProgress(pct) {
-        var container = getElement('progress-container');
-        var bar = getElement('progress-bar');
+        var container = $('progress-container');
+        var bar = $('progress-bar');
         if (!container || !bar) return;
         if (pct > 0) {
             container.classList.add('active');
@@ -459,19 +459,19 @@
     }
 
     function getResultContainer() {
-        return currentTab === 'chat' ? getElement('chat-result') : getElement('kroot-result');
+        return currentTab === 'chat' ? $('chat-result') : $('kroot-result');
     }
 
     function getTemaInput() {
-        return currentTab === 'chat' ? getElement('chat-tema') : getElement('kroot-tema');
+        return currentTab === 'chat' ? $('chat-tema') : $('kroot-tema');
     }
 
     function getModeloSelect() {
-        return currentTab === 'chat' ? getElement('chat-modelo') : getElement('kroot-modelo');
+        return currentTab === 'chat' ? $('chat-modelo') : $('kroot-modelo');
     }
 
     function getGenerarBtn() {
-        return currentTab === 'chat' ? getElement('chat-generar') : getElement('kroot-generar');
+        return currentTab === 'chat' ? $('chat-generar') : $('kroot-generar');
     }
 
     function appendResult(text, type) {
@@ -516,26 +516,22 @@
         setProgress(0);
     }
 
-    // ═══ CAMBIAR PESTAÑA ═══
     function switchTab(tab) {
-        console.log('[KalmAI] Cambiando a tab:', tab);
         currentTab = tab;
 
         // Actualizar tabs
-        var tabs = document.querySelectorAll('.tab');
-        for (var i = 0; i < tabs.length; i++) {
-            tabs[i].classList.remove('active');
-        }
+        document.querySelectorAll('.tab').forEach(function(t) {
+            t.classList.remove('active');
+        });
         var tabEl = document.querySelector('.tab[data-tab="' + tab + '"]');
         if (tabEl) tabEl.classList.add('active');
 
         // Actualizar contenidos
-        var contents = document.querySelectorAll('.tab-content');
-        for (var j = 0; j < contents.length; j++) {
-            contents[j].classList.remove('active');
-            contents[j].style.display = 'none';
-        }
-        var contentEl = getElement('tab-' + tab);
+        document.querySelectorAll('.tab-content').forEach(function(c) {
+            c.classList.remove('active');
+            c.style.display = 'none';
+        });
+        var contentEl = $('tab-' + tab);
         if (contentEl) {
             contentEl.classList.add('active');
             contentEl.style.display = 'flex';
@@ -545,15 +541,9 @@
         setProgress(0);
     }
 
-    // ═══ GENERAR ═══
     function generar() {
-        console.log('[KalmAI] Click en Generar');
-
         var input = getTemaInput();
-        if (!input) {
-            console.error('[KalmAI] Input no encontrado');
-            return;
-        }
+        if (!input) return;
 
         var tema = input.value.trim();
         if (!tema) {
@@ -580,7 +570,6 @@
 
         var url = API_BASE + '/generar';
         var data = { tema: tema, modelo: modelo, tipo: tipo };
-        console.log('[KalmAI] Enviando POST a:', url);
 
         fetch(url, {
             method: 'POST',
@@ -588,22 +577,18 @@
             body: JSON.stringify(data)
         })
         .then(function(response) {
-            console.log('[KalmAI] Respuesta status:', response.status);
-            if (!response.ok) {
-                throw new Error('Error ' + response.status + ': ' + response.statusText);
-            }
+            if (!response.ok) throw new Error('Error ' + response.status);
             return response.json();
         })
         .then(function(data) {
-            console.log('[KalmAI] Datos recibidos');
             setProgress(95);
             if (data.error) {
                 appendResult('\n❌ Error: ' + data.error + '\n', 'error');
                 setStatus('Error', 'error');
             } else {
                 var lines = data.resultado.split('\n');
-                for (var k = 0; k < lines.length; k++) {
-                    var line = lines[k];
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i];
                     if (line.startsWith('##') || line.startsWith('#')) {
                         appendResult(line + '\n', 'titulo');
                     } else if (line.startsWith('**') || line.startsWith('*')) {
@@ -623,7 +608,6 @@
             }
         })
         .catch(function(error) {
-            console.error('[KalmAI] Error:', error);
             appendResult('\n❌ Error: ' + error.message + '\n', 'error');
             setStatus('Error', 'error');
             setProgress(0);
@@ -635,15 +619,9 @@
         });
     }
 
-    // ═══ CHAT ═══
     function chatLibre() {
-        console.log('[KalmAI] Click en Chat');
-
-        var input = getElement('chat-tema');
-        if (!input) {
-            console.error('[KalmAI] Input no encontrado');
-            return;
-        }
+        var input = $('chat-tema');
+        if (!input) return;
 
         var mensaje = input.value.trim();
         if (!mensaje) {
@@ -652,8 +630,8 @@
         }
         if (isGenerating) return;
 
-        var modelo = getElement('chat-modelo').value;
-        var btn = getElement('chat-chat');
+        var modelo = $('chat-modelo').value;
+        var btn = $('chat-chat');
 
         isGenerating = true;
         btn.disabled = true;
@@ -661,7 +639,7 @@
         setStatus('💬 Pensando...', 'loading');
         setProgress(20);
 
-        var container = getElement('chat-result');
+        var container = $('chat-result');
         if (!container.querySelector('.result-content')) {
             container.innerHTML = '<div class="result-content"></div>';
         }
@@ -670,7 +648,6 @@
 
         var url = API_BASE + '/chat';
         var data = { mensaje: mensaje, modelo: modelo };
-        console.log('[KalmAI] Enviando POST a:', url);
 
         fetch(url, {
             method: 'POST',
@@ -678,14 +655,10 @@
             body: JSON.stringify(data)
         })
         .then(function(response) {
-            console.log('[KalmAI] Respuesta status:', response.status);
-            if (!response.ok) {
-                throw new Error('Error ' + response.status + ': ' + response.statusText);
-            }
+            if (!response.ok) throw new Error('Error ' + response.status);
             return response.json();
         })
         .then(function(data) {
-            console.log('[KalmAI] Datos recibidos');
             setProgress(80);
             if (data.error) {
                 appendResult('❌ Error: ' + data.error + '\n', 'error');
@@ -698,7 +671,6 @@
             }
         })
         .catch(function(error) {
-            console.error('[KalmAI] Error:', error);
             appendResult('❌ Error: ' + error.message + '\n', 'error');
             setStatus('Error', 'error');
             setProgress(0);
@@ -711,7 +683,6 @@
         });
     }
 
-    // ═══ EXPORTAR ═══
     function exportarTxt() {
         if (!currentResult) {
             alert('📋 No hay contenido para exportar.');
@@ -730,7 +701,6 @@
         setStatus('📄 Exportado', 'success');
     }
 
-    // ═══ LIMPIAR ═══
     function limpiar() {
         clearResult();
         var input = getTemaInput();
@@ -741,36 +711,18 @@
 
     // ═══ INICIALIZAR ═══
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('[KalmAI] DOM cargado - Inicializando...');
-        console.log('[KalmAI] API Base:', API_BASE);
+        // Conectar botones
+        var btnGenerar = $('chat-generar');
+        var btnChat = $('chat-chat');
+        var btnKroot = $('kroot-generar');
+        var btnExport = $('btn-export');
+        var btnLimpiar = $('btn-limpiar');
 
-        // Conectar botones directamente
-        var btnGenerar = getElement('chat-generar');
-        var btnChat = getElement('chat-chat');
-        var btnKroot = getElement('kroot-generar');
-        var btnExport = getElement('btn-export');
-        var btnLimpiar = getElement('btn-limpiar');
-
-        if (btnGenerar) {
-            btnGenerar.onclick = generar;
-            console.log('[KalmAI] Evento click asignado a Generar');
-        }
-        if (btnChat) {
-            btnChat.onclick = chatLibre;
-            console.log('[KalmAI] Evento click asignado a Chat');
-        }
-        if (btnKroot) {
-            btnKroot.onclick = generar;
-            console.log('[KalmAI] Evento click asignado a Kroot');
-        }
-        if (btnExport) {
-            btnExport.onclick = exportarTxt;
-            console.log('[KalmAI] Evento click asignado a Exportar');
-        }
-        if (btnLimpiar) {
-            btnLimpiar.onclick = limpiar;
-            console.log('[KalmAI] Evento click asignado a Limpiar');
-        }
+        if (btnGenerar) btnGenerar.onclick = generar;
+        if (btnChat) btnChat.onclick = chatLibre;
+        if (btnKroot) btnKroot.onclick = generar;
+        if (btnExport) btnExport.onclick = exportarTxt;
+        if (btnLimpiar) btnLimpiar.onclick = limpiar;
 
         // Enter para generar
         var inputs = document.querySelectorAll('#chat-tema, #kroot-tema');
@@ -784,24 +736,6 @@
                 });
             })(inputs[i]);
         }
-
-        // Asegurar que solo el tab activo se muestra
-        var activeTab = document.querySelector('.tab.active');
-        if (activeTab) {
-            var tabName = activeTab.getAttribute('data-tab');
-            var contents = document.querySelectorAll('.tab-content');
-            for (var j = 0; j < contents.length; j++) {
-                contents[j].classList.remove('active');
-                contents[j].style.display = 'none';
-            }
-            var activeContent = getElement('tab-' + tabName);
-            if (activeContent) {
-                activeContent.classList.add('active');
-                activeContent.style.display = 'flex';
-            }
-        }
-
-        console.log('[KalmAI] Inicializacion completada');
     });
 
     // Exponer funciones globalmente
