@@ -702,7 +702,7 @@ function executeProgramFromMenu(path, name) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// KALM AI - FUNCIONES CORREGIDAS
+// KALM AI - FUNCIONES CORREGIDAS (USANDO /api/kalm/)
 // ═══════════════════════════════════════════════════════════
 
 function openKalmAI() {
@@ -712,14 +712,12 @@ function openKalmAI() {
         showNotification('🧠 Abriendo Kalm AI...', 'info');
     }
     
-    // Abrir el navegador y cargar Kalm AI
     openKalmAIBrowser();
 }
 
 function openKalmAIBrowser() {
     console.log('🌐 Abriendo navegador con Kalm AI...');
     
-    // Primero verificar si la ventana existe
     let win = document.getElementById('win-browser');
     
     if (!win) {
@@ -750,8 +748,8 @@ function loadKalmAIInFrame() {
         return;
     }
     
-    // La ruta CORRECTA es /kalm-ai
-    const kalmUrl = '/kalm-ai';
+    // ═══ USAR /api/kalm/ QUE FUNCIONABA ANTES ═══
+    const kalmUrl = '/api/kalm/';
     
     if (urlInput) {
         urlInput.value = kalmUrl;
@@ -762,7 +760,6 @@ function loadKalmAIInFrame() {
         status.style.color = '#ffaa00';
     }
     
-    // Limpiar y cargar
     frame.srcdoc = '';
     frame.src = 'about:blank';
     
@@ -771,9 +768,8 @@ function loadKalmAIInFrame() {
         console.log('✅ Frame cargado con ' + kalmUrl);
     }, 200);
     
-    // Verificar después de 3 segundos
     setTimeout(function() {
-        fetch('/kalm-ai/health')
+        fetch('/api/kalm/health')
             .then(function(r) {
                 if (r.ok) {
                     if (status) {
