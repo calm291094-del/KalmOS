@@ -1,6 +1,7 @@
-"""Navegador interno de Kalm OS"""
+"""Navegador interno de Kalm OS - Versión Profesional"""
 import urllib.parse
 import urllib.request
+import urllib.error
 from pathlib import Path
 from system.config import log
 
@@ -11,16 +12,16 @@ class InternalBrowser:
         try:
             req = urllib.request.Request(url, method=method)
             
-            default_headers = {
-                "User-Agent": "KalmOS-InternalBrowser/4.2",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            default_headers = { 
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
                 "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
                 "X-Kalm-Internal": "true"
             }
             
             if headers:
                 default_headers.update(headers)
-            
+             
             for k, v in default_headers.items():
                 req.add_header(k, v)
             
@@ -33,7 +34,7 @@ class InternalBrowser:
                 
                 try:
                     text = content.decode("utf-8")
-                except:
+                except UnicodeDecodeError:
                     try:
                         text = content.decode("latin-1")
                     except:
@@ -62,18 +63,12 @@ class InternalBrowser:
             }
     
     @staticmethod
-    def build_service_url(domain, path="/", port=None):
-        from system.config import PROXY_PORT
-        if port:
-            return f"http://{domain}:{port}{path}"
-        return f"http://{domain}:{PROXY_PORT}{path}"
-    
-    @staticmethod
     def get_bookmarks():
         """Retorna marcadores de servicios configurados"""
         bookmarks = [
             {"name": "🏰 Inicio", "domain": "kalm.local", "url": "/desktop", "icon": "🏰"},
             {"name": "💾 Disco D:", "domain": "d.local", "url": "/D", "icon": "💾"},
+            {"name": "🧠 Kalm AI", "domain": "kalm.ai", "url": "/api/kalm/", "icon": "🧠"},
             {"name": "📊 Task Manager", "domain": "task", "url": "#", "icon": "📊"},
             {"name": "🌐 DNS", "domain": "dns", "url": "#", "icon": "🌐"},
             {"name": "🔒 Proxy", "domain": "proxy", "url": "#", "icon": "🔒"},
@@ -96,167 +91,3 @@ class InternalBrowser:
             log(f"Error obteniendo reglas proxy: {e}", "WARN")
         
         return bookmarks
-    
-    @staticmethod
-    def generate_iframe_html(url, title="Kalm Browser"):
-        return f'''<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title}</title>
-    <style>
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body, html {{ height: 100%; overflow: hidden; background: #0a0514; font-family: 'Segoe UI', sans-serif; }}
-        .toolbar {{
-            height: 40px;
-            background: linear-gradient(to right, #1a0033, #2e0854);
-            border-bottom: 1px solid #6a0dad;
-            display: flex;
-            align-items: center;
-            padding: 0 10px;
-            gap: 8px;
-            flex-shrink: 0;
-        }}
-        .toolbar button {{
-            background: #4b0082;
-            color: #fff;
-            border: 1px solid #9370db;
-            padding: 4px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
-        }}
-        .toolbar button:hover {{ background: #6a0dad; }}
-        .toolbar .btn-close {{
-            background: #8b0000;
-            border-color: #ff0000;
-        }}
-        .toolbar .btn-close:hover {{ background: #cc0000; }}
-        .url-bar {{
-            flex: 1;
-            background: #1a0033;
-            color: #e6e6fa;
-            border: 1px solid #6a0dad;
-            padding: 5px 10px;
-            border-radius: 3px;
-            font-family: monospace;
-            font-size: 12px;
-            min-width: 100px;
-        }}
-        iframe {{
-            width: 100%;
-            height: calc(100% - 40px);
-            border: none;
-            background: #fff;
-        }}
-        .status {{
-            position: absolute;
-            bottom: 5px;
-            right: 10px;
-            color: #9370db;
-            font-size: 10px;
-            background: rgba(10,5,20,0.8);
-            padding: 2px 8px;
-            border-radius: 3px;
-        }}
-        @media (max-width: 768px) {{
-            .toolbar {{ height: 36px; padding: 0 6px; gap: 4px; }}
-            .toolbar button {{ font-size: 10px; padding: 3px 6px; }}
-            .url-bar {{ font-size: 10px; padding: 3px 6px; }}
-        }}
-    </style>
-</head>
-<body>
-    <div class="toolbar">
-        <button onclick="history.back()">◀</button>
-        <button onclick="history.forward()">▶</button>
-        <button onclick="location.reload()">🔄</button>
-        <input type="text" class="url-bar" id="url-bar" value="{url}" 
-               onkeydown="if(event.key==='Enter')navigate()">
-        <button onclick="navigate()">Ir</button>
-        <button onclick="openExternal()">🔗</button>
-        <button onclick="window.close()" class="btn-close">✕</button>
-    </div>
-    <iframe id="frame" src="{url}"></iframe>
-    <div class="status">🏰 Kalm Internal Browser</div>
-    <script>
-        function navigate() {{
-            const url = document.getElementById('url-bar').value;
-            document.getElementById('frame').src = url;
-        }}
-        function openExternal() {{
-            const url = document.getElementById('url-bar').value;
-            window.open(url, '_blank');
-        }}
-    </script>
-</body>
-</html>'''
-
-// ═══ FUNCIÓN PARA FORZAR CARGA DE KALM AI ═══
-function forceLoadKalmAI() {
-    console.log('🔄 Force loading Kalm AI...');
-    
-    const frame = document.getElementById('browser-frame');
-    const urlInput = document.getElementById('browser-url');
-    const status = document.getElementById('browser-status');
-    
-    if (frame) {
-        // Limpiar el frame primero
-        frame.srcdoc = '';
-        frame.src = 'about:blank';
-        
-        setTimeout(() => {
-            // Cargar la URL
-            frame.src = '/api/kalm/';
-            console.log('✅ Frame cargado con /api/kalm/');
-            
-            if (status) {
-                status.textContent = '🧠 Cargando Kalm AI...';
-                status.style.color = '#ffaa00';
-            }
-            
-            if (urlInput) {
-                urlInput.value = '/api/kalm/';
-            }
-            
-            // Verificar después de 3 segundos
-            setTimeout(() => {
-                if (frame.contentDocument && frame.contentDocument.body) {
-                    const bodyText = frame.contentDocument.body.innerText || '';
-                    if (bodyText.includes('Kalm AI') || bodyText.includes('Chat Academico')) {
-                        if (status) {
-                            status.textContent = '✅ Kalm AI cargado';
-                            status.style.color = '#00cc66';
-                        }
-                    } else if (bodyText.includes('no disponible') || bodyText.includes('Error')) {
-                        if (status) {
-                            status.textContent = '⚠️ Kalm AI no disponible';
-                            status.style.color = '#ff4444';
-                        }
-                    }
-                }
-            }, 3000);
-            
-            // Verificar el proxy
-            fetch('/api/kalm/health')
-                .then(r => {
-                    if (r.ok) {
-                        console.log('✅ Kalm AI health check OK');
-                        if (status) {
-                            status.textContent = '✅ Kalm AI - Listo';
-                            status.style.color = '#00cc66';
-                        }
-                    }
-                })
-                .catch(() => {
-                    console.log('⚠️ Kalm AI health check falló');
-                });
-            
-        }, 200);
-    }
-}
-
-// Exportar función
-window.forceLoadKalmAI = forceLoadKalmAI;
