@@ -519,18 +519,18 @@
     function switchTab(tab) {
         currentTab = tab;
 
-        var tabs = document.querySelectorAll('.tab');
-        for (var i = 0; i < tabs.length; i++) {
-            tabs[i].classList.remove('active');
-        }
+        // Actualizar tabs
+        document.querySelectorAll('.tab').forEach(function(t) {
+            t.classList.remove('active');
+        });
         var tabEl = document.querySelector('.tab[data-tab="' + tab + '"]');
         if (tabEl) tabEl.classList.add('active');
 
-        var contents = document.querySelectorAll('.tab-content');
-        for (var j = 0; j < contents.length; j++) {
-            contents[j].classList.remove('active');
-            contents[j].style.display = 'none';
-        }
+        // Actualizar contenidos
+        document.querySelectorAll('.tab-content').forEach(function(c) {
+            c.classList.remove('active');
+            c.style.display = 'none';
+        });
         var contentEl = $('tab-' + tab);
         if (contentEl) {
             contentEl.classList.add('active');
@@ -584,8 +584,8 @@
                 setStatus('Error', 'error');
             } else {
                 var lines = data.resultado.split('\n');
-                for (var k = 0; k < lines.length; k++) {
-                    var line = lines[k];
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i];
                     if (line.startsWith('##') || line.startsWith('#')) {
                         appendResult(line + '\n', 'titulo');
                     } else if (line.startsWith('**') || line.startsWith('*')) {
