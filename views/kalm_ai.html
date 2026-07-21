@@ -86,6 +86,7 @@
             border-bottom: 1px solid rgba(106,13,173,0.1);
             padding: 0 16px;
             gap: 4px;
+            flex-shrink: 0;
         }
         .tab {
             padding: 12px 20px;
@@ -98,6 +99,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            user-select: none;
         }
         .tab:hover { color: #da70d6; background: rgba(106,13,173,0.08); }
         .tab.active {
@@ -114,6 +116,16 @@
         }
         .tab.active .badge { background: rgba(218,112,214,0.15); color: #da70d6; }
 
+        /* ═══ IMPORTANTE: Solo mostrar el tab activo ═══ */
+        .tab-content {
+            display: none !important;
+            flex: 1;
+            flex-direction: column;
+        }
+        .tab-content.active {
+            display: flex !important;
+        }
+
         .controls-panel {
             padding: 14px 20px;
             background: rgba(10,5,20,0.25);
@@ -122,6 +134,7 @@
             flex-wrap: wrap;
             gap: 10px;
             align-items: center;
+            flex-shrink: 0;
         }
         .controls-panel label { color: #9370db; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         .controls-panel select {
@@ -186,8 +199,8 @@
         .result-area {
             flex: 1;
             padding: 16px 20px;
-            min-height: 320px;
-            max-height: 520px;
+            min-height: 280px;
+            max-height: 480px;
             overflow-y: auto;
             background: rgba(0,0,0,0.12);
             margin: 0 14px 14px 14px;
@@ -200,7 +213,6 @@
             line-height: 1.8;
             font-size: 14px;
             color: #d8bfd8;
-            font-family: 'Segoe UI', system-ui, sans-serif;
         }
         .result-area .result-content .titulo { color: #da70d6; font-weight: 700; font-size: 1.1em; }
         .result-area .result-content .subtitulo { color: #9370db; font-weight: 600; }
@@ -231,7 +243,7 @@
             align-items: center;
             justify-content: center;
             height: 100%;
-            min-height: 250px;
+            min-height: 200px;
             text-align: center;
             color: #9370db;
         }
@@ -248,6 +260,7 @@
             flex-wrap: wrap;
             gap: 8px;
             background: rgba(10,5,20,0.15);
+            flex-shrink: 0;
         }
         .app-footer .info { font-size: 11px; color: #6a0dad; }
         .app-footer .actions { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -260,6 +273,7 @@
             margin: 0 14px 2px 14px;
             opacity: 0;
             transition: opacity 0.4s;
+            flex-shrink: 0;
         }
         .progress-container.active { opacity: 1; }
         .progress-container .progress-bar {
@@ -277,7 +291,7 @@
             .tab { padding: 10px 14px; font-size: 12px; white-space: nowrap; }
             .controls-panel { padding: 10px 14px; }
             .controls-panel input[type="text"] { min-width: 100px; font-size: 12px; }
-            .result-area { padding: 12px 14px; margin: 0 10px 10px 10px; min-height: 220px; max-height: 380px; }
+            .result-area { padding: 12px 14px; margin: 0 10px 10px 10px; min-height: 200px; max-height: 350px; }
             .btn { font-size: 12px; padding: 6px 12px; }
         }
         @media (max-width: 480px) {
@@ -288,7 +302,7 @@
             .controls-panel input[type="text"] { min-width: unset; }
             .controls-panel .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
             .controls-panel .btn-group .btn { flex: 1; justify-content: center; }
-            .result-area { min-height: 180px; max-height: 320px; }
+            .result-area { min-height: 160px; max-height: 280px; }
         }
     </style>
 </head>
@@ -322,6 +336,7 @@
         <div class="progress-bar" id="progress-bar"></div>
     </div>
 
+    <!-- ═══ TAB: CHAT ACADÉMICO ═══ -->
     <div class="tab-content active" id="tab-chat">
         <div class="controls-panel">
             <label>🧠 Modelo</label>
@@ -348,6 +363,7 @@
         </div>
     </div>
 
+    <!-- ═══ TAB: KROOT CORP ═══ -->
     <div class="tab-content" id="tab-kroot">
         <div class="controls-panel">
             <label>🧠 Modelo</label>
@@ -405,51 +421,100 @@
     }
 
     function setProgress(pct) {
-        if (pct > 0) { progressContainer.classList.add('active'); progressBar.style.width = Math.min(pct, 100) + '%'; }
-        else { progressContainer.classList.remove('active'); progressBar.style.width = '0%'; }
+        if (pct > 0) {
+            progressContainer.classList.add('active');
+            progressBar.style.width = Math.min(pct, 100) + '%';
+        } else {
+            progressContainer.classList.remove('active');
+            progressBar.style.width = '0%';
+        }
     }
 
-    function getResultContainer() { return $(currentTab === 'chat' ? 'chat-result' : 'kroot-result'); }
-    function getTemaInput() { return $(currentTab === 'chat' ? 'chat-tema' : 'kroot-tema'); }
-    function getModeloSelect() { return $(currentTab === 'chat' ? 'chat-modelo' : 'kroot-modelo'); }
-    function getGenerarBtn() { return $(currentTab === 'chat' ? 'chat-generar' : 'kroot-generar'); }
+    function getResultContainer() {
+        return $(currentTab === 'chat' ? 'chat-result' : 'kroot-result');
+    }
+
+    function getTemaInput() {
+        return $(currentTab === 'chat' ? 'chat-tema' : 'kroot-tema');
+    }
+
+    function getModeloSelect() {
+        return $(currentTab === 'chat' ? 'chat-modelo' : 'kroot-modelo');
+    }
+
+    function getGenerarBtn() {
+        return $(currentTab === 'chat' ? 'chat-generar' : 'kroot-generar');
+    }
 
     function switchTab(tab) {
         currentTab = tab;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
-        $(`tab-${tab}`).classList.add('active');
-        setStatus(`Listo - ${tab === 'chat' ? 'Chat' : 'Kroot'}`, 'info');
+        
+        // Actualizar tabs
+        document.querySelectorAll('.tab').forEach(function(t) {
+            t.classList.remove('active');
+        });
+        document.querySelector('.tab[data-tab="' + tab + '"]').classList.add('active');
+        
+        // Actualizar contenidos
+        document.querySelectorAll('.tab-content').forEach(function(c) {
+            c.classList.remove('active');
+            c.style.display = 'none';
+        });
+        var activeContent = document.getElementById('tab-' + tab);
+        activeContent.classList.add('active');
+        activeContent.style.display = 'flex';
+        
+        setStatus('Listo - ' + (tab === 'chat' ? 'Chat' : 'Kroot'), 'info');
         setProgress(0);
     }
 
-    function appendResult(text, type = 'normal') {
-        const container = getResultContainer();
-        const classes = { titulo: 'titulo', subtitulo: 'subtitulo', error: 'error', exito: 'exito', step: 'step', normal: '' };
-        const cls = classes[type] || '';
-        let content = container.querySelector('.result-content');
-        if (!content) { content = document.createElement('div'); content.className = 'result-content'; container.innerHTML = ''; container.appendChild(content); }
-        if (cls) { content.innerHTML += `<span class="${cls}">${text}</span>`; }
-        else { content.innerHTML += text; }
+    function appendResult(text, type) {
+        type = type || 'normal';
+        var container = getResultContainer();
+        var classes = {
+            titulo: 'titulo',
+            subtitulo: 'subtitulo',
+            error: 'error',
+            exito: 'exito',
+            step: 'step',
+            normal: ''
+        };
+        var cls = classes[type] || '';
+        var content = container.querySelector('.result-content');
+        if (!content) {
+            content = document.createElement('div');
+            content.className = 'result-content';
+            container.innerHTML = '';
+            container.appendChild(content);
+        }
+        if (cls) {
+            content.innerHTML += '<span class="' + cls + '">' + text + '</span>';
+        } else {
+            content.innerHTML += text;
+        }
         container.scrollTop = container.scrollHeight;
     }
 
     function clearResult() {
-        const container = getResultContainer();
-        container.innerHTML = `<div class="empty-state"><div class="icon">${currentTab === 'chat' ? '📚' : '🏢'}</div><div class="title">${currentTab === 'chat' ? 'Chat Académico' : 'Kroot Corp IA'}</div><div class="desc">${currentTab === 'chat' ? 'Escribe un tema y pulsa "Generar".' : 'Genera informes ejecutivos profesionales.'}</div></div>`;
+        var container = getResultContainer();
+        var icon = currentTab === 'chat' ? '📚' : '🏢';
+        var title = currentTab === 'chat' ? 'Chat Académico' : 'Kroot Corp IA';
+        var desc = currentTab === 'chat' 
+            ? 'Escribe un tema y pulsa "Generar" para crear un trabajo académico profesional.'
+            : 'Genera informes ejecutivos profesionales con estructura definida.';
+        container.innerHTML = '<div class="empty-state"><div class="icon">' + icon + '</div><div class="title">' + title + '</div><div class="desc">' + desc + '</div></div>';
         currentResult = '';
         setProgress(0);
     }
 
     async function generar() {
-        const tema = getTemaInput().value.trim();
+        var tema = getTemaInput().value.trim();
         if (!tema) { alert('✏️ Escribe un tema.'); return; }
         if (isGenerating) return;
 
-        const modelo = getModeloSelect().value;
-        const tipo = currentTab;
-        const btn = getGenerarBtn();
+        var modelo = getModeloSelect().value;
+        var tipo = currentTab;
+        var btn = getGenerarBtn();
 
         isGenerating = true;
         btn.disabled = true;
@@ -458,62 +523,72 @@
         setProgress(10);
         setStatus('⏳ Generando...', 'loading');
 
-        const container = getResultContainer();
-        container.innerHTML = `<div class="result-content"></div>`;
-        appendResult(`📝 Generando ${tipo === 'chat' ? 'trabajo académico' : 'informe ejecutivo'} sobre: "${tema}"\n`, 'titulo');
+        var container = getResultContainer();
+        container.innerHTML = '<div class="result-content"></div>';
+        appendResult('📝 Generando ' + (tipo === 'chat' ? 'trabajo académico' : 'informe ejecutivo') + ' sobre: "' + tema + '"\n', 'titulo');
         appendResult('═══════════════════════════════════════════════\n\n', 'normal');
 
-        const steps = [
+        var steps = [
             { pct: 20, msg: '🔍 Conectando con proveedores de IA...' },
             { pct: 40, msg: '🧠 Procesando tu solicitud...' },
             { pct: 60, msg: '✍️ Generando contenido...' },
             { pct: 80, msg: '📊 Estructurando el resultado...' }
         ];
-        let stepIndex = 0;
-        const stepInterval = setInterval(() => {
+        var stepIndex = 0;
+        var stepInterval = setInterval(function() {
             if (stepIndex < steps.length) {
-                const step = steps[stepIndex];
+                var step = steps[stepIndex];
                 setProgress(step.pct);
-                appendResult(`  ${step.msg}\n`, 'step');
+                appendResult('  ' + step.msg + '\n', 'step');
                 stepIndex++;
             }
         }, 700);
 
         try {
-            const response = await fetch(`${API_BASE}/generar`, {
+            var response = await fetch(API_BASE + '/generar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tema, modelo, tipo })
+                body: JSON.stringify({ tema: tema, modelo: modelo, tipo: tipo })
             });
 
-            const text = await response.text();
-            let data;
-            try { data = JSON.parse(text); }
-            catch (e) { throw new Error(`Error del servidor (${response.status}). Asegúrate de que Kalm AI esté ejecutándose.`); }
+            var text = await response.text();
+            var data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                throw new Error('Error del servidor (' + response.status + '). Asegúrate de que Kalm AI esté ejecutándose.');
+            }
 
             clearInterval(stepInterval);
             setProgress(95);
 
             if (data.error) {
-                appendResult(`\n❌ Error: ${data.error}\n`, 'error');
+                appendResult('\n❌ Error: ' + data.error + '\n', 'error');
                 setStatus('❌ Error', 'error');
             } else {
-                const lines = data.resultado.split('\n');
-                for (const line of lines) {
-                    if (line.startsWith('##') || line.startsWith('#')) appendResult(line + '\n', 'titulo');
-                    else if (line.startsWith('**') || line.startsWith('*')) appendResult(line + '\n', 'subtitulo');
-                    else if (line.match(/^[✅📊📝📌🔹]/)) appendResult(line + '\n', 'exito');
-                    else if (line.startsWith('❌')) appendResult(line + '\n', 'error');
-                    else appendResult(line + '\n', 'normal');
+                var lines = data.resultado.split('\n');
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i];
+                    if (line.startsWith('##') || line.startsWith('#')) {
+                        appendResult(line + '\n', 'titulo');
+                    } else if (line.startsWith('**') || line.startsWith('*')) {
+                        appendResult(line + '\n', 'subtitulo');
+                    } else if (line.match(/^[✅📊📝📌🔹]/)) {
+                        appendResult(line + '\n', 'exito');
+                    } else if (line.startsWith('❌')) {
+                        appendResult(line + '\n', 'error');
+                    } else {
+                        appendResult(line + '\n', 'normal');
+                    }
                 }
                 currentResult = data.resultado;
                 setStatus('✅ Listo', 'success');
                 setProgress(100);
-                setTimeout(() => setProgress(0), 1000);
+                setTimeout(function() { setProgress(0); }, 1000);
             }
         } catch (error) {
             clearInterval(stepInterval);
-            appendResult(`\n❌ Error: ${error.message}\n`, 'error');
+            appendResult('\n❌ Error: ' + error.message + '\n', 'error');
             setStatus('❌ Error', 'error');
             setProgress(0);
         }
@@ -524,12 +599,12 @@
     }
 
     async function chatLibre() {
-        const mensaje = getTemaInput().value.trim();
+        var mensaje = getTemaInput().value.trim();
         if (!mensaje) { alert('✏️ Escribe un mensaje.'); return; }
         if (isGenerating) return;
 
-        const modelo = getModeloSelect().value;
-        const btn = getGenerarBtn();
+        var modelo = getModeloSelect().value;
+        var btn = getGenerarBtn();
 
         isGenerating = true;
         btn.disabled = true;
@@ -537,38 +612,41 @@
         setStatus('💬 Pensando...', 'loading');
         setProgress(20);
 
-        const container = getResultContainer();
+        var container = getResultContainer();
         if (!container.querySelector('.result-content')) {
-            container.innerHTML = `<div class="result-content"></div>`;
+            container.innerHTML = '<div class="result-content"></div>';
         }
-        appendResult(`\n🧑 Tú: ${mensaje}\n`, 'subtitulo');
-        appendResult(`🤖 IA: `, 'exito');
+        appendResult('\n🧑 Tú: ' + mensaje + '\n', 'subtitulo');
+        appendResult('🤖 IA: ', 'exito');
 
         try {
-            const response = await fetch(`${API_BASE}/chat`, {
+            var response = await fetch(API_BASE + '/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mensaje, modelo })
+                body: JSON.stringify({ mensaje: mensaje, modelo: modelo })
             });
 
-            const text = await response.text();
-            let data;
-            try { data = JSON.parse(text); }
-            catch (e) { throw new Error(`Error del servidor (${response.status}). Verifica que Kalm AI esté corriendo.`); }
+            var text = await response.text();
+            var data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                throw new Error('Error del servidor (' + response.status + '). Verifica que Kalm AI esté corriendo.');
+            }
 
             setProgress(80);
 
             if (data.error) {
-                appendResult(`❌ Error: ${data.error}\n`, 'error');
+                appendResult('❌ Error: ' + data.error + '\n', 'error');
                 setStatus('❌ Error', 'error');
             } else {
-                appendResult(`${data.respuesta}\n\n`, 'normal');
+                appendResult(data.respuesta + '\n\n', 'normal');
                 setStatus('✅ Listo', 'success');
                 setProgress(100);
-                setTimeout(() => setProgress(0), 800);
+                setTimeout(function() { setProgress(0); }, 800);
             }
         } catch (error) {
-            appendResult(`❌ Error: ${error.message}\n`, 'error');
+            appendResult('❌ Error: ' + error.message + '\n', 'error');
             setStatus('❌ Error', 'error');
             setProgress(0);
         }
@@ -581,12 +659,12 @@
 
     function exportarTxt() {
         if (!currentResult) { alert('📋 No hay contenido para exportar.'); return; }
-        const blob = new Blob([currentResult], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        var blob = new Blob([currentResult], { type: 'text/plain;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
         a.href = url;
-        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
-        a.download = `${currentTab}_${timestamp}.txt`;
+        var timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+        a.download = currentTab + '_' + timestamp + '.txt';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -602,22 +680,39 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar: asegurar que solo el tab activo se muestra
+        var activeTab = document.querySelector('.tab.active');
+        if (activeTab) {
+            var tabName = activeTab.getAttribute('data-tab');
+            document.querySelectorAll('.tab-content').forEach(function(c) {
+                c.classList.remove('active');
+                c.style.display = 'none';
+            });
+            var activeContent = document.getElementById('tab-' + tabName);
+            activeContent.classList.add('active');
+            activeContent.style.display = 'flex';
+        }
+
         $('chat-generar').addEventListener('click', generar);
         $('chat-chat').addEventListener('click', chatLibre);
         $('kroot-generar').addEventListener('click', generar);
         $('btn-export').addEventListener('click', exportarTxt);
         $('btn-limpiar').addEventListener('click', limpiar);
 
-        document.querySelectorAll('#chat-tema, #kroot-tema').forEach(el => {
+        document.querySelectorAll('#chat-tema, #kroot-tema').forEach(function(el) {
             el.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generar(); }
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    generar();
+                }
             });
         });
 
         console.log('🧠 Kalm AI v2.0 cargado');
-        console.log(`📡 API Base: ${API_BASE}`);
+        console.log('📡 API Base: ' + API_BASE);
     });
 
+    // Exponer funciones globalmente
     window.switchTab = switchTab;
     window.generar = generar;
     window.chatLibre = chatLibre;
