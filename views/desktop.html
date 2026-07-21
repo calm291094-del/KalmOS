@@ -570,17 +570,25 @@
         </div>
     </div>
     <div class="window-body" style="display:flex;flex-direction:column;height:100%">
-        <!-- Controles -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px">
-            <button class="act" onclick="musicPlay()">▶️ Reproducir</button>
-            <button class="act" onclick="musicPause()">⏸️ Pausa</button>
-            <button class="act" onclick="musicNext()">⏭️ Siguiente</button>
-            <button class="act" onclick="musicPrev()">⏮️ Anterior</button>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-            <button class="act" onclick="musicVolumeUp()">🔊 Vol +</button>
-            <button class="act" onclick="musicVolumeDown()">🔉 Vol -</button>
-        </div>
+        
+<!-- Controles mejorados -->
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:10px">
+    <button class="act btn-shuffle" onclick="musicShuffle()" style="border:1px solid transparent;">🔀 Shuffle</button>
+    <button class="act btn-repeat" onclick="musicRepeat()" style="border:1px solid transparent;">🔁 Repetir</button>
+    <button class="act btn-play" onclick="musicPlay()">▶️ Play</button>
+    <button class="act" onclick="musicPause()">⏸️ Pausa</button>
+    <button class="act" onclick="musicNext()">⏭️ Siguiente</button>
+    <button class="act" onclick="musicPrev()">⏮️ Anterior</button>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+    <button class="act" onclick="musicVolumeUp()">🔊 Vol +</button>
+    <button class="act" onclick="musicVolumeDown()">🔉 Vol -</button>
+</div>
+<!-- Barra de volumen visual -->
+<div style="background:#0a0a1a;height:4px;border-radius:2px;margin-bottom:10px;overflow:hidden">
+    <div class="volume-bar" style="width:70%;height:100%;background:linear-gradient(to right,#6a0dad,#da70d6);border-radius:2px;"></div>
+</div>
+        
         <!-- Info y progreso -->
         <div style="background:#1a0033;padding:10px;border-radius:5px;border:1px solid #4b0082;margin-bottom:10px">
             <div id="music-info" style="color:#d8bfd8;font-size:13px;min-height:20px">🎵 Selecciona una canción</div>
