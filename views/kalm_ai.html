@@ -312,13 +312,13 @@
     </header>
 
     <div class="tabs">
-        <div class="tab active" data-tab="chat" onclick="switchTab('chat')">
+        <div class="tab active" data-tab="chat" onclick="window.switchTab('chat')">
             💬 Chat Academico <span class="badge">IA</span>
         </div>
-        <div class="tab" data-tab="kroot" onclick="switchTab('kroot')">
+        <div class="tab" data-tab="kroot" onclick="window.switchTab('kroot')">
             🏢 Kroot Corp <span class="badge">Empresarial</span>
         </div>
-        <div class="tab" data-tab="external" onclick="switchTab('external')">
+        <div class="tab" data-tab="external" onclick="window.switchTab('external')">
             🌐 Externos <span class="badge">Web</span>
         </div>
     </div>
@@ -404,7 +404,7 @@
                     <div style="font-size:32px;margin-bottom:10px;">🤖</div>
                     <h3 style="color:#da70d6;margin-bottom:6px;">Pollinations AI</h3>
                     <p style="color:#9370db;font-size:13px;margin-bottom:12px;">IA integrada en Kalm OS.</p>
-                    <button class="btn btn-secondary" onclick="switchTab('chat')">Usar Pollinations</button>
+                    <button class="btn btn-secondary" onclick="window.switchTab('chat')">Usar Pollinations</button>
                 </div>
             </div>
             <div style="margin-top:16px;padding:12px 16px;background:rgba(0,100,200,0.08);border-radius:8px;border:1px solid rgba(0,100,200,0.15);">
@@ -424,8 +424,10 @@
 
 <script>
     // ═══════════════════════════════════════════════════════
-    // ESTADO GLOBAL
+    // EXPONER FUNCIONES GLOBALMENTE
     // ═══════════════════════════════════════════════════════
+    
+    // Estado global
     var currentResult = '';
     var currentTab = 'chat';
     var isGenerating = false;
@@ -443,6 +445,10 @@
         if (el) {
             el.textContent = text;
             el.style.color = colors[type] || '#9370db';
+        }
+        var dot = document.querySelector('.dot');
+        if (dot) {
+            dot.style.background = type === 'error' ? '#ff4444' : type === 'loading' ? '#ffaa00' : '#00cc66';
         }
     }
 
@@ -503,6 +509,7 @@
 
     // ═══ CAMBIAR PESTAÑA ═══
     function switchTab(tab) {
+        console.log('[KalmAI] Cambiando a tab:', tab);
         currentTab = tab;
         
         document.querySelectorAll('.tab').forEach(function(t) {
@@ -719,67 +726,40 @@
         setProgress(0);
     }
 
-    // ═══ INICIALIZAR ═══
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('[KalmAI] DOM cargado - Inicializando...');
-        console.log('[KalmAI] API Base:', API_BASE);
-
-        // Conectar botones con eventos click - MÉTODO DIRECTO
-        var btnGenerar = $('chat-generar');
-        var btnChat = $('chat-chat');
-        var btnKroot = $('kroot-generar');
-        var btnExport = $('btn-export');
-        var btnLimpiar = $('btn-limpiar');
-
-        console.log('[KalmAI] Botones encontrados:', {
-            generar: !!btnGenerar,
-            chat: !!btnChat,
-            kroot: !!btnKroot,
-            export: !!btnExport,
-            limpiar: !!btnLimpiar
-        });
-
-        // Asignar eventos directamente
-        if (btnGenerar) {
-            btnGenerar.onclick = generar;
-            console.log('[KalmAI] Evento click asignado a Generar');
-        }
-        if (btnChat) {
-            btnChat.onclick = chatLibre;
-            console.log('[KalmAI] Evento click asignado a Chat');
-        }
-        if (btnKroot) {
-            btnKroot.onclick = generar;
-            console.log('[KalmAI] Evento click asignado a Kroot');
-        }
-        if (btnExport) {
-            btnExport.onclick = exportarTxt;
-            console.log('[KalmAI] Evento click asignado a Exportar');
-        }
-        if (btnLimpiar) {
-            btnLimpiar.onclick = limpiar;
-            console.log('[KalmAI] Evento click asignado a Limpiar');
-        }
-
-        // Enter para generar
-        document.querySelectorAll('#chat-tema, #kroot-tema').forEach(function(el) {
-            el.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    generar();
-                }
-            });
-        });
-
-        console.log('[KalmAI] Inicializacion completada');
-    });
-
-    // Exponer funciones globalmente
+    // ═══ INICIALIZAR - EXPONER FUNCIONES AL OBJETO WINDOW ═══
     window.switchTab = switchTab;
     window.generar = generar;
     window.chatLibre = chatLibre;
     window.exportarTxt = exportarTxt;
     window.limpiar = limpiar;
+
+    // ═══ CONFIGURAR EVENTOS DESPUÉS DE QUE EL DOM ESTÉ LISTO ═══
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('[KalmAI] DOM cargado - Inicializando...');
+        console.log('[KalmAI] API Base:', API_BASE);
+
+        // Asegurar que solo el tab activo se muestra
+        var activeTab = document.querySelector('.tab.active');
+        if (activeTab) {
+            var tabName = activeTab.getAttribute('data-tab');
+            document.querySelectorAll('.tab-content').forEach(function(c) {
+                c.classList.remove('active');
+                c.style.display = 'none';
+            });
+            var activeContent = $('tab-' + tabName);
+            if (activeContent) {
+                activeContent.classList.add('active');
+                activeContent.style.display = 'flex';
+            }
+        }
+
+        console.log('[KalmAI] Inicializacion completada');
+        console.log('[KalmAI] Funciones disponibles:', {
+            switchTab: typeof window.switchTab,
+            generar: typeof window.generar,
+            chatLibre: typeof window.chatLibre
+        });
+    });
 </script>
 </body>
 </html>
