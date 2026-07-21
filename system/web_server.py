@@ -107,7 +107,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
 
     
     def _serve_kalm_ai(self, path):
-        """Sirve Kalm AI directamente sin Flask"""
+        """Sirve Kalm AI - CORREGIDO"""
         if not KALM_AI_AVAILABLE:
             self.send_response(503)
             self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -124,11 +124,12 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         if not route or route == "":
             route = "/"
     
-        print(f"[KalmAI] Ruta solicitada: {route}")
+        print(f"[KalmAI] Ruta: {route}, Metodo: {self.command}")
     
-        # GET requests
+        # ═══ GET ═══
         if self.command == "GET":
             if route == "/" or route == "/index" or route == "/index.html":
+                from system.Program.kalm_ai_handler import serve_kalm_ai_page
                 content = serve_kalm_ai_page()
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -139,6 +140,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 return
         
             elif route == "/health":
+                from system.Program.kalm_ai_handler import handle_health
                 result, code = handle_health()
                 self.send_response(code)
                 self.send_header("Content-Type", "application/json")
@@ -152,7 +154,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 return
     
-        # POST requests
+        # ═══ POST ═══
         elif self.command == "POST":
             content_length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(content_length).decode("utf-8")
@@ -160,8 +162,14 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             try:
                 data = json.loads(body) if body else {}
             except Exception as e:
-                print(f"[KalmAI] Error parseando JSON: {e}")
-                data = {}
+                print(f"[KalmAI] Error JSON: {e}")
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "JSON invalido"}).encode("utf-8"))
+                return
+        
+            from system.Program.kalm_ai_handler import handle_generar, handle_chat
         
             if route == "/generar":
                 result, code = handle_generar(data)
