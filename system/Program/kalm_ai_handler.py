@@ -3,7 +3,7 @@
 
 """
 KALM AI - Handler para integrar en el servidor principal
-VERSIÓN COMPLETA Y FUNCIONAL - SIN FLASK
+VERSION FUNCIONAL CON POLLINATIONS AI
 """
 
 import json
@@ -22,7 +22,7 @@ def instalar_dependencias():
         try:
             __import__(pkg.replace("-", "_"))
         except ImportError:
-            print(f"📦 Instalando {pkg}...")
+            print(f"Instalando {pkg}...")
             subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "--quiet"])
 
 instalar_dependencias()
@@ -38,16 +38,19 @@ class IAProvider:
         payload = {"model": model, "messages": [{"role": "user", "content": prompt}], "stream": False}
         
         try:
-            response = requests.post(url, json=payload, timeout=60)
+            print(f"🔄 Llamando a Pollinations AI...")
+            response = requests.post(url, json=payload, timeout=120)
             response.raise_for_status()
             data = response.json()
             
             if "choices" not in data or not data["choices"]:
                 raise Exception("Respuesta sin choices")
             
-            return data["choices"][0]["message"]["content"]
+            resultado = data["choices"][0]["message"]["content"]
+            print(f"✅ Pollinations respondió con {len(resultado)} caracteres")
+            return resultado
         except requests.exceptions.Timeout:
-            raise Exception("Timeout conectando con Pollinations")
+            raise Exception("Timeout conectando con Pollinations (más de 120 segundos)")
         except Exception as e:
             raise Exception(f"Pollinations falló: {str(e)}")
     
@@ -82,17 +85,17 @@ class IAProvider:
                 time.sleep(1)
                 continue
         
-        return "❌ Error: Todos los proveedores fallaron. Intenta de nuevo."
+        return "Error: Todos los proveedores fallaron. Intenta de nuevo."
 
 # ============================================================
-# 3. HTML TEMPLATE
+# 3. HTML TEMPLATE CON TODAS LAS FUNCIONALIDADES
 # ============================================================
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧠 Kalm AI</title>
+    <title>Kalm AI</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -107,7 +110,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         ::-webkit-scrollbar-thumb { background: #6a0dad; border-radius: 3px; }
 
         .app-container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 0 auto;
             background: rgba(26, 0, 51, 0.7);
             backdrop-filter: blur(20px);
@@ -175,6 +178,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             border-bottom: 1px solid rgba(106,13,173,0.1);
             padding: 0 16px;
             gap: 4px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
         }
         .tab {
             padding: 12px 20px;
@@ -187,6 +192,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             display: flex;
             align-items: center;
             gap: 8px;
+            user-select: none;
         }
         .tab:hover { color: #da70d6; background: rgba(106,13,173,0.08); }
         .tab.active {
@@ -203,6 +209,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }
         .tab.active .badge { background: rgba(218,112,214,0.15); color: #da70d6; }
 
+        .tab-content {
+            display: none !important;
+            flex: 1;
+            flex-direction: column;
+        }
+        .tab-content.active {
+            display: flex !important;
+        }
+
         .controls-panel {
             padding: 14px 20px;
             background: rgba(10,5,20,0.25);
@@ -211,6 +226,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             flex-wrap: wrap;
             gap: 10px;
             align-items: center;
+            flex-shrink: 0;
         }
         .controls-panel label { color: #9370db; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         .controls-panel select {
@@ -270,13 +286,19 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             color: #fff;
         }
         .btn-success:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,204,102,0.3); }
+        .btn-external {
+            background: rgba(0,100,200,0.2);
+            color: #4da6ff;
+            border: 1px solid rgba(0,100,200,0.2);
+        }
+        .btn-external:hover { background: rgba(0,100,200,0.35); }
         .btn-sm { padding: 4px 12px; font-size: 11px; }
 
         .result-area {
             flex: 1;
             padding: 16px 20px;
-            min-height: 320px;
-            max-height: 520px;
+            min-height: 280px;
+            max-height: 480px;
             overflow-y: auto;
             background: rgba(0,0,0,0.12);
             margin: 0 14px 14px 14px;
@@ -302,16 +324,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             gap: 8px;
             margin: 3px 0;
         }
-        .result-area .result-content .step .spinner-small {
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(106,13,173,0.2);
-            border-radius: 50%;
-            border-top-color: #da70d6;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
 
         .empty-state {
             display: flex;
@@ -319,7 +331,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             align-items: center;
             justify-content: center;
             height: 100%;
-            min-height: 250px;
+            min-height: 200px;
             text-align: center;
             color: #9370db;
         }
@@ -336,6 +348,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             flex-wrap: wrap;
             gap: 8px;
             background: rgba(10,5,20,0.15);
+            flex-shrink: 0;
         }
         .app-footer .info { font-size: 11px; color: #6a0dad; }
         .app-footer .actions { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -348,6 +361,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             margin: 0 14px 2px 14px;
             opacity: 0;
             transition: opacity 0.4s;
+            flex-shrink: 0;
         }
         .progress-container.active { opacity: 1; }
         .progress-container .progress-bar {
@@ -358,14 +372,25 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             transition: width 0.5s ease;
         }
 
+        .external-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 0 20px 10px 20px;
+        }
+        .external-links .btn {
+            font-size: 12px;
+            padding: 5px 14px;
+        }
+
         @media (max-width: 768px) {
             .app-header { padding: 14px 16px; }
             .app-header h1 { font-size: 17px; }
-            .tabs { padding: 0 10px; overflow-x: auto; }
+            .tabs { padding: 0 10px; overflow-x: auto; flex-wrap: nowrap; }
             .tab { padding: 10px 14px; font-size: 12px; white-space: nowrap; }
             .controls-panel { padding: 10px 14px; }
             .controls-panel input[type="text"] { min-width: 100px; font-size: 12px; }
-            .result-area { padding: 12px 14px; margin: 0 10px 10px 10px; min-height: 220px; max-height: 380px; }
+            .result-area { padding: 12px 14px; margin: 0 10px 10px 10px; min-height: 200px; max-height: 350px; }
             .btn { font-size: 12px; padding: 6px 12px; }
         }
         @media (max-width: 480px) {
@@ -376,7 +401,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             .controls-panel input[type="text"] { min-width: unset; }
             .controls-panel .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
             .controls-panel .btn-group .btn { flex: 1; justify-content: center; }
-            .result-area { min-height: 180px; max-height: 320px; }
+            .result-area { min-height: 160px; max-height: 280px; }
         }
     </style>
 </head>
@@ -404,15 +429,19 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <div class="tab" data-tab="kroot" onclick="switchTab('kroot')">
             🏢 Kroot Corp <span class="badge">Empresarial</span>
         </div>
+        <div class="tab" data-tab="external" onclick="switchTab('external')">
+            🌐 Externos <span class="badge">Web</span>
+        </div>
     </div>
 
     <div class="progress-container" id="progress-container">
         <div class="progress-bar" id="progress-bar"></div>
     </div>
 
+    <!-- TAB: CHAT ACADEMICO -->
     <div class="tab-content active" id="tab-chat">
         <div class="controls-panel">
-            <label>🧠 Modelo</label>
+            <label>Modelo</label>
             <select id="chat-modelo">
                 <option value="openai">OpenAI</option>
                 <option value="claude">Claude</option>
@@ -421,24 +450,25 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 <option value="llama">Llama</option>
                 <option value="mistral">Mistral</option>
             </select>
-            <input type="text" id="chat-tema" placeholder="Escribe el tema del trabajo académico..." />
+            <input type="text" id="chat-tema" placeholder="Tema del trabajo academico..." />
             <div class="btn-group">
-                <button class="btn btn-primary" id="chat-generar">📝 Generar</button>
-                <button class="btn btn-secondary" id="chat-chat">💬 Chat</button>
+                <button class="btn btn-primary" id="chat-generar">Generar</button>
+                <button class="btn btn-secondary" id="chat-chat">Chat</button>
             </div>
         </div>
         <div class="result-area" id="chat-result">
             <div class="empty-state">
                 <div class="icon">📚</div>
-                <div class="title">Chat Académico</div>
-                <div class="desc">Escribe un tema y pulsa "Generar" para crear un trabajo académico profesional.</div>
+                <div class="title">Chat Academico</div>
+                <div class="desc">Escribe un tema y pulsa "Generar" para crear un trabajo academico.</div>
             </div>
         </div>
     </div>
 
+    <!-- TAB: KROOT CORP -->
     <div class="tab-content" id="tab-kroot">
         <div class="controls-panel">
-            <label>🧠 Modelo</label>
+            <label>Modelo</label>
             <select id="kroot-modelo">
                 <option value="openai">OpenAI</option>
                 <option value="claude">Claude</option>
@@ -447,25 +477,58 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 <option value="llama">Llama</option>
                 <option value="mistral">Mistral</option>
             </select>
-            <input type="text" id="kroot-tema" placeholder="Escribe el tema del informe ejecutivo..." />
+            <input type="text" id="kroot-tema" placeholder="Tema del informe ejecutivo..." />
             <div class="btn-group">
-                <button class="btn btn-primary" id="kroot-generar">📊 Generar Informe</button>
+                <button class="btn btn-primary" id="kroot-generar">Generar Informe</button>
             </div>
         </div>
         <div class="result-area" id="kroot-result">
             <div class="empty-state">
                 <div class="icon">🏢</div>
                 <div class="title">Kroot Corp IA</div>
-                <div class="desc">Genera informes ejecutivos profesionales con estructura definida.</div>
+                <div class="desc">Genera informes ejecutivos profesionales.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB: EXTERNOS -->
+    <div class="tab-content" id="tab-external">
+        <div class="controls-panel">
+            <label>🌐 Acceso a IAs externas</label>
+            <span style="color:#9370db;font-size:13px;">Abre en nueva pestaña para usar directamente</span>
+        </div>
+        <div style="padding:16px 20px;flex:1;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
+                <div style="background:rgba(10,5,20,0.4);border-radius:12px;padding:20px;border:1px solid rgba(106,13,173,0.15);">
+                    <div style="font-size:32px;margin-bottom:10px;">🔵</div>
+                    <h3 style="color:#da70d6;margin-bottom:6px;">DeepSeek</h3>
+                    <p style="color:#9370db;font-size:13px;margin-bottom:12px;">IA avanzada con razonamiento profundo. Gratuita y sin limites.</p>
+                    <button class="btn btn-external" onclick="window.open('https://chat.deepseek.com/a/chat/','_blank')">Abrir DeepSeek →</button>
+                </div>
+                <div style="background:rgba(10,5,20,0.4);border-radius:12px;padding:20px;border:1px solid rgba(106,13,173,0.15);">
+                    <div style="font-size:32px;margin-bottom:10px;">🟣</div>
+                    <h3 style="color:#da70d6;margin-bottom:6px;">Qwen AI</h3>
+                    <p style="color:#9370db;font-size:13px;margin-bottom:12px;">IA de Alibaba Cloud. Multimodal y con capacidad de contexto largo.</p>
+                    <button class="btn btn-external" onclick="window.open('https://chat.qwen.ai/c/','_blank')">Abrir Qwen →</button>
+                </div>
+                <div style="background:rgba(10,5,20,0.4);border-radius:12px;padding:20px;border:1px solid rgba(106,13,173,0.15);">
+                    <div style="font-size:32px;margin-bottom:10px;">🤖</div>
+                    <h3 style="color:#da70d6;margin-bottom:6px;">Pollinations AI</h3>
+                    <p style="color:#9370db;font-size:13px;margin-bottom:12px;">IA integrada en Kalm OS. Usa las pestañas Chat Academico y Kroot Corp.</p>
+                    <button class="btn btn-secondary" onclick="switchTab('chat')">Usar Pollinations →</button>
+                </div>
+            </div>
+            <div style="margin-top:16px;padding:12px 16px;background:rgba(0,100,200,0.08);border-radius:8px;border:1px solid rgba(0,100,200,0.15);">
+                <p style="color:#9370db;font-size:12px;">💡 <b>Consejo:</b> DeepSeek y Qwen son servicios externos. Al hacer clic se abriran en una nueva pestaña. Pollinations AI esta integrado directamente en Kalm OS.</p>
             </div>
         </div>
     </div>
 
     <footer class="app-footer">
-        <span class="info">🔒 Pollinations AI · DuckDuckGo · Sin API Key</span>
+        <span class="info">Pollinations AI · DuckDuckGo · Sin API Key</span>
         <div class="actions">
-            <button class="btn btn-success btn-sm" id="btn-export">📄 Exportar</button>
-            <button class="btn btn-secondary btn-sm" id="btn-limpiar">🗑️ Limpiar</button>
+            <button class="btn btn-success btn-sm" id="btn-export">Exportar</button>
+            <button class="btn btn-secondary btn-sm" id="btn-limpiar">Limpiar</button>
         </div>
     </footer>
 </div>
@@ -474,238 +537,330 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     // ═══════════════════════════════════════════════════════
     // ESTADO GLOBAL
     // ═══════════════════════════════════════════════════════
-    let currentResult = '';
-    let currentTab = 'chat';
-    let isGenerating = false;
-    const API_BASE = '/kalm-ai';
+    var currentResult = '';
+    var currentTab = 'chat';
+    var isGenerating = false;
+    var API_BASE = '/kalm-ai';
 
-    const $ = id => document.getElementById(id);
-    const statusText = $('status-text');
-    const progressContainer = $('progress-container');
-    const progressBar = $('progress-bar');
+    var $ = function(id) { return document.getElementById(id); };
+    var statusText = $('status-text');
+    var progressContainer = $('progress-container');
+    var progressBar = $('progress-bar');
 
-    function setStatus(text, type = 'info') {
-        const colors = { info: '#9370db', success: '#00cc66', error: '#ff4444', loading: '#ffaa00' };
+    function setStatus(text, type) {
+        type = type || 'info';
+        var colors = { info: '#9370db', success: '#00cc66', error: '#ff4444', loading: '#ffaa00' };
         statusText.textContent = text;
         statusText.style.color = colors[type] || '#9370db';
-        const dot = document.querySelector('.dot');
+        var dot = document.querySelector('.dot');
         if (dot) dot.style.background = type === 'error' ? '#ff4444' : type === 'loading' ? '#ffaa00' : '#00cc66';
     }
 
     function setProgress(pct) {
-        if (pct > 0) { progressContainer.classList.add('active'); progressBar.style.width = Math.min(pct, 100) + '%'; }
-        else { progressContainer.classList.remove('active'); progressBar.style.width = '0%'; }
+        if (pct > 0) {
+            progressContainer.classList.add('active');
+            progressBar.style.width = Math.min(pct, 100) + '%';
+        } else {
+            progressContainer.classList.remove('active');
+            progressBar.style.width = '0%';
+        }
     }
 
-    function getResultContainer() { return $(currentTab === 'chat' ? 'chat-result' : 'kroot-result'); }
-    function getTemaInput() { return $(currentTab === 'chat' ? 'chat-tema' : 'kroot-tema'); }
-    function getModeloSelect() { return $(currentTab === 'chat' ? 'chat-modelo' : 'kroot-modelo'); }
-    function getGenerarBtn() { return $(currentTab === 'chat' ? 'chat-generar' : 'kroot-generar'); }
+    function getResultContainer() {
+        return $(currentTab === 'chat' ? 'chat-result' : (currentTab === 'kroot' ? 'kroot-result' : null));
+    }
+
+    function getTemaInput() {
+        return $(currentTab === 'chat' ? 'chat-tema' : 'kroot-tema');
+    }
+
+    function getModeloSelect() {
+        return $(currentTab === 'chat' ? 'chat-modelo' : 'kroot-modelo');
+    }
+
+    function getGenerarBtn() {
+        return $(currentTab === 'chat' ? 'chat-generar' : 'kroot-generar');
+    }
 
     function switchTab(tab) {
         currentTab = tab;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
-        $(`tab-${tab}`).classList.add('active');
-        setStatus(`Listo - ${tab === 'chat' ? 'Chat' : 'Kroot'}`, 'info');
+        
+        document.querySelectorAll('.tab').forEach(function(t) {
+            t.classList.remove('active');
+        });
+        var tabEl = document.querySelector('.tab[data-tab="' + tab + '"]');
+        if (tabEl) tabEl.classList.add('active');
+        
+        document.querySelectorAll('.tab-content').forEach(function(c) {
+            c.classList.remove('active');
+            c.style.display = 'none';
+        });
+        var contentEl = document.getElementById('tab-' + tab);
+        if (contentEl) {
+            contentEl.classList.add('active');
+            contentEl.style.display = 'flex';
+        }
+        
+        setStatus('Listo', 'info');
         setProgress(0);
     }
 
-    function appendResult(text, type = 'normal') {
-        const container = getResultContainer();
-        const classes = { titulo: 'titulo', subtitulo: 'subtitulo', error: 'error', exito: 'exito', step: 'step', normal: '' };
-        const cls = classes[type] || '';
-        let content = container.querySelector('.result-content');
-        if (!content) { content = document.createElement('div'); content.className = 'result-content'; container.innerHTML = ''; container.appendChild(content); }
-        if (cls) { content.innerHTML += `<span class="${cls}">${text}</span>`; }
-        else { content.innerHTML += text; }
+    function appendResult(text, type) {
+        type = type || 'normal';
+        var container = getResultContainer();
+        if (!container) return;
+        
+        var classes = {
+            titulo: 'titulo',
+            subtitulo: 'subtitulo',
+            error: 'error',
+            exito: 'exito',
+            step: 'step',
+            normal: ''
+        };
+        var cls = classes[type] || '';
+        var content = container.querySelector('.result-content');
+        if (!content) {
+            content = document.createElement('div');
+            content.className = 'result-content';
+            container.innerHTML = '';
+            container.appendChild(content);
+        }
+        if (cls) {
+            content.innerHTML += '<span class="' + cls + '">' + text + '</span>';
+        } else {
+            content.innerHTML += text;
+        }
         container.scrollTop = container.scrollHeight;
     }
 
     function clearResult() {
-        const container = getResultContainer();
-        container.innerHTML = `<div class="empty-state"><div class="icon">${currentTab === 'chat' ? '📚' : '🏢'}</div><div class="title">${currentTab === 'chat' ? 'Chat Académico' : 'Kroot Corp IA'}</div><div class="desc">${currentTab === 'chat' ? 'Escribe un tema y pulsa "Generar".' : 'Genera informes ejecutivos profesionales.'}</div></div>`;
+        var container = getResultContainer();
+        if (!container) return;
+        
+        var icon = currentTab === 'chat' ? '📚' : '🏢';
+        var title = currentTab === 'chat' ? 'Chat Academico' : 'Kroot Corp IA';
+        var desc = currentTab === 'chat' 
+            ? 'Escribe un tema y pulsa "Generar" para crear un trabajo academico.'
+            : 'Genera informes ejecutivos profesionales.';
+        container.innerHTML = '<div class="empty-state"><div class="icon">' + icon + '</div><div class="title">' + title + '</div><div class="desc">' + desc + '</div></div>';
         currentResult = '';
         setProgress(0);
     }
 
-    async function generar() {
-        const tema = getTemaInput().value.trim();
-        if (!tema) { alert('✏️ Escribe un tema.'); return; }
+    function generar() {
+        var tema = getTemaInput().value.trim();
+        if (!tema) { alert('Escribe un tema.'); return; }
         if (isGenerating) return;
 
-        const modelo = getModeloSelect().value;
-        const tipo = currentTab;
-        const btn = getGenerarBtn();
+        var modelo = getModeloSelect().value;
+        var tipo = currentTab;
+        var btn = getGenerarBtn();
 
         isGenerating = true;
         btn.disabled = true;
-        btn.innerHTML = '⏳ Generando...';
+        btn.innerHTML = 'Generando...';
 
         setProgress(10);
-        setStatus('⏳ Generando...', 'loading');
+        setStatus('Generando...', 'loading');
 
-        const container = getResultContainer();
-        container.innerHTML = `<div class="result-content"></div>`;
-        appendResult(`📝 Generando ${tipo === 'chat' ? 'trabajo académico' : 'informe ejecutivo'} sobre: "${tema}"\n`, 'titulo');
-        appendResult('═══════════════════════════════════════════════\n\n', 'normal');
+        var container = getResultContainer();
+        container.innerHTML = '<div class="result-content"></div>';
+        appendResult('Generando ' + (tipo === 'chat' ? 'trabajo academico' : 'informe ejecutivo') + ' sobre: "' + tema + '"\n', 'titulo');
+        appendResult('========================================\n\n', 'normal');
 
-        const steps = [
-            { pct: 20, msg: '🔍 Conectando con proveedores de IA...' },
-            { pct: 40, msg: '🧠 Procesando tu solicitud...' },
-            { pct: 60, msg: '✍️ Generando contenido...' },
-            { pct: 80, msg: '📊 Estructurando el resultado...' }
+        var steps = [
+            { pct: 20, msg: 'Conectando con proveedores de IA...' },
+            { pct: 40, msg: 'Procesando tu solicitud...' },
+            { pct: 60, msg: 'Generando contenido...' },
+            { pct: 80, msg: 'Estructurando el resultado...' }
         ];
-        let stepIndex = 0;
-        const stepInterval = setInterval(() => {
+        var stepIndex = 0;
+        var stepInterval = setInterval(function() {
             if (stepIndex < steps.length) {
-                const step = steps[stepIndex];
+                var step = steps[stepIndex];
                 setProgress(step.pct);
-                appendResult(`  ${step.msg}\n`, 'step');
+                appendResult('  ' + step.msg + '\n', 'step');
                 stepIndex++;
             }
         }, 700);
 
-        try {
-            const response = await fetch(`${API_BASE}/generar`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tema, modelo, tipo })
-            });
-
-            const text = await response.text();
-            let data;
-            try { data = JSON.parse(text); }
-            catch (e) { throw new Error(`Error del servidor (${response.status}). Asegúrate de que Kalm AI esté ejecutándose.`); }
-
+        fetch(API_BASE + '/generar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tema: tema, modelo: modelo, tipo: tipo })
+        })
+        .then(function(response) {
+            return response.text();
+        })
+        .then(function(text) {
             clearInterval(stepInterval);
+            var data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                throw new Error('Error del servidor (' + text.substring(0, 100) + '). Asegurate de que Kalm AI este ejecutandose.');
+            }
             setProgress(95);
 
             if (data.error) {
-                appendResult(`\n❌ Error: ${data.error}\n`, 'error');
-                setStatus('❌ Error', 'error');
+                appendResult('\nError: ' + data.error + '\n', 'error');
+                setStatus('Error', 'error');
             } else {
-                const lines = data.resultado.split('\n');
-                for (const line of lines) {
-                    if (line.startsWith('##') || line.startsWith('#')) appendResult(line + '\n', 'titulo');
-                    else if (line.startsWith('**') || line.startsWith('*')) appendResult(line + '\n', 'subtitulo');
-                    else if (line.match(/^[✅📊📝📌🔹]/)) appendResult(line + '\n', 'exito');
-                    else if (line.startsWith('❌')) appendResult(line + '\n', 'error');
-                    else appendResult(line + '\n', 'normal');
+                var lines = data.resultado.split('\n');
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i];
+                    if (line.startsWith('##') || line.startsWith('#')) {
+                        appendResult(line + '\n', 'titulo');
+                    } else if (line.startsWith('**') || line.startsWith('*')) {
+                        appendResult(line + '\n', 'subtitulo');
+                    } else if (line.match(/^[✅📊📝📌🔹]/)) {
+                        appendResult(line + '\n', 'exito');
+                    } else if (line.startsWith('❌')) {
+                        appendResult(line + '\n', 'error');
+                    } else {
+                        appendResult(line + '\n', 'normal');
+                    }
                 }
                 currentResult = data.resultado;
-                setStatus('✅ Listo', 'success');
+                setStatus('Listo', 'success');
                 setProgress(100);
-                setTimeout(() => setProgress(0), 1000);
+                setTimeout(function() { setProgress(0); }, 1000);
             }
-        } catch (error) {
+        })
+        .catch(function(error) {
             clearInterval(stepInterval);
-            appendResult(`\n❌ Error: ${error.message}\n`, 'error');
-            setStatus('❌ Error', 'error');
+            appendResult('\nError: ' + error.message + '\n', 'error');
+            setStatus('Error', 'error');
             setProgress(0);
-        }
-
-        isGenerating = false;
-        btn.disabled = false;
-        btn.innerHTML = currentTab === 'chat' ? '📝 Generar' : '📊 Generar Informe';
+        })
+        .finally(function() {
+            isGenerating = false;
+            btn.disabled = false;
+            btn.innerHTML = currentTab === 'chat' ? 'Generar' : 'Generar Informe';
+        });
     }
 
-    async function chatLibre() {
-        const mensaje = getTemaInput().value.trim();
-        if (!mensaje) { alert('✏️ Escribe un mensaje.'); return; }
+    function chatLibre() {
+        var mensaje = getTemaInput().value.trim();
+        if (!mensaje) { alert('Escribe un mensaje.'); return; }
         if (isGenerating) return;
 
-        const modelo = getModeloSelect().value;
-        const btn = getGenerarBtn();
+        var modelo = getModeloSelect().value;
+        var btn = getGenerarBtn();
 
         isGenerating = true;
         btn.disabled = true;
-        btn.innerHTML = '⏳ Pensando...';
-        setStatus('💬 Pensando...', 'loading');
+        btn.innerHTML = 'Pensando...';
+        setStatus('Pensando...', 'loading');
         setProgress(20);
 
-        const container = getResultContainer();
+        var container = getResultContainer();
         if (!container.querySelector('.result-content')) {
-            container.innerHTML = `<div class="result-content"></div>`;
+            container.innerHTML = '<div class="result-content"></div>';
         }
-        appendResult(`\n🧑 Tú: ${mensaje}\n`, 'subtitulo');
-        appendResult(`🤖 IA: `, 'exito');
+        appendResult('\nTu: ' + mensaje + '\n', 'subtitulo');
+        appendResult('IA: ', 'exito');
 
-        try {
-            const response = await fetch(`${API_BASE}/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mensaje, modelo })
-            });
-
-            const text = await response.text();
-            let data;
-            try { data = JSON.parse(text); }
-            catch (e) { throw new Error(`Error del servidor (${response.status}). Verifica que Kalm AI esté corriendo.`); }
-
+        fetch(API_BASE + '/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mensaje: mensaje, modelo: modelo })
+        })
+        .then(function(response) {
+            return response.text();
+        })
+        .then(function(text) {
+            var data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                throw new Error('Error del servidor (' + text.substring(0, 100) + '). Verifica que Kalm AI este corriendo.');
+            }
             setProgress(80);
 
             if (data.error) {
-                appendResult(`❌ Error: ${data.error}\n`, 'error');
-                setStatus('❌ Error', 'error');
+                appendResult('Error: ' + data.error + '\n', 'error');
+                setStatus('Error', 'error');
             } else {
-                appendResult(`${data.respuesta}\n\n`, 'normal');
-                setStatus('✅ Listo', 'success');
+                appendResult(data.respuesta + '\n\n', 'normal');
+                setStatus('Listo', 'success');
                 setProgress(100);
-                setTimeout(() => setProgress(0), 800);
+                setTimeout(function() { setProgress(0); }, 800);
             }
-        } catch (error) {
-            appendResult(`❌ Error: ${error.message}\n`, 'error');
-            setStatus('❌ Error', 'error');
+        })
+        .catch(function(error) {
+            appendResult('Error: ' + error.message + '\n', 'error');
+            setStatus('Error', 'error');
             setProgress(0);
-        }
-
-        isGenerating = false;
-        btn.disabled = false;
-        btn.innerHTML = currentTab === 'chat' ? '📝 Generar' : '📊 Generar Informe';
-        getTemaInput().value = '';
+        })
+        .finally(function() {
+            isGenerating = false;
+            btn.disabled = false;
+            btn.innerHTML = currentTab === 'chat' ? 'Generar' : 'Generar Informe';
+            getTemaInput().value = '';
+        });
     }
 
     function exportarTxt() {
-        if (!currentResult) { alert('📋 No hay contenido para exportar.'); return; }
-        const blob = new Blob([currentResult], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        if (!currentResult) { alert('No hay contenido para exportar.'); return; }
+        var blob = new Blob([currentResult], { type: 'text/plain;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
         a.href = url;
-        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
-        a.download = `${currentTab}_${timestamp}.txt`;
+        var timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+        a.download = currentTab + '_' + timestamp + '.txt';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        setStatus('📄 Exportado', 'success');
+        setStatus('Exportado', 'success');
     }
 
     function limpiar() {
         clearResult();
         getTemaInput().value = '';
-        setStatus('🗑️ Limpiado', 'info');
+        setStatus('Limpiado', 'info');
         setProgress(0);
     }
 
+    // Inicializar
     document.addEventListener('DOMContentLoaded', function() {
+        // Asegurar que solo el tab activo se muestra
+        var activeTab = document.querySelector('.tab.active');
+        if (activeTab) {
+            var tabName = activeTab.getAttribute('data-tab');
+            document.querySelectorAll('.tab-content').forEach(function(c) {
+                c.classList.remove('active');
+                c.style.display = 'none';
+            });
+            var activeContent = document.getElementById('tab-' + tabName);
+            if (activeContent) {
+                activeContent.classList.add('active');
+                activeContent.style.display = 'flex';
+            }
+        }
+
         $('chat-generar').addEventListener('click', generar);
         $('chat-chat').addEventListener('click', chatLibre);
         $('kroot-generar').addEventListener('click', generar);
         $('btn-export').addEventListener('click', exportarTxt);
         $('btn-limpiar').addEventListener('click', limpiar);
 
-        document.querySelectorAll('#chat-tema, #kroot-tema').forEach(el => {
+        document.querySelectorAll('#chat-tema, #kroot-tema').forEach(function(el) {
             el.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generar(); }
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    generar();
+                }
             });
         });
 
-        console.log('🧠 Kalm AI v2.0 cargado');
-        console.log(`📡 API Base: ${API_BASE}`);
+        console.log('Kalm AI v3.0 cargado');
+        console.log('API Base: ' + API_BASE);
     });
 
+    // Exponer funciones globalmente
     window.switchTab = switchTab;
     window.generar = generar;
     window.chatLibre = chatLibre;
@@ -729,6 +884,7 @@ def serve_kalm_ai_page():
         else:
             return HTML_TEMPLATE
     except Exception as e:
+        print(f"Error sirviendo pagina: {e}")
         return HTML_TEMPLATE
 
 def handle_generar(data):
@@ -738,24 +894,24 @@ def handle_generar(data):
     tipo = data.get('tipo', 'chat')
     
     if not tema:
-        return {"error": "El tema no puede estar vacío"}, 400
+        return {"error": "El tema no puede estar vacio"}, 400
     
     if tipo == 'chat':
-        prompt = f"""Escribe un trabajo académico completo y profesional sobre: {tema}
+        prompt = f"""Escribe un trabajo academico completo y profesional sobre: {tema}
 
 ESTRUCTURA EXACTA:
-## INTRODUCCIÓN
+## INTRODUCCION
 ## INTRODUCTION (in English)
 ## DESARROLLO
 ## CONCLUSIONES
-## BIBLIOGRAFÍA
+## BIBLIOGRAFIA
 
-El trabajo debe ser completo, bien estructurado, con lenguaje formal y académico."""
+El trabajo debe ser completo, bien estructurado, con lenguaje formal y academico."""
     else:
         prompt = f"""Genera un informe ejecutivo profesional sobre: {tema}
 
 ESTRUCTURA EXACTA:
-## INTRODUCCIÓN
+## INTRODUCCION
 ## PUNTOS CLAVE
 ## CONCLUSIONES
 ## RECOMENDACIONES
@@ -763,10 +919,12 @@ ESTRUCTURA EXACTA:
 El informe debe ser ejecutivo, directo y orientado a la toma de decisiones."""
     
     try:
-        print(f"📝 Generando: {tema[:50]}...")
+        print(f"Generando: {tema[:50]}...")
         resultado = IAProvider.get_response(prompt, modelo)
+        print(f"Resultado obtenido: {len(resultado)} caracteres")
         return {"resultado": resultado}, 200
     except Exception as e:
+        print(f"Error en handle_generar: {e}")
         return {"error": str(e)}, 500
 
 def handle_chat(data):
@@ -775,13 +933,15 @@ def handle_chat(data):
     modelo = data.get('modelo', 'openai')
     
     if not mensaje:
-        return {"error": "El mensaje no puede estar vacío"}, 400
+        return {"error": "El mensaje no puede estar vacio"}, 400
     
     try:
-        print(f"💬 Chat: {mensaje[:50]}...")
+        print(f"Chat: {mensaje[:50]}...")
         respuesta = IAProvider.get_response(mensaje, modelo)
+        print(f"Respuesta obtenida: {len(respuesta)} caracteres")
         return {"respuesta": respuesta}, 200
     except Exception as e:
+        print(f"Error en handle_chat: {e}")
         return {"error": str(e)}, 500
 
 def handle_health():
