@@ -8,6 +8,7 @@ let bookmarksLoadedFlag = false;
 let bookmarksLoading = false;
 let resourceUpdateInterval = null;
 let clockUpdateInterval = null;
+let windowZIndex = 100;
 
 // ═══════════════════════════════════════════════════════════
 // CONSTANTES - MAPAS GLOBALES
@@ -721,7 +722,9 @@ function openKalmAIBrowser() {
     let win = document.getElementById('win-browser');
     
     if (!win) {
-        openWin('browser');
+        if (typeof openWin === 'function') {
+            openWin('browser');
+        }
         setTimeout(function() {
             loadKalmAIInFrame();
         }, 500);
@@ -729,7 +732,7 @@ function openKalmAIBrowser() {
         win.style.display = 'flex';
         win.classList.add('active');
         win.style.zIndex = ++windowZIndex;
-        updateTaskbar('browser');
+        if (typeof updateTaskbar === 'function') updateTaskbar('browser');
         setTimeout(function() {
             loadKalmAIInFrame();
         }, 300);
@@ -787,7 +790,11 @@ function loadKalmAIInFrame() {
     }, 3000);
 }
 
-// ═══ MANTENER COMPATIBILIDAD ═══
+// Alias para compatibilidad con botones HTML que puedan llamar a esta función
+function forceLoadKalmAI() {
+    loadKalmAIInFrame();
+}
+
 function openChatAcademico() {
     openKalmAI();
 }
@@ -1006,7 +1013,9 @@ function loadBrowserBookmarks() {
                         const urlInput = document.getElementById('browser-url');
                         if (urlInput) {
                             urlInput.value = bm.url || bm.domain;
-                            browserNavigate();
+                            if (typeof browserNavigate === 'function') {
+                                browserNavigate();
+                            }
                         }
                     };
                     container.appendChild(btn);
@@ -1030,27 +1039,27 @@ function loadBrowserBookmarks() {
 // ═══════════════════════════════════════════════════════════
 
 function openTools() {
-    openWin('tools');
+    if (typeof openWin === 'function') openWin('tools');
 }
 
 function openGames() {
-    openWin('games');
+    if (typeof openWin === 'function') openWin('games');
 }
 
 function openMusic() {
-    openWin('music');
+    if (typeof openWin === 'function') openWin('music');
 }
 
 function openCalculator() {
-    openWin('calc');
+    if (typeof openWin === 'function') openWin('calc');
 }
 
 function openNotepad() {
-    openWin('notepad');
+    if (typeof openWin === 'function') openWin('notepad');
 }
 
 function openWorldClock() {
-    openWin('clock');
+    if (typeof openWin === 'function') openWin('clock');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1325,12 +1334,6 @@ if (document.getElementById('clock-display')) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// FUNCIONES PARA HERRAMIENTAS Y JUEGOS (desde window)
-// ═══════════════════════════════════════════════════════════
-
-// Estas funciones se cargan desde tools.js y games.js
-
-// ═══════════════════════════════════════════════════════════
 // NOTIFICACIONES
 // ═══════════════════════════════════════════════════════════
 
@@ -1373,16 +1376,17 @@ function showNotification(message, type = 'info') {
 // EXPORTAR FUNCIONES GLOBALMENTE
 // ═══════════════════════════════════════════════════════════
 
-window.runTool = runTool || function() {};
-window.runGame = runGame || function() {};
-window.loadTools = loadTools || function() {};
-window.loadGames = loadGames || function() {};
-window.openTerminalForProcess = openTerminalForProcess || function() {};
-window.closeTerminalWindow = closeTerminalWindow || function() {};
+window.runTool = window.runTool || function() {};
+window.runGame = window.runGame || function() {};
+window.loadTools = window.loadTools || function() {};
+window.loadGames = window.loadGames || function() {};
+window.openTerminalForProcess = window.openTerminalForProcess || function() {};
+window.closeTerminalWindow = window.closeTerminalWindow || function() {};
 window.openKalmAI = openKalmAI;
 window.openChatAcademico = openChatAcademico;
 window.openKrootCorp = openKrootCorp;
 window.showNotification = showNotification;
 window.loadKalmAIInFrame = loadKalmAIInFrame;
+window.forceLoadKalmAI = forceLoadKalmAI;
 
 console.log('🏰 Kalm OS v4.3 - Aplicación cargada correctamente');
