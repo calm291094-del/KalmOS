@@ -1370,6 +1370,177 @@ function showNotification(message, type = 'info') {
 }
 
 // ═══════════════════════════════════════════════════════════
+// TERMINAL VIRTUAL - FUNCIONES FALTANTES
+// ═══════════════════════════════════════════════════════════
+
+function openTerminalForProcess(sessionId, programName) {
+    console.log('💻 Abriendo terminal para:', programName, 'Session:', sessionId);
+    
+    // Verificar si ya existe una ventana de terminal
+    let win = document.getElementById('win-terminal');
+    
+    if (win) {
+        win.style.display = 'flex';
+        win.classList.add('active');
+        win.style.zIndex = ++windowZIndex;
+        const titleBar = win.querySelector('.title-bar span');
+        if (titleBar) titleBar.textContent = `💻 Terminal: ${programName || 'Proceso'}`;
+        updateTaskbar('terminal');
+        startTerminalStream(sessionId);
+        return win;
+    }
+    
+    // Crear nueva ventana de terminal
+    win = document.createElement('div');
+    win.id = 'win-terminal';
+    win.className = 'window resizable';
+    win.style.cssText = 'top:100px;left:100px;width:750px;height:500px;display:flex;flex-direction:column;z-index:9999;';
+    win.dataset.title = `💻 Terminal: ${programName || 'Proceso'}`;
+    
+    win.innerHTML = `
+        <div class="title-bar" onmousedown="startDrag(event,'terminal')">
+            <span>💻 Terminal: ${programName || 'Proceso'}</span>
+            <div class="controls">
+                <button class="btn btn-min" onclick="minimizeWin('terminal')">─</button>
+                <button class="btn btn-max" onclick="maximizeWin('terminal')">▢</button>
+                <button class="btn btn-close" onclick="closeTerminalWindow()">✕</button>
+            </div>
+        </div>
+        <div class="window-body" style="padding:0;display:flex;flex-direction:column;height:100%;">
+            <pre id="term-output" style="flex:1;margin:0;padding:10px;overflow-y:auto;background:#0a0a1a;color:#0f0;font-family:'Consolas',monospace;font-size:13px;white-space:pre-wrap;word-wrap:break-word;min-height:300px;">⏳ Conectando al proceso...</pre>
+            <div style="padding:8px;background:#0a0a1a;border-top:1px solid #4b0082;display:flex;">
+                <span style="color:#0f0;margin-right:8px;font-family:monospace;">$</span>
+                <input id="term-input" style="flex:1;background:transparent;color:#0f0;border:none;outline:none;font-family:monospace;font-size:13px;" placeholder="Escribe aquí para enviar...">
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(win);
+    win.style.display = 'flex';
+    win.classList.add('active');
+    win.style.zIndex = ++windowZIndex;
+    updateTaskbar('terminal');
+    startTerminalStream(sessionId);
+    
+    const input = document.getElementById('term-input');
+    if (input) {
+        input.onkeydown = function(e) {
+            if (e.key === 'Enter') {
+                const value = this.value;
+                if (value.trim()) {
+                    sendTerminalInput(sessionId, value);
+                    const output = document.getElementById('term-output');
+                    if (output) output.textContent += `\n${value}`;
+                    this.value = '';
+                }
+            }
+        };
+        setTimeout(() => input.focus(), 300);
+    }
+    
+    return win;
+}
+
+function closeTerminalWindow() {
+    const win = document.getElementById('win-terminal');
+    if (win) {
+        if (window.termEventSource) {
+            window.termEventSource.close();
+            window.termEventSource = null;
+        }
+        win.remove();
+        const tbItem = document.querySelector(`.tb-window[data-win="terminal"]`);
+        if (tbItem) tbItem.remove();
+    }
+}
+
+function startTerminalStream(sessionId) {
+    const output = document.getElementById('term-output');
+    if (!output) return;
+    
+    if (window.termEventSource) {
+        window.termEventSource.close();
+        window.termEventSource = null;
+    }
+    
+    const url = `/api/process/stream/${sessionId}`;
+    const eventSource = new EventSource(url);
+    window.termEventSource = eventSource;
+    
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 2;
+    let timeoutId = null;
+    
+    const resetTimeout = () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            if (window.termEventSource) {
+                window.termEventSource.close();
+                window.termEventSource = null;
+                output.textContent += '\n⏱️ Tiempo de espera agotado\n';
+            }
+        }, 30000);
+    };
+    
+    eventSource.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            resetTimeout();
+            
+            if (data.type === 'output') {
+                output.textContent += data.data;
+                output.scrollTop = output.scrollHeight;
+            } else if (data.type === 'exit') {
+                output.textContent += `\n\n📋 Proceso terminado (código ${data.code || 0})\n`;
+                eventSource.close();
+                window.termEventSource = null;
+                if (timeoutId) clearTimeout(timeoutId);
+            } else if (data.type === 'error') {
+                output.textContent += `\n❌ Error: ${data.data}\n`;
+            } else if (data.type === 'connected') {
+                output.textContent = output.textContent.replace('⏳ Conectando al proceso...', '✅ Conectado al proceso\n');
+            }
+        } catch (e) {
+            console.error('Error parsing SSE:', e);
+        }
+    };
+    
+    eventSource.onerror = function() {
+        if (eventSource.readyState === EventSource.CLOSED) {
+            output.textContent += '\n❌ Conexión cerrada\n';
+            window.termEventSource = null;
+            if (timeoutId) clearTimeout(timeoutId);
+        } else if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            output.textContent += `\n⚠️ Reconectando... (${reconnectAttempts}/${maxReconnectAttempts})\n`;
+            resetTimeout();
+        } else {
+            output.textContent += '\n❌ Error de conexión persistente\n';
+            eventSource.close();
+            window.termEventSource = null;
+            if (timeoutId) clearTimeout(timeoutId);
+        }
+    };
+    
+    resetTimeout();
+}
+
+function sendTerminalInput(sessionId, data) {
+    fetch('/api/process/input', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, input: data })
+    })
+    .then(r => r.json())
+    .then(response => {
+        if (!response.ok) {
+            console.error('Error enviando input:', response.error);
+        }
+    })
+    .catch(err => console.error('Error:', err));
+}
+
+// ═══════════════════════════════════════════════════════════
 // EXPORTAR FUNCIONES GLOBALMENTE
 // ═══════════════════════════════════════════════════════════
 
@@ -1379,6 +1550,8 @@ window.loadTools = loadTools || function() {};
 window.loadGames = loadGames || function() {};
 window.openTerminalForProcess = openTerminalForProcess || function() {};
 window.closeTerminalWindow = closeTerminalWindow || function() {};
+window.startTerminalStream = startTerminalStream;
+window.sendTerminalInput = sendTerminalInput;
 window.openKalmAI = openKalmAI;
 window.openChatAcademico = openChatAcademico;
 window.openKrootCorp = openKrootCorp;
