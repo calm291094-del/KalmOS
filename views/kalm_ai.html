@@ -3,17 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧠 Kalm AI - Asistente Profesional</title>
+    <title>🧠 Kalm AI</title>
     <style>
-        /* ═══ RESET Y ESTILOS BASE ═══ */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: linear-gradient(135deg, #0a0514 0%, #1a0033 50%, #2e0854 100%);
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             min-height: 100vh;
             padding: 20px;
             color: #e6e6fa;
@@ -21,9 +16,7 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: rgba(10,5,20,0.5); border-radius: 3px; }
         ::-webkit-scrollbar-thumb { background: #6a0dad; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #9370db; }
 
-        /* ═══ CONTENEDOR PRINCIPAL ═══ */
         .app-container {
             max-width: 1000px;
             margin: 0 auto;
@@ -38,7 +31,6 @@
             flex-direction: column;
         }
 
-        /* ═══ HEADER ═══ */
         .app-header {
             padding: 20px 28px;
             background: linear-gradient(135deg, rgba(75,0,130,0.3), rgba(106,13,173,0.1));
@@ -49,11 +41,7 @@
             flex-wrap: wrap;
             gap: 12px;
         }
-        .app-header .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+        .app-header .logo { display: flex; align-items: center; gap: 12px; }
         .app-header .logo-icon {
             font-size: 28px;
             background: linear-gradient(135deg, #6a0dad, #da70d6);
@@ -71,10 +59,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .app-header .subtitle {
-            font-size: 12px;
-            color: #9370db;
-        }
+        .app-header .subtitle { font-size: 12px; color: #9370db; }
         .status-badge {
             display: flex;
             align-items: center;
@@ -93,9 +78,8 @@
             background: #00cc66;
             animation: pulse 1.5s ease-in-out infinite;
         }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-        /* ═══ TABS ═══ */
         .tabs {
             display: flex;
             background: rgba(10,5,20,0.3);
@@ -118,10 +102,7 @@
             gap: 8px;
             user-select: none;
         }
-        .tab:hover {
-            color: #da70d6;
-            background: rgba(106,13,173,0.08);
-        }
+        .tab:hover { color: #da70d6; background: rgba(106,13,173,0.08); }
         .tab.active {
             color: #da70d6;
             border-bottom-color: #da70d6;
@@ -134,12 +115,8 @@
             border-radius: 10px;
             color: #9370db;
         }
-        .tab.active .badge {
-            background: rgba(218,112,214,0.15);
-            color: #da70d6;
-        }
+        .tab.active .badge { background: rgba(218,112,214,0.15); color: #da70d6; }
 
-        /* ═══ CONTENIDO DE TABS ═══ */
         .tab-content {
             display: none !important;
             flex: 1;
@@ -149,7 +126,6 @@
             display: flex !important;
         }
 
-        /* ═══ PANEL DE CONTROLES ═══ */
         .controls-panel {
             padding: 14px 20px;
             background: rgba(10,5,20,0.25);
@@ -160,13 +136,7 @@
             align-items: center;
             flex-shrink: 0;
         }
-        .controls-panel label {
-            color: #9370db;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+        .controls-panel label { color: #9370db; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         .controls-panel select {
             padding: 7px 12px;
             border-radius: 8px;
@@ -178,9 +148,7 @@
             cursor: pointer;
             min-width: 110px;
         }
-        .controls-panel select:focus {
-            border-color: #6a0dad;
-        }
+        .controls-panel select:focus { border-color: #6a0dad; }
         .controls-panel input[type="text"] {
             flex: 1;
             min-width: 160px;
@@ -192,14 +160,9 @@
             font-size: 13px;
             outline: none;
         }
-        .controls-panel input[type="text"]:focus {
-            border-color: #6a0dad;
-        }
-        .controls-panel input[type="text"]::placeholder {
-            color: #4b0082;
-        }
+        .controls-panel input[type="text"]:focus { border-color: #6a0dad; }
+        .controls-panel input[type="text"]::placeholder { color: #4b0082; }
 
-        /* ═══ BOTONES ═══ */
         .btn {
             padding: 7px 18px;
             border-radius: 8px;
@@ -218,45 +181,27 @@
             color: #fff;
             box-shadow: 0 4px 15px rgba(106,13,173,0.3);
         }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(106,13,173,0.5);
-        }
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(106,13,173,0.5); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         .btn-secondary {
             background: rgba(75,0,130,0.2);
             color: #e6e6fa;
             border: 1px solid rgba(106,13,173,0.15);
         }
-        .btn-secondary:hover {
-            background: rgba(75,0,130,0.35);
-        }
+        .btn-secondary:hover { background: rgba(75,0,130,0.35); }
         .btn-success {
             background: linear-gradient(135deg, #008800, #00cc66);
             color: #fff;
         }
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,204,102,0.3);
-        }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,204,102,0.3); }
         .btn-external {
             background: rgba(0,100,200,0.2);
             color: #4da6ff;
             border: 1px solid rgba(0,100,200,0.2);
         }
-        .btn-external:hover {
-            background: rgba(0,100,200,0.35);
-        }
-        .btn-sm {
-            padding: 4px 12px;
-            font-size: 11px;
-        }
+        .btn-external:hover { background: rgba(0,100,200,0.35); }
+        .btn-sm { padding: 4px 12px; font-size: 11px; }
 
-        /* ═══ ÁREA DE RESULTADOS ═══ */
         .result-area {
             flex: 1;
             padding: 16px 20px;
@@ -275,21 +220,10 @@
             font-size: 14px;
             color: #d8bfd8;
         }
-        .result-area .result-content .titulo {
-            color: #da70d6;
-            font-weight: 700;
-            font-size: 1.1em;
-        }
-        .result-area .result-content .subtitulo {
-            color: #9370db;
-            font-weight: 600;
-        }
-        .result-area .result-content .error {
-            color: #ff4444;
-        }
-        .result-area .result-content .exito {
-            color: #00cc66;
-        }
+        .result-area .result-content .titulo { color: #da70d6; font-weight: 700; font-size: 1.1em; }
+        .result-area .result-content .subtitulo { color: #9370db; font-weight: 600; }
+        .result-area .result-content .error { color: #ff4444; }
+        .result-area .result-content .exito { color: #00cc66; }
 
         .empty-state {
             display: flex;
@@ -301,23 +235,10 @@
             text-align: center;
             color: #9370db;
         }
-        .empty-state .icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-        }
-        .empty-state .title {
-            font-size: 17px;
-            font-weight: 600;
-            color: #da70d6;
-        }
-        .empty-state .desc {
-            font-size: 13px;
-            margin-top: 4px;
-            max-width: 380px;
-            color: #6a0dad;
-        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-state .title { font-size: 17px; font-weight: 600; color: #da70d6; }
+        .empty-state .desc { font-size: 13px; margin-top: 4px; max-width: 380px; color: #6a0dad; }
 
-        /* ═══ FOOTER ═══ */
         .app-footer {
             padding: 10px 20px;
             border-top: 1px solid rgba(106,13,173,0.1);
@@ -329,17 +250,9 @@
             background: rgba(10,5,20,0.15);
             flex-shrink: 0;
         }
-        .app-footer .info {
-            font-size: 11px;
-            color: #6a0dad;
-        }
-        .app-footer .actions {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
+        .app-footer .info { font-size: 11px; color: #6a0dad; }
+        .app-footer .actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
-        /* ═══ BARRA DE PROGRESO ═══ */
         .progress-container {
             height: 3px;
             background: rgba(106,13,173,0.12);
@@ -350,9 +263,7 @@
             transition: opacity 0.4s;
             flex-shrink: 0;
         }
-        .progress-container.active {
-            opacity: 1;
-        }
+        .progress-container.active { opacity: 1; }
         .progress-container .progress-bar {
             height: 100%;
             width: 0%;
@@ -361,7 +272,6 @@
             transition: width 0.5s ease;
         }
 
-        /* ═══ RESPONSIVE ═══ */
         @media (max-width: 768px) {
             .app-header { padding: 14px 16px; }
             .app-header h1 { font-size: 17px; }
@@ -385,571 +295,521 @@
     </style>
 </head>
 <body>
-    <div class="app-container">
+<div class="app-container">
 
-        <!-- ═══ HEADER ═══ -->
-        <header class="app-header">
-            <div class="logo">
-                <div class="logo-icon">🧠</div>
-                <div>
-                    <h1>Kalm AI</h1>
-                    <span class="subtitle">Asistente Inteligente</span>
-                </div>
-            </div>
-            <div class="status-badge">
-                <span class="dot"></span>
-                <span id="status-text">Listo</span>
-            </div>
-        </header>
-
-        <!-- ═══ TABS ═══ -->
-        <nav class="tabs">
-            <div class="tab active" data-tab="chat">💬 Chat Academico <span class="badge">IA</span></div>
-            <div class="tab" data-tab="kroot">🏢 Kroot Corp <span class="badge">Empresarial</span></div>
-            <div class="tab" data-tab="external">🌐 Externos <span class="badge">Web</span></div>
-        </nav>
-
-        <!-- ═══ BARRA DE PROGRESO ═══ -->
-        <div class="progress-container" id="progress-container">
-            <div class="progress-bar" id="progress-bar"></div>
-        </div>
-
-        <!-- ═══ TAB: CHAT ACADEMICO ═══ -->
-        <div class="tab-content active" id="tab-chat">
-            <div class="controls-panel">
-                <label for="chat-modelo">Modelo</label>
-                <select id="chat-modelo">
-                    <option value="openai">OpenAI</option>
-                    <option value="claude">Claude</option>
-                    <option value="gemini">Gemini</option>
-                    <option value="deepseek">DeepSeek</option>
-                    <option value="llama">Llama</option>
-                    <option value="mistral">Mistral</option>
-                </select>
-                <input type="text" id="chat-tema" placeholder="Tema del trabajo academico..." />
-                <div class="btn-group">
-                    <button class="btn btn-primary" id="chat-generar">📝 Generar</button>
-                    <button class="btn btn-secondary" id="chat-chat">💬 Chat</button>
-                </div>
-            </div>
-            <div class="result-area" id="chat-result">
-                <div class="empty-state">
-                    <div class="icon">📚</div>
-                    <div class="title">Chat Academico</div>
-                    <div class="desc">Escribe un tema y pulsa "Generar" para crear un trabajo academico.</div>
-                </div>
+    <header class="app-header">
+        <div class="logo">
+            <div class="logo-icon">🧠</div>
+            <div>
+                <h1>Kalm AI</h1>
+                <span class="subtitle">Asistente Inteligente</span>
             </div>
         </div>
-
-        <!-- ═══ TAB: KROOT CORP ═══ -->
-        <div class="tab-content" id="tab-kroot">
-            <div class="controls-panel">
-                <label for="kroot-modelo">Modelo</label>
-                <select id="kroot-modelo">
-                    <option value="openai">OpenAI</option>
-                    <option value="claude">Claude</option>
-                    <option value="gemini">Gemini</option>
-                    <option value="deepseek">DeepSeek</option>
-                    <option value="llama">Llama</option>
-                    <option value="mistral">Mistral</option>
-                </select>
-                <input type="text" id="kroot-tema" placeholder="Tema del informe ejecutivo..." />
-                <div class="btn-group">
-                    <button class="btn btn-primary" id="kroot-generar">📊 Generar Informe</button>
-                </div>
-            </div>
-            <div class="result-area" id="kroot-result">
-                <div class="empty-state">
-                    <div class="icon">🏢</div>
-                    <div class="title">Kroot Corp IA</div>
-                    <div class="desc">Genera informes ejecutivos profesionales.</div>
-                </div>
-            </div>
+        <div class="status-badge">
+            <span class="dot"></span>
+            <span id="status-text">Listo</span>
         </div>
+    </header>
 
-        <!-- ═══ TAB: EXTERNOS ═══ -->
-        <div class="tab-content" id="tab-external">
-            <div class="controls-panel">
-                <label>🌐 Acceso a IAs externas</label>
-                <span style="color:#9370db;font-size:13px;">Abre en nueva pestaña</span>
-            </div>
-            <div style="padding:16px 20px;flex:1;">
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
-                    <div style="background:rgba(10,5,20,0.4);border-radius:12px;padding:20px;border:1px solid rgba(106,13,173,0.15);">
-                        <div style="font-size:32px;margin-bottom:10px;">🔵</div>
-                        <h3 style="color:#da70d6;margin-bottom:6px;">DeepSeek</h3>
-                        <p style="color:#9370db;font-size:13px;margin-bottom:12px;">IA avanzada con razonamiento profundo.</p>
-                        <button class="btn btn-external" data-url="https://chat.deepseek.com/a/chat/">Abrir DeepSeek</button>
-                    </div>
-                    <div style="background:rgba(10,5,20,0.4);border-radius:12px;padding:20px;border:1px solid rgba(106,13,173,0.15);">
-                        <div style="font-size:32px;margin-bottom:10px;">🟣</div>
-                        <h3 style="color:#da70d6;margin-bottom:6px;">Qwen AI</h3>
-                        <p style="color:#9370db;font-size:13px;margin-bottom:12px;">IA de Alibaba Cloud.</p>
-                        <button class="btn btn-external" data-url="https://chat.qwen.ai/c/">Abrir Qwen</button>
-                    </div>
-                    <div style="background:rgba(10,5,20,0.4);border-radius:12px;padding:20px;border:1px solid rgba(106,13,173,0.15);">
-                        <div style="font-size:32px;margin-bottom:10px;">🤖</div>
-                        <h3 style="color:#da70d6;margin-bottom:6px;">Pollinations AI</h3>
-                        <p style="color:#9370db;font-size:13px;margin-bottom:12px;">IA integrada en Kalm OS.</p>
-                        <button class="btn btn-secondary" data-tab="chat">Usar Pollinations</button>
-                    </div>
-                </div>
-                <div style="margin-top:16px;padding:12px 16px;background:rgba(0,100,200,0.08);border-radius:8px;border:1px solid rgba(0,100,200,0.15);">
-                    <p style="color:#9370db;font-size:12px;">💡 <b>Consejo:</b> DeepSeek y Qwen son servicios externos. Pollinations AI esta integrado directamente.</p>
-                </div>
-            </div>
+    <div class="tabs">
+        <div class="tab active" data-tab="chat" onclick="switchTab('chat')">
+            💬 Chat Academico <span class="badge">IA</span>
         </div>
-
-        <!-- ═══ FOOTER ═══ -->
-        <footer class="app-footer">
-            <span class="info">Pollinations AI · DuckDuckGo · Sin API Key</span>
-            <div class="actions">
-                <button class="btn btn-success btn-sm" id="btn-export">📄 Exportar</button>
-                <button class="btn btn-secondary btn-sm" id="btn-limpiar">🗑️ Limpiar</button>
-            </div>
-        </footer>
+        <div class="tab" data-tab="kroot" onclick="switchTab('kroot')">
+            🏢 Kroot Corp <span class="badge">Empresarial</span>
+        </div>
+        <div class="tab" data-tab="external" onclick="switchTab('external')">
+            🌐 Externos <span class="badge">Web</span>
+        </div>
     </div>
 
-    <script>
-        // ═══════════════════════════════════════════════════════════
-        // 1. CONFIGURACIÓN Y ESTADO GLOBAL
-        // ═══════════════════════════════════════════════════════════
-        var STATE = {
-            currentTab: 'chat',
-            currentResult: '',
-            isGenerating: false,
-            API_BASE: '/kalm-ai'
+    <div class="progress-container" id="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <!-- ═══ TAB: CHAT ACADEMICO ═══ -->
+    <div class="tab-content active" id="tab-chat">
+        <div class="controls-panel">
+            <label>Modelo</label>
+            <select id="chat-modelo">
+                <option value="openai">OpenAI</option>
+                <option value="claude">Claude</option>
+                <option value="gemini">Gemini</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="llama">Llama</option>
+                <option value="mistral">Mistral</option>
+            </select>
+            <input type="text" id="chat-tema" placeholder="Tema del trabajo academico..." />
+            <div class="btn-group">
+                <button class="btn btn-primary" id="chat-generar">📝 Generar</button>
+                <button class="btn btn-secondary" id="chat-chat">💬 Chat</button>
+            </div>
+        </div>
+        <div class="result-area" id="chat-result">
+            <div class="empty-state">
+                <div class="icon">📚</div>
+                <div class="title">Chat Academico</div>
+                <div class="desc">Escribe un tema y pulsa "Generar" para crear un trabajo academico.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ TAB: KROOT CORP ═══ -->
+    <div class="tab-content" id="tab-kroot">
+        <div class="controls-panel">
+            <label>Modelo</label>
+            <select id="kroot-modelo">
+                <option value="openai">OpenAI</option>
+                <option value="claude">Claude</option>
+                <option value="gemini">Gemini</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="llama">Llama</option>
+                <option value="mistral">Mistral</option>
+            </select>
+            <input type="text" id="kroot-tema" placeholder="Tema del informe ejecutivo..." />
+            <div class="btn-group">
+                <button class="btn btn-primary" id="kroot-generar">📊 Generar Informe</button>
+            </div>
+        </div>
+        <div class="result-area" id="kroot-result">
+            <div class="empty-state">
+                <div class="icon">🏢</div>
+                <div class="title">Kroot Corp IA</div>
+                <div class="desc">Genera informes ejecutivos profesionales.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ TAB: EXTERNOS ═══ -->
+    <div class="tab-content" id="tab-external">
+        <div class="controls-panel">
+            <label>🌐 Acceso a IAs externas</label>
+            <span style="color:#9370db;font-size:13px;">Abre en nueva pestaña</span>
+        </div>
+        <div style="padding:16px 20px;flex:1;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
+                <div style="background:rgba(10,5,20,0.4);border-radius:12px;padding:20px;border:1px solid rgba(106,13,173,0.15);">
+                    <div style="font-size:32px;margin-bottom:10px;">🔵</div>
+                    <h3 style="color:#da70d6;margin-bottom:6px;">DeepSeek</h3>
+                    <p style="color:#9370db;font-size:13px;margin-bottom:12px;">IA avanzada con razonamiento profundo.</p>
+                    <button class="btn btn-external" onclick="window.open('https://chat.deepseek.com/a/chat/','_blank')">Abrir DeepSeek</button>
+                </div>
+                <div style="background:rgba(10,5,20,0.4);border-radius:12px;padding:20px;border:1px solid rgba(106,13,173,0.15);">
+                    <div style="font-size:32px;margin-bottom:10px;">🟣</div>
+                    <h3 style="color:#da70d6;margin-bottom:6px;">Qwen AI</h3>
+                    <p style="color:#9370db;font-size:13px;margin-bottom:12px;">IA de Alibaba Cloud.</p>
+                    <button class="btn btn-external" onclick="window.open('https://chat.qwen.ai/c/','_blank')">Abrir Qwen</button>
+                </div>
+                <div style="background:rgba(10,5,20,0.4);border-radius:12px;padding:20px;border:1px solid rgba(106,13,173,0.15);">
+                    <div style="font-size:32px;margin-bottom:10px;">🤖</div>
+                    <h3 style="color:#da70d6;margin-bottom:6px;">Pollinations AI</h3>
+                    <p style="color:#9370db;font-size:13px;margin-bottom:12px;">IA integrada en Kalm OS.</p>
+                    <button class="btn btn-secondary" onclick="switchTab('chat')">Usar Pollinations</button>
+                </div>
+            </div>
+            <div style="margin-top:16px;padding:12px 16px;background:rgba(0,100,200,0.08);border-radius:8px;border:1px solid rgba(0,100,200,0.15);">
+                <p style="color:#9370db;font-size:12px;">💡 <b>Consejo:</b> DeepSeek y Qwen son servicios externos. Pollinations AI esta integrado directamente.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="app-footer">
+        <span class="info">Pollinations AI · DuckDuckGo · Sin API Key</span>
+        <div class="actions">
+            <button class="btn btn-success btn-sm" id="btn-export">📄 Exportar</button>
+            <button class="btn btn-secondary btn-sm" id="btn-limpiar">🗑️ Limpiar</button>
+        </div>
+    </footer>
+</div>
+
+<script>
+    // ═══════════════════════════════════════════════════════
+    // FUNCIONES GLOBALES
+    // ═══════════════════════════════════════════════════════
+    var currentResult = '';
+    var currentTab = 'chat';
+    var isGenerating = false;
+    var API_BASE = '/kalm-ai';
+
+    function getElement(id) {
+        return document.getElementById(id);
+    }
+
+    function setStatus(text, type) {
+        type = type || 'info';
+        var colors = { info: '#9370db', success: '#00cc66', error: '#ff4444', loading: '#ffaa00' };
+        var el = getElement('status-text');
+        if (el) {
+            el.textContent = text;
+            el.style.color = colors[type] || '#9370db';
+        }
+    }
+
+    function setProgress(pct) {
+        var container = getElement('progress-container');
+        var bar = getElement('progress-bar');
+        if (!container || !bar) return;
+        if (pct > 0) {
+            container.classList.add('active');
+            bar.style.width = Math.min(pct, 100) + '%';
+        } else {
+            container.classList.remove('active');
+            bar.style.width = '0%';
+        }
+    }
+
+    function getResultContainer() {
+        return currentTab === 'chat' ? getElement('chat-result') : getElement('kroot-result');
+    }
+
+    function getTemaInput() {
+        return currentTab === 'chat' ? getElement('chat-tema') : getElement('kroot-tema');
+    }
+
+    function getModeloSelect() {
+        return currentTab === 'chat' ? getElement('chat-modelo') : getElement('kroot-modelo');
+    }
+
+    function getGenerarBtn() {
+        return currentTab === 'chat' ? getElement('chat-generar') : getElement('kroot-generar');
+    }
+
+    function appendResult(text, type) {
+        type = type || 'normal';
+        var container = getResultContainer();
+        if (!container) return;
+
+        var classes = {
+            titulo: 'titulo',
+            subtitulo: 'subtitulo',
+            error: 'error',
+            exito: 'exito',
+            normal: ''
         };
+        var cls = classes[type] || '';
+        var content = container.querySelector('.result-content');
+        if (!content) {
+            content = document.createElement('div');
+            content.className = 'result-content';
+            container.innerHTML = '';
+            container.appendChild(content);
+        }
+        if (cls) {
+            content.innerHTML += '<span class="' + cls + '">' + text + '</span>';
+        } else {
+            content.innerHTML += text;
+        }
+        container.scrollTop = container.scrollHeight;
+    }
 
-        // ═══════════════════════════════════════════════════════════
-        // 2. DOM HELPERS (SINTAXIS SIMPLE Y ROBUSTA)
-        // ═══════════════════════════════════════════════════════════
-        function getElement(id) {
-            return document.getElementById(id);
+    function clearResult() {
+        var container = getResultContainer();
+        if (!container) return;
+
+        var icon = currentTab === 'chat' ? '📚' : '🏢';
+        var title = currentTab === 'chat' ? 'Chat Academico' : 'Kroot Corp IA';
+        var desc = currentTab === 'chat'
+            ? 'Escribe un tema y pulsa "Generar" para crear un trabajo academico.'
+            : 'Genera informes ejecutivos profesionales.';
+        container.innerHTML = '<div class="empty-state"><div class="icon">' + icon + '</div><div class="title">' + title + '</div><div class="desc">' + desc + '</div></div>';
+        currentResult = '';
+        setProgress(0);
+    }
+
+    // ═══ CAMBIAR PESTAÑA ═══
+    function switchTab(tab) {
+        console.log('[KalmAI] Cambiando a tab:', tab);
+        currentTab = tab;
+
+        // Actualizar tabs
+        var tabs = document.querySelectorAll('.tab');
+        for (var i = 0; i < tabs.length; i++) {
+            tabs[i].classList.remove('active');
+        }
+        var tabEl = document.querySelector('.tab[data-tab="' + tab + '"]');
+        if (tabEl) tabEl.classList.add('active');
+
+        // Actualizar contenidos
+        var contents = document.querySelectorAll('.tab-content');
+        for (var j = 0; j < contents.length; j++) {
+            contents[j].classList.remove('active');
+            contents[j].style.display = 'none';
+        }
+        var contentEl = getElement('tab-' + tab);
+        if (contentEl) {
+            contentEl.classList.add('active');
+            contentEl.style.display = 'flex';
         }
 
-        function getElementBySelector(selector) {
-            return document.querySelector(selector);
+        setStatus('Listo', 'info');
+        setProgress(0);
+    }
+
+    // ═══ GENERAR ═══
+    function generar() {
+        console.log('[KalmAI] Click en Generar');
+
+        var input = getTemaInput();
+        if (!input) {
+            console.error('[KalmAI] Input no encontrado');
+            return;
         }
 
-        function getElementsBySelector(selector) {
-            return document.querySelectorAll(selector);
+        var tema = input.value.trim();
+        if (!tema) {
+            alert('✏️ Escribe un tema.');
+            return;
         }
+        if (isGenerating) return;
 
-        // ═══════════════════════════════════════════════════════════
-        // 3. FUNCIONES DE UI
-        // ═══════════════════════════════════════════════════════════
-        function setStatus(text, type) {
-            type = type || 'info';
-            var colors = {
-                info: '#9370db',
-                success: '#00cc66',
-                error: '#ff4444',
-                loading: '#ffaa00'
-            };
-            var el = getElement('status-text');
-            if (el) {
-                el.textContent = text;
-                el.style.color = colors[type] || '#9370db';
+        var modelo = getModeloSelect().value;
+        var tipo = currentTab;
+        var btn = getGenerarBtn();
+
+        isGenerating = true;
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Generando...';
+
+        setProgress(10);
+        setStatus('Generando...', 'loading');
+
+        var container = getResultContainer();
+        container.innerHTML = '<div class="result-content"></div>';
+        appendResult('📝 Generando ' + (tipo === 'chat' ? 'trabajo academico' : 'informe ejecutivo') + ' sobre: "' + tema + '"\n', 'titulo');
+        appendResult('═══════════════════════════════════════════════\n\n', 'normal');
+
+        var url = API_BASE + '/generar';
+        var data = { tema: tema, modelo: modelo, tipo: tipo };
+        console.log('[KalmAI] Enviando POST a:', url);
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(function(response) {
+            console.log('[KalmAI] Respuesta status:', response.status);
+            if (!response.ok) {
+                throw new Error('Error ' + response.status + ': ' + response.statusText);
             }
-        }
-
-        function setProgress(pct) {
-            var container = getElement('progress-container');
-            var bar = getElement('progress-bar');
-            if (!container || !bar) return;
-            if (pct > 0) {
-                container.classList.add('active');
-                bar.style.width = Math.min(pct, 100) + '%';
+            return response.json();
+        })
+        .then(function(data) {
+            console.log('[KalmAI] Datos recibidos');
+            setProgress(95);
+            if (data.error) {
+                appendResult('\n❌ Error: ' + data.error + '\n', 'error');
+                setStatus('Error', 'error');
             } else {
-                container.classList.remove('active');
-                bar.style.width = '0%';
-            }
-        }
-
-        function getResultContainer() {
-            return STATE.currentTab === 'chat' ? getElement('chat-result') : getElement('kroot-result');
-        }
-
-        function getTemaInput() {
-            return STATE.currentTab === 'chat' ? getElement('chat-tema') : getElement('kroot-tema');
-        }
-
-        function getModeloSelect() {
-            return STATE.currentTab === 'chat' ? getElement('chat-modelo') : getElement('kroot-modelo');
-        }
-
-        function getGenerarBtn() {
-            return STATE.currentTab === 'chat' ? getElement('chat-generar') : getElement('kroot-generar');
-        }
-
-        function appendResult(text, type) {
-            type = type || 'normal';
-            var container = getResultContainer();
-            if (!container) return;
-
-            var classes = {
-                titulo: 'titulo',
-                subtitulo: 'subtitulo',
-                error: 'error',
-                exito: 'exito',
-                normal: ''
-            };
-            var cls = classes[type] || '';
-            var content = container.querySelector('.result-content');
-            if (!content) {
-                content = document.createElement('div');
-                content.className = 'result-content';
-                container.innerHTML = '';
-                container.appendChild(content);
-            }
-            if (cls) {
-                content.innerHTML += '<span class="' + cls + '">' + text + '</span>';
-            } else {
-                content.innerHTML += text;
-            }
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function clearResult() {
-            var container = getResultContainer();
-            if (!container) return;
-
-            var icon = STATE.currentTab === 'chat' ? '📚' : '🏢';
-            var title = STATE.currentTab === 'chat' ? 'Chat Academico' : 'Kroot Corp IA';
-            var desc = STATE.currentTab === 'chat' ?
-                'Escribe un tema y pulsa "Generar" para crear un trabajo academico.' :
-                'Genera informes ejecutivos profesionales.';
-            container.innerHTML = '<div class="empty-state"><div class="icon">' + icon + '</div><div class="title">' + title + '</div><div class="desc">' + desc + '</div></div>';
-            STATE.currentResult = '';
-            setProgress(0);
-        }
-
-        // ═══════════════════════════════════════════════════════════
-        // 4. FUNCIONALIDAD PRINCIPAL
-        // ═══════════════════════════════════════════════════════════
-        function switchTab(tab) {
-            console.log('[KalmAI] Cambiando a tab:', tab);
-            STATE.currentTab = tab;
-
-            // Actualizar tabs
-            var tabs = getElementsBySelector('.tab');
-            for (var i = 0; i < tabs.length; i++) {
-                tabs[i].classList.remove('active');
-            }
-            var tabEl = getElementBySelector('.tab[data-tab="' + tab + '"]');
-            if (tabEl) tabEl.classList.add('active');
-
-            // Actualizar contenidos
-            var contents = getElementsBySelector('.tab-content');
-            for (var i = 0; i < contents.length; i++) {
-                contents[i].classList.remove('active');
-                contents[i].style.display = 'none';
-            }
-            var contentEl = getElement('tab-' + tab);
-            if (contentEl) {
-                contentEl.classList.add('active');
-                contentEl.style.display = 'flex';
-            }
-
-            setStatus('Listo', 'info');
-            setProgress(0);
-        }
-
-        function generar() {
-            console.log('[KalmAI] Click en Generar');
-
-            var input = getTemaInput();
-            if (!input) {
-                console.error('[KalmAI] Input no encontrado');
-                return;
-            }
-
-            var tema = input.value.trim();
-            if (!tema) {
-                alert('✏️ Escribe un tema.');
-                return;
-            }
-            if (STATE.isGenerating) return;
-
-            var modelo = getModeloSelect().value;
-            var tipo = STATE.currentTab;
-            var btn = getGenerarBtn();
-
-            STATE.isGenerating = true;
-            btn.disabled = true;
-            btn.innerHTML = '⏳ Generando...';
-
-            setProgress(10);
-            setStatus('Generando...', 'loading');
-
-            var container = getResultContainer();
-            container.innerHTML = '<div class="result-content"></div>';
-            appendResult('📝 Generando ' + (tipo === 'chat' ? 'trabajo academico' : 'informe ejecutivo') + ' sobre: "' + tema + '"\n', 'titulo');
-            appendResult('═══════════════════════════════════════════════\n\n', 'normal');
-
-            var url = STATE.API_BASE + '/generar';
-            var data = { tema: tema, modelo: modelo, tipo: tipo };
-            console.log('[KalmAI] Enviando POST a:', url);
-
-            fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                })
-                .then(function(response) {
-                    console.log('[KalmAI] Respuesta status:', response.status);
-                    if (!response.ok) {
-                        throw new Error('Error ' + response.status + ': ' + response.statusText);
-                    }
-                    return response.json();
-                })
-                .then(function(data) {
-                    console.log('[KalmAI] Datos recibidos');
-                    setProgress(95);
-                    if (data.error) {
-                        appendResult('\n❌ Error: ' + data.error + '\n', 'error');
-                        setStatus('Error', 'error');
+                var lines = data.resultado.split('\n');
+                for (var k = 0; k < lines.length; k++) {
+                    var line = lines[k];
+                    if (line.startsWith('##') || line.startsWith('#')) {
+                        appendResult(line + '\n', 'titulo');
+                    } else if (line.startsWith('**') || line.startsWith('*')) {
+                        appendResult(line + '\n', 'subtitulo');
+                    } else if (line.match(/^[✅📊📝📌🔹]/)) {
+                        appendResult(line + '\n', 'exito');
+                    } else if (line.startsWith('❌')) {
+                        appendResult(line + '\n', 'error');
                     } else {
-                        var lines = data.resultado.split('\n');
-                        for (var i = 0; i < lines.length; i++) {
-                            var line = lines[i];
-                            if (line.startsWith('##') || line.startsWith('#')) {
-                                appendResult(line + '\n', 'titulo');
-                            } else if (line.startsWith('**') || line.startsWith('*')) {
-                                appendResult(line + '\n', 'subtitulo');
-                            } else if (line.match(/^[✅📊📝📌🔹]/)) {
-                                appendResult(line + '\n', 'exito');
-                            } else if (line.startsWith('❌')) {
-                                appendResult(line + '\n', 'error');
-                            } else {
-                                appendResult(line + '\n', 'normal');
-                            }
-                        }
-                        STATE.currentResult = data.resultado;
-                        setStatus('✅ Listo', 'success');
-                        setProgress(100);
-                        setTimeout(function() { setProgress(0); }, 1000);
-                    }
-                })
-                .catch(function(error) {
-                    console.error('[KalmAI] Error:', error);
-                    appendResult('\n❌ Error: ' + error.message + '\n', 'error');
-                    setStatus('Error', 'error');
-                    setProgress(0);
-                })
-                .finally(function() {
-                    STATE.isGenerating = false;
-                    btn.disabled = false;
-                    btn.innerHTML = STATE.currentTab === 'chat' ? '📝 Generar' : '📊 Generar Informe';
-                });
-        }
-
-        function chatLibre() {
-            console.log('[KalmAI] Click en Chat');
-
-            var input = getElement('chat-tema');
-            if (!input) {
-                console.error('[KalmAI] Input no encontrado');
-                return;
-            }
-
-            var mensaje = input.value.trim();
-            if (!mensaje) {
-                alert('✏️ Escribe un mensaje.');
-                return;
-            }
-            if (STATE.isGenerating) return;
-
-            var modelo = getElement('chat-modelo').value;
-            var btn = getElement('chat-chat');
-
-            STATE.isGenerating = true;
-            btn.disabled = true;
-            btn.innerHTML = '⏳ Pensando...';
-            setStatus('💬 Pensando...', 'loading');
-            setProgress(20);
-
-            var container = getElement('chat-result');
-            if (!container.querySelector('.result-content')) {
-                container.innerHTML = '<div class="result-content"></div>';
-            }
-            appendResult('\n🧑 Tú: ' + mensaje + '\n', 'subtitulo');
-            appendResult('🤖 IA: ', 'exito');
-
-            var url = STATE.API_BASE + '/chat';
-            var data = { mensaje: mensaje, modelo: modelo };
-            console.log('[KalmAI] Enviando POST a:', url);
-
-            fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                })
-                .then(function(response) {
-                    console.log('[KalmAI] Respuesta status:', response.status);
-                    if (!response.ok) {
-                        throw new Error('Error ' + response.status + ': ' + response.statusText);
-                    }
-                    return response.json();
-                })
-                .then(function(data) {
-                    console.log('[KalmAI] Datos recibidos');
-                    setProgress(80);
-                    if (data.error) {
-                        appendResult('❌ Error: ' + data.error + '\n', 'error');
-                        setStatus('Error', 'error');
-                    } else {
-                        appendResult(data.respuesta + '\n\n', 'normal');
-                        setStatus('✅ Listo', 'success');
-                        setProgress(100);
-                        setTimeout(function() { setProgress(0); }, 800);
-                    }
-                })
-                .catch(function(error) {
-                    console.error('[KalmAI] Error:', error);
-                    appendResult('❌ Error: ' + error.message + '\n', 'error');
-                    setStatus('Error', 'error');
-                    setProgress(0);
-                })
-                .finally(function() {
-                    STATE.isGenerating = false;
-                    btn.disabled = false;
-                    btn.innerHTML = '💬 Chat';
-                    input.value = '';
-                });
-        }
-
-        function exportarTxt() {
-            if (!STATE.currentResult) {
-                alert('📋 No hay contenido para exportar.');
-                return;
-            }
-            var blob = new Blob([STATE.currentResult], { type: 'text/plain;charset=utf-8' });
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement('a');
-            a.href = url;
-            var timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
-            a.download = STATE.currentTab + '_' + timestamp + '.txt';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            setStatus('📄 Exportado', 'success');
-        }
-
-        function limpiar() {
-            clearResult();
-            var input = getTemaInput();
-            if (input) input.value = '';
-            setStatus('🗑️ Limpiado', 'info');
-            setProgress(0);
-        }
-
-        // ═══════════════════════════════════════════════════════════
-        // 5. INICIALIZACIÓN Y EVENTOS
-        // ═══════════════════════════════════════════════════════════
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('[KalmAI] DOM cargado - Inicializando...');
-            console.log('[KalmAI] API Base:', STATE.API_BASE);
-
-            // Configurar eventos de las pestañas
-            var tabs = getElementsBySelector('.tab');
-            for (var i = 0; i < tabs.length; i++) {
-                (function(tabEl) {
-                    tabEl.addEventListener('click', function() {
-                        var tabName = tabEl.getAttribute('data-tab');
-                        if (tabName) {
-                            switchTab(tabName);
-                        }
-                    });
-                })(tabs[i]);
-            }
-
-            // Configurar botón "Generar" en Chat
-            var btnGenerar = getElement('chat-generar');
-            if (btnGenerar) {
-                btnGenerar.addEventListener('click', generar);
-                console.log('[KalmAI] Evento click asignado a Generar');
-            }
-
-            // Configurar botón "Chat" en Chat
-            var btnChat = getElement('chat-chat');
-            if (btnChat) {
-                btnChat.addEventListener('click', chatLibre);
-                console.log('[KalmAI] Evento click asignado a Chat');
-            }
-
-            // Configurar botón "Generar Informe" en Kroot
-            var btnKroot = getElement('kroot-generar');
-            if (btnKroot) {
-                btnKroot.addEventListener('click', generar);
-                console.log('[KalmAI] Evento click asignado a Kroot');
-            }
-
-            // Configurar botón "Exportar"
-            var btnExport = getElement('btn-export');
-            if (btnExport) {
-                btnExport.addEventListener('click', exportarTxt);
-                console.log('[KalmAI] Evento click asignado a Exportar');
-            }
-
-            // Configurar botón "Limpiar"
-            var btnLimpiar = getElement('btn-limpiar');
-            if (btnLimpiar) {
-                btnLimpiar.addEventListener('click', limpiar);
-                console.log('[KalmAI] Evento click asignado a Limpiar');
-            }
-
-            // Configurar botones de enlaces externos
-            var externalBtns = getElementsBySelector('.btn-external');
-            for (var j = 0; j < externalBtns.length; j++) {
-                (function(btn) {
-                    btn.addEventListener('click', function() {
-                        var url = btn.getAttribute('data-url');
-                        var tab = btn.getAttribute('data-tab');
-                        if (url) {
-                            window.open(url, '_blank');
-                        } else if (tab) {
-                            switchTab(tab);
-                        }
-                    });
-                })(externalBtns[j]);
-            }
-
-            // Enter para generar
-            var inputs = getElementsBySelector('#chat-tema, #kroot-tema');
-            for (var k = 0; k < inputs.length; k++) {
-                (function(input) {
-                    input.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            generar();
-                        }
-                    });
-                })(inputs[k]);
-            }
-
-            // Asegurar que solo el tab activo se muestra
-            var activeTab = getElementBySelector('.tab.active');
-            if (activeTab) {
-                var tabName = activeTab.getAttribute('data-tab');
-                if (tabName) {
-                    var contents = getElementsBySelector('.tab-content');
-                    for (var l = 0; l < contents.length; l++) {
-                        contents[l].classList.remove('active');
-                        contents[l].style.display = 'none';
-                    }
-                    var activeContent = getElement('tab-' + tabName);
-                    if (activeContent) {
-                        activeContent.classList.add('active');
-                        activeContent.style.display = 'flex';
+                        appendResult(line + '\n', 'normal');
                     }
                 }
+                currentResult = data.resultado;
+                setStatus('✅ Listo', 'success');
+                setProgress(100);
+                setTimeout(function() { setProgress(0); }, 1000);
             }
-
-            console.log('[KalmAI] Inicializacion completada');
+        })
+        .catch(function(error) {
+            console.error('[KalmAI] Error:', error);
+            appendResult('\n❌ Error: ' + error.message + '\n', 'error');
+            setStatus('Error', 'error');
+            setProgress(0);
+        })
+        .finally(function() {
+            isGenerating = false;
+            btn.disabled = false;
+            btn.innerHTML = currentTab === 'chat' ? '📝 Generar' : '📊 Generar Informe';
         });
-    </script>
+    }
+
+    // ═══ CHAT ═══
+    function chatLibre() {
+        console.log('[KalmAI] Click en Chat');
+
+        var input = getElement('chat-tema');
+        if (!input) {
+            console.error('[KalmAI] Input no encontrado');
+            return;
+        }
+
+        var mensaje = input.value.trim();
+        if (!mensaje) {
+            alert('✏️ Escribe un mensaje.');
+            return;
+        }
+        if (isGenerating) return;
+
+        var modelo = getElement('chat-modelo').value;
+        var btn = getElement('chat-chat');
+
+        isGenerating = true;
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Pensando...';
+        setStatus('💬 Pensando...', 'loading');
+        setProgress(20);
+
+        var container = getElement('chat-result');
+        if (!container.querySelector('.result-content')) {
+            container.innerHTML = '<div class="result-content"></div>';
+        }
+        appendResult('\n🧑 Tú: ' + mensaje + '\n', 'subtitulo');
+        appendResult('🤖 IA: ', 'exito');
+
+        var url = API_BASE + '/chat';
+        var data = { mensaje: mensaje, modelo: modelo };
+        console.log('[KalmAI] Enviando POST a:', url);
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(function(response) {
+            console.log('[KalmAI] Respuesta status:', response.status);
+            if (!response.ok) {
+                throw new Error('Error ' + response.status + ': ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            console.log('[KalmAI] Datos recibidos');
+            setProgress(80);
+            if (data.error) {
+                appendResult('❌ Error: ' + data.error + '\n', 'error');
+                setStatus('Error', 'error');
+            } else {
+                appendResult(data.respuesta + '\n\n', 'normal');
+                setStatus('✅ Listo', 'success');
+                setProgress(100);
+                setTimeout(function() { setProgress(0); }, 800);
+            }
+        })
+        .catch(function(error) {
+            console.error('[KalmAI] Error:', error);
+            appendResult('❌ Error: ' + error.message + '\n', 'error');
+            setStatus('Error', 'error');
+            setProgress(0);
+        })
+        .finally(function() {
+            isGenerating = false;
+            btn.disabled = false;
+            btn.innerHTML = '💬 Chat';
+            input.value = '';
+        });
+    }
+
+    // ═══ EXPORTAR ═══
+    function exportarTxt() {
+        if (!currentResult) {
+            alert('📋 No hay contenido para exportar.');
+            return;
+        }
+        var blob = new Blob([currentResult], { type: 'text/plain;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        var timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+        a.download = currentTab + '_' + timestamp + '.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setStatus('📄 Exportado', 'success');
+    }
+
+    // ═══ LIMPIAR ═══
+    function limpiar() {
+        clearResult();
+        var input = getTemaInput();
+        if (input) input.value = '';
+        setStatus('🗑️ Limpiado', 'info');
+        setProgress(0);
+    }
+
+    // ═══ INICIALIZAR ═══
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('[KalmAI] DOM cargado - Inicializando...');
+        console.log('[KalmAI] API Base:', API_BASE);
+
+        // Conectar botones directamente
+        var btnGenerar = getElement('chat-generar');
+        var btnChat = getElement('chat-chat');
+        var btnKroot = getElement('kroot-generar');
+        var btnExport = getElement('btn-export');
+        var btnLimpiar = getElement('btn-limpiar');
+
+        if (btnGenerar) {
+            btnGenerar.onclick = generar;
+            console.log('[KalmAI] Evento click asignado a Generar');
+        }
+        if (btnChat) {
+            btnChat.onclick = chatLibre;
+            console.log('[KalmAI] Evento click asignado a Chat');
+        }
+        if (btnKroot) {
+            btnKroot.onclick = generar;
+            console.log('[KalmAI] Evento click asignado a Kroot');
+        }
+        if (btnExport) {
+            btnExport.onclick = exportarTxt;
+            console.log('[KalmAI] Evento click asignado a Exportar');
+        }
+        if (btnLimpiar) {
+            btnLimpiar.onclick = limpiar;
+            console.log('[KalmAI] Evento click asignado a Limpiar');
+        }
+
+        // Enter para generar
+        var inputs = document.querySelectorAll('#chat-tema, #kroot-tema');
+        for (var i = 0; i < inputs.length; i++) {
+            (function(el) {
+                el.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        generar();
+                    }
+                });
+            })(inputs[i]);
+        }
+
+        // Asegurar que solo el tab activo se muestra
+        var activeTab = document.querySelector('.tab.active');
+        if (activeTab) {
+            var tabName = activeTab.getAttribute('data-tab');
+            var contents = document.querySelectorAll('.tab-content');
+            for (var j = 0; j < contents.length; j++) {
+                contents[j].classList.remove('active');
+                contents[j].style.display = 'none';
+            }
+            var activeContent = getElement('tab-' + tabName);
+            if (activeContent) {
+                activeContent.classList.add('active');
+                activeContent.style.display = 'flex';
+            }
+        }
+
+        console.log('[KalmAI] Inicializacion completada');
+    });
+
+    // Exponer funciones globalmente
+    window.switchTab = switchTab;
+    window.generar = generar;
+    window.chatLibre = chatLibre;
+    window.exportarTxt = exportarTxt;
+    window.limpiar = limpiar;
+</script>
 </body>
 </html>
