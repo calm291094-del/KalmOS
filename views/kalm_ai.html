@@ -431,31 +431,9 @@
     var isGenerating = false;
     var API_BASE = '/kalm-ai';
 
-    function $(id) { return document.getElementById(id); }
-
-    function switchTab(tab) {
-        currentTab = tab;
-        
-        // Actualizar tabs
-        document.querySelectorAll('.tab').forEach(function(t) {
-            t.classList.remove('active');
-        });
-        var tabEl = document.querySelector('.tab[data-tab="' + tab + '"]');
-        if (tabEl) tabEl.classList.add('active');
-        
-        // Actualizar contenidos
-        document.querySelectorAll('.tab-content').forEach(function(c) {
-            c.classList.remove('active');
-            c.style.display = 'none';
-        });
-        var contentEl = $('tab-' + tab);
-        if (contentEl) {
-            contentEl.classList.add('active');
-            contentEl.style.display = 'flex';
-        }
-        
-        setStatus('Listo', 'info');
-        setProgress(0);
+    // ═══ FUNCIONES AUXILIARES ═══
+    function $(id) {
+        return document.getElementById(id);
     }
 
     function setStatus(text, type) {
@@ -465,10 +443,6 @@
         if (el) {
             el.textContent = text;
             el.style.color = colors[type] || '#9370db';
-        }
-        var dot = document.querySelector('.dot');
-        if (dot) {
-            dot.style.background = type === 'error' ? '#ff4444' : type === 'loading' ? '#ffaa00' : '#00cc66';
         }
     }
 
@@ -527,15 +501,45 @@
         setProgress(0);
     }
 
+    // ═══ CAMBIAR PESTAÑA ═══
+    function switchTab(tab) {
+        currentTab = tab;
+        
+        document.querySelectorAll('.tab').forEach(function(t) {
+            t.classList.remove('active');
+        });
+        var tabEl = document.querySelector('.tab[data-tab="' + tab + '"]');
+        if (tabEl) tabEl.classList.add('active');
+        
+        document.querySelectorAll('.tab-content').forEach(function(c) {
+            c.classList.remove('active');
+            c.style.display = 'none';
+        });
+        var contentEl = $('tab-' + tab);
+        if (contentEl) {
+            contentEl.classList.add('active');
+            contentEl.style.display = 'flex';
+        }
+        
+        setStatus('Listo', 'info');
+        setProgress(0);
+    }
+
     // ═══ GENERAR ═══
     function generar() {
         console.log('[KalmAI] Click en Generar');
         
         var input = currentTab === 'chat' ? $('chat-tema') : $('kroot-tema');
-        if (!input) { console.error('Input no encontrado'); return; }
+        if (!input) {
+            console.error('[KalmAI] Input no encontrado');
+            return;
+        }
         
         var tema = input.value.trim();
-        if (!tema) { alert('Escribe un tema.'); return; }
+        if (!tema) {
+            alert('✏️ Escribe un tema.');
+            return;
+        }
         if (isGenerating) return;
 
         var modelo = (currentTab === 'chat' ? $('chat-modelo') : $('kroot-modelo')).value;
@@ -551,19 +555,27 @@
 
         var container = currentTab === 'chat' ? $('chat-result') : $('kroot-result');
         container.innerHTML = '<div class="result-content"></div>';
-        appendResult('Generando ' + (tipo === 'chat' ? 'trabajo academico' : 'informe ejecutivo') + ' sobre: "' + tema + '"\n', 'titulo');
-        appendResult('========================================\n\n', 'normal');
+        appendResult('📝 Generando ' + (tipo === 'chat' ? 'trabajo academico' : 'informe ejecutivo') + ' sobre: "' + tema + '"\n', 'titulo');
+        appendResult('═══════════════════════════════════════════════\n\n', 'normal');
 
-        fetch(API_BASE + '/generar', {
+        var url = API_BASE + '/generar';
+        var data = { tema: tema, modelo: modelo, tipo: tipo };
+        console.log('[KalmAI] Enviando POST a:', url);
+
+        fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tema: tema, modelo: modelo, tipo: tipo })
+            body: JSON.stringify(data)
         })
         .then(function(response) {
-            if (!response.ok) throw new Error('Error ' + response.status);
+            console.log('[KalmAI] Respuesta status:', response.status);
+            if (!response.ok) {
+                throw new Error('Error ' + response.status + ': ' + response.statusText);
+            }
             return response.json();
         })
         .then(function(data) {
+            console.log('[KalmAI] Datos recibidos');
             setProgress(95);
             if (data.error) {
                 appendResult('\n❌ Error: ' + data.error + '\n', 'error');
@@ -591,6 +603,7 @@
             }
         })
         .catch(function(error) {
+            console.error('[KalmAI] Error:', error);
             appendResult('\n❌ Error: ' + error.message + '\n', 'error');
             setStatus('Error', 'error');
             setProgress(0);
@@ -607,10 +620,16 @@
         console.log('[KalmAI] Click en Chat');
         
         var input = $('chat-tema');
-        if (!input) { console.error('Input no encontrado'); return; }
+        if (!input) {
+            console.error('[KalmAI] Input no encontrado');
+            return;
+        }
         
         var mensaje = input.value.trim();
-        if (!mensaje) { alert('Escribe un mensaje.'); return; }
+        if (!mensaje) {
+            alert('✏️ Escribe un mensaje.');
+            return;
+        }
         if (isGenerating) return;
 
         var modelo = $('chat-modelo').value;
@@ -619,7 +638,7 @@
         isGenerating = true;
         btn.disabled = true;
         btn.innerHTML = '⏳ Pensando...';
-        setStatus('Pensando...', 'loading');
+        setStatus('💬 Pensando...', 'loading');
         setProgress(20);
 
         var container = $('chat-result');
@@ -629,16 +648,24 @@
         appendResult('\n🧑 Tú: ' + mensaje + '\n', 'subtitulo');
         appendResult('🤖 IA: ', 'exito');
 
-        fetch(API_BASE + '/chat', {
+        var url = API_BASE + '/chat';
+        var data = { mensaje: mensaje, modelo: modelo };
+        console.log('[KalmAI] Enviando POST a:', url);
+
+        fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mensaje: mensaje, modelo: modelo })
+            body: JSON.stringify(data)
         })
         .then(function(response) {
-            if (!response.ok) throw new Error('Error ' + response.status);
+            console.log('[KalmAI] Respuesta status:', response.status);
+            if (!response.ok) {
+                throw new Error('Error ' + response.status + ': ' + response.statusText);
+            }
             return response.json();
         })
         .then(function(data) {
+            console.log('[KalmAI] Datos recibidos');
             setProgress(80);
             if (data.error) {
                 appendResult('❌ Error: ' + data.error + '\n', 'error');
@@ -651,6 +678,7 @@
             }
         })
         .catch(function(error) {
+            console.error('[KalmAI] Error:', error);
             appendResult('❌ Error: ' + error.message + '\n', 'error');
             setStatus('Error', 'error');
             setProgress(0);
@@ -665,7 +693,10 @@
 
     // ═══ EXPORTAR ═══
     function exportarTxt() {
-        if (!currentResult) { alert('No hay contenido para exportar.'); return; }
+        if (!currentResult) {
+            alert('📋 No hay contenido para exportar.');
+            return;
+        }
         var blob = new Blob([currentResult], { type: 'text/plain;charset=utf-8' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
@@ -690,24 +721,10 @@
 
     // ═══ INICIALIZAR ═══
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('[KalmAI] DOM cargado');
+        console.log('[KalmAI] DOM cargado - Inicializando...');
+        console.log('[KalmAI] API Base:', API_BASE);
 
-        // Asegurar que solo el tab activo se muestra
-        var activeTab = document.querySelector('.tab.active');
-        if (activeTab) {
-            var tabName = activeTab.getAttribute('data-tab');
-            document.querySelectorAll('.tab-content').forEach(function(c) {
-                c.classList.remove('active');
-                c.style.display = 'none';
-            });
-            var activeContent = $('tab-' + tabName);
-            if (activeContent) {
-                activeContent.classList.add('active');
-                activeContent.style.display = 'flex';
-            }
-        }
-
-        // Conectar botones con eventos click
+        // Conectar botones con eventos click - MÉTODO DIRECTO
         var btnGenerar = $('chat-generar');
         var btnChat = $('chat-chat');
         var btnKroot = $('kroot-generar');
@@ -722,11 +739,27 @@
             limpiar: !!btnLimpiar
         });
 
-        if (btnGenerar) btnGenerar.addEventListener('click', generar);
-        if (btnChat) btnChat.addEventListener('click', chatLibre);
-        if (btnKroot) btnKroot.addEventListener('click', generar);
-        if (btnExport) btnExport.addEventListener('click', exportarTxt);
-        if (btnLimpiar) btnLimpiar.addEventListener('click', limpiar);
+        // Asignar eventos directamente
+        if (btnGenerar) {
+            btnGenerar.onclick = generar;
+            console.log('[KalmAI] Evento click asignado a Generar');
+        }
+        if (btnChat) {
+            btnChat.onclick = chatLibre;
+            console.log('[KalmAI] Evento click asignado a Chat');
+        }
+        if (btnKroot) {
+            btnKroot.onclick = generar;
+            console.log('[KalmAI] Evento click asignado a Kroot');
+        }
+        if (btnExport) {
+            btnExport.onclick = exportarTxt;
+            console.log('[KalmAI] Evento click asignado a Exportar');
+        }
+        if (btnLimpiar) {
+            btnLimpiar.onclick = limpiar;
+            console.log('[KalmAI] Evento click asignado a Limpiar');
+        }
 
         // Enter para generar
         document.querySelectorAll('#chat-tema, #kroot-tema').forEach(function(el) {
@@ -739,7 +772,6 @@
         });
 
         console.log('[KalmAI] Inicializacion completada');
-        console.log('[KalmAI] API Base: ' + API_BASE);
     });
 
     // Exponer funciones globalmente
