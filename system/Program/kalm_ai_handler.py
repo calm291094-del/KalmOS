@@ -3,7 +3,7 @@
 
 """
 KALM AI - Handler para integrar en el servidor principal
-VERSION CORREGIDA - DEVUELVE JSON VALIDO
+VERSION DEFINITIVA - HTML INCORPORADO
 """
 
 import json
@@ -28,11 +28,9 @@ def instalar_dependencias():
 instalar_dependencias()
 
 # ============================================================
-# 2. HTML TEMPLATE
+# 2. HTML - INCORPORADO EN EL CODIGO
 # ============================================================
-def get_html_template():
-    """Retorna el HTML de Kalm AI"""
-    return """<!DOCTYPE html>
+HTML_TEMPLATE = '''<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -40,77 +38,328 @@ def get_html_template():
     <title>🧠 Kalm AI</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: linear-gradient(135deg, #0a0514 0%, #1a0033 50%, #2e0854 100%); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; padding: 20px; color: #e6e6fa; }
+        body {
+            background: linear-gradient(135deg, #0a0514 0%, #1a0033 50%, #2e0854 100%);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            color: #e6e6fa;
+        }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: rgba(10,5,20,0.5); border-radius: 3px; }
         ::-webkit-scrollbar-thumb { background: #6a0dad; border-radius: 3px; }
-        .app-container { max-width: 1000px; margin: 0 auto; background: rgba(26, 0, 51, 0.7); backdrop-filter: blur(20px); border-radius: 24px; border: 1px solid rgba(106, 13, 173, 0.25); box-shadow: 0 25px 80px rgba(0,0,0,0.6); overflow: hidden; min-height: 85vh; display: flex; flex-direction: column; }
-        .app-header { padding: 20px 28px; background: linear-gradient(135deg, rgba(75,0,130,0.3), rgba(106,13,173,0.1)); border-bottom: 1px solid rgba(106,13,173,0.15); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+
+        .app-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(26, 0, 51, 0.7);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(106, 13, 173, 0.25);
+            box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+            overflow: hidden;
+            min-height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-header {
+            padding: 20px 28px;
+            background: linear-gradient(135deg, rgba(75,0,130,0.3), rgba(106,13,173,0.1));
+            border-bottom: 1px solid rgba(106,13,173,0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
         .app-header .logo { display: flex; align-items: center; gap: 12px; }
-        .app-header .logo-icon { font-size: 28px; background: linear-gradient(135deg, #6a0dad, #da70d6); width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-        .app-header h1 { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #da70d6, #9370db); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .app-header .logo-icon {
+            font-size: 28px;
+            background: linear-gradient(135deg, #6a0dad, #da70d6);
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .app-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #da70d6, #9370db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
         .app-header .subtitle { font-size: 12px; color: #9370db; }
-        .status-badge { display: flex; align-items: center; gap: 8px; padding: 5px 14px; border-radius: 20px; background: rgba(0,204,102,0.12); border: 1px solid rgba(0,204,102,0.25); font-size: 12px; color: #00cc66; }
-        .status-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #00cc66; animation: pulse 1.5s ease-in-out infinite; }
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            background: rgba(0,204,102,0.12);
+            border: 1px solid rgba(0,204,102,0.25);
+            font-size: 12px;
+            color: #00cc66;
+        }
+        .status-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00cc66;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-        .tabs { display: flex; background: rgba(10,5,20,0.3); border-bottom: 1px solid rgba(106,13,173,0.1); padding: 0 16px; gap: 4px; flex-shrink: 0; flex-wrap: wrap; }
-        .tab { padding: 12px 20px; cursor: pointer; color: #9370db; font-weight: 600; font-size: 13px; border-bottom: 3px solid transparent; transition: all 0.3s; display: flex; align-items: center; gap: 8px; user-select: none; }
+
+        .tabs {
+            display: flex;
+            background: rgba(10,5,20,0.3);
+            border-bottom: 1px solid rgba(106,13,173,0.1);
+            padding: 0 16px;
+            gap: 4px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            color: #9370db;
+            font-weight: 600;
+            font-size: 13px;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            user-select: none;
+        }
         .tab:hover { color: #da70d6; background: rgba(106,13,173,0.08); }
-        .tab.active { color: #da70d6; border-bottom-color: #da70d6; background: rgba(106,13,173,0.1); }
-        .tab .badge { font-size: 9px; background: rgba(106,13,173,0.25); padding: 1px 8px; border-radius: 10px; color: #9370db; }
+        .tab.active {
+            color: #da70d6;
+            border-bottom-color: #da70d6;
+            background: rgba(106,13,173,0.1);
+        }
+        .tab .badge {
+            font-size: 9px;
+            background: rgba(106,13,173,0.25);
+            padding: 1px 8px;
+            border-radius: 10px;
+            color: #9370db;
+        }
         .tab.active .badge { background: rgba(218,112,214,0.15); color: #da70d6; }
-        .tab-content { display: none !important; flex: 1; flex-direction: column; }
-        .tab-content.active { display: flex !important; }
-        .controls-panel { padding: 14px 20px; background: rgba(10,5,20,0.25); border-bottom: 1px solid rgba(106,13,173,0.08); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; flex-shrink: 0; }
+
+        .tab-content {
+            display: none !important;
+            flex: 1;
+            flex-direction: column;
+        }
+        .tab-content.active {
+            display: flex !important;
+        }
+
+        .controls-panel {
+            padding: 14px 20px;
+            background: rgba(10,5,20,0.25);
+            border-bottom: 1px solid rgba(106,13,173,0.08);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            flex-shrink: 0;
+        }
         .controls-panel label { color: #9370db; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .controls-panel select { padding: 7px 12px; border-radius: 8px; border: 1px solid rgba(106,13,173,0.2); background: rgba(10,5,20,0.7); color: #e6e6fa; font-size: 13px; outline: none; cursor: pointer; min-width: 110px; }
+        .controls-panel select {
+            padding: 7px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(106,13,173,0.2);
+            background: rgba(10,5,20,0.7);
+            color: #e6e6fa;
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+            min-width: 110px;
+        }
         .controls-panel select:focus { border-color: #6a0dad; }
-        .controls-panel input[type="text"] { flex: 1; min-width: 160px; padding: 7px 14px; border-radius: 8px; border: 1px solid rgba(106,13,173,0.2); background: rgba(10,5,20,0.7); color: #e6e6fa; font-size: 13px; outline: none; }
+        .controls-panel input[type="text"] {
+            flex: 1;
+            min-width: 160px;
+            padding: 7px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(106,13,173,0.2);
+            background: rgba(10,5,20,0.7);
+            color: #e6e6fa;
+            font-size: 13px;
+            outline: none;
+        }
         .controls-panel input[type="text"]:focus { border-color: #6a0dad; }
         .controls-panel input[type="text"]::placeholder { color: #4b0082; }
-        .btn { padding: 7px 18px; border-radius: 8px; border: none; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.25s; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-        .btn-primary { background: linear-gradient(135deg, #6a0dad, #9370db); color: #fff; box-shadow: 0 4px 15px rgba(106,13,173,0.3); }
+
+        .btn {
+            padding: 7px 18px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6a0dad, #9370db);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(106,13,173,0.3);
+        }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(106,13,173,0.5); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .btn-secondary { background: rgba(75,0,130,0.2); color: #e6e6fa; border: 1px solid rgba(106,13,173,0.15); }
+        .btn-secondary {
+            background: rgba(75,0,130,0.2);
+            color: #e6e6fa;
+            border: 1px solid rgba(106,13,173,0.15);
+        }
         .btn-secondary:hover { background: rgba(75,0,130,0.35); }
-        .btn-success { background: linear-gradient(135deg, #008800, #00cc66); color: #fff; }
+        .btn-success {
+            background: linear-gradient(135deg, #008800, #00cc66);
+            color: #fff;
+        }
         .btn-success:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,204,102,0.3); }
-        .btn-external { background: rgba(0,100,200,0.2); color: #4da6ff; border: 1px solid rgba(0,100,200,0.2); }
+        .btn-external {
+            background: rgba(0,100,200,0.2);
+            color: #4da6ff;
+            border: 1px solid rgba(0,100,200,0.2);
+        }
         .btn-external:hover { background: rgba(0,100,200,0.35); }
         .btn-sm { padding: 4px 12px; font-size: 11px; }
-        .result-area { flex: 1; padding: 16px 20px; min-height: 280px; max-height: 480px; overflow-y: auto; background: rgba(0,0,0,0.12); margin: 0 14px 14px 14px; border-radius: 12px; border: 1px solid rgba(106,13,173,0.06); }
-        .result-area .result-content { white-space: pre-wrap; word-wrap: break-word; line-height: 1.8; font-size: 14px; color: #d8bfd8; }
+
+        .result-area {
+            flex: 1;
+            padding: 16px 20px;
+            min-height: 280px;
+            max-height: 480px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.12);
+            margin: 0 14px 14px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(106,13,173,0.06);
+        }
+        .result-area .result-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.8;
+            font-size: 14px;
+            color: #d8bfd8;
+        }
         .result-area .result-content .titulo { color: #da70d6; font-weight: 700; font-size: 1.1em; }
         .result-area .result-content .subtitulo { color: #9370db; font-weight: 600; }
         .result-area .result-content .error { color: #ff4444; }
         .result-area .result-content .exito { color: #00cc66; }
-        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 200px; text-align: center; color: #9370db; }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 200px;
+            text-align: center;
+            color: #9370db;
+        }
         .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
         .empty-state .title { font-size: 17px; font-weight: 600; color: #da70d6; }
         .empty-state .desc { font-size: 13px; margin-top: 4px; max-width: 380px; color: #6a0dad; }
-        .app-footer { padding: 10px 20px; border-top: 1px solid rgba(106,13,173,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; background: rgba(10,5,20,0.15); flex-shrink: 0; }
+
+        .app-footer {
+            padding: 10px 20px;
+            border-top: 1px solid rgba(106,13,173,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            background: rgba(10,5,20,0.15);
+            flex-shrink: 0;
+        }
         .app-footer .info { font-size: 11px; color: #6a0dad; }
         .app-footer .actions { display: flex; gap: 6px; flex-wrap: wrap; }
-        .progress-container { height: 3px; background: rgba(106,13,173,0.12); border-radius: 2px; overflow: hidden; margin: 0 14px 2px 14px; opacity: 0; transition: opacity 0.4s; flex-shrink: 0; }
+
+        .progress-container {
+            height: 3px;
+            background: rgba(106,13,173,0.12);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 0 14px 2px 14px;
+            opacity: 0;
+            transition: opacity 0.4s;
+            flex-shrink: 0;
+        }
         .progress-container.active { opacity: 1; }
-        .progress-container .progress-bar { height: 100%; width: 0%; background: linear-gradient(to right, #6a0dad, #da70d6); border-radius: 2px; transition: width 0.5s ease; }
-        @media (max-width: 768px) { .app-header { padding: 14px 16px; } .app-header h1 { font-size: 17px; } .tabs { padding: 0 10px; overflow-x: auto; flex-wrap: nowrap; } .tab { padding: 10px 14px; font-size: 12px; white-space: nowrap; } .controls-panel { padding: 10px 14px; } .controls-panel input[type="text"] { min-width: 100px; font-size: 12px; } .result-area { padding: 12px 14px; margin: 0 10px 10px 10px; min-height: 200px; max-height: 350px; } .btn { font-size: 12px; padding: 6px 12px; } }
-        @media (max-width: 480px) { body { padding: 10px; } .app-header .logo-icon { width: 34px; height: 34px; font-size: 18px; } .app-header h1 { font-size: 15px; } .controls-panel { flex-direction: column; align-items: stretch; } .controls-panel input[type="text"] { min-width: unset; } .controls-panel .btn-group { display: flex; gap: 6px; flex-wrap: wrap; } .controls-panel .btn-group .btn { flex: 1; justify-content: center; } .result-area { min-height: 160px; max-height: 280px; } }
+        .progress-container .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, #6a0dad, #da70d6);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        @media (max-width: 768px) {
+            .app-header { padding: 14px 16px; }
+            .app-header h1 { font-size: 17px; }
+            .tabs { padding: 0 10px; overflow-x: auto; flex-wrap: nowrap; }
+            .tab { padding: 10px 14px; font-size: 12px; white-space: nowrap; }
+            .controls-panel { padding: 10px 14px; }
+            .controls-panel input[type="text"] { min-width: 100px; font-size: 12px; }
+            .result-area { padding: 12px 14px; margin: 0 10px 10px 10px; min-height: 200px; max-height: 350px; }
+            .btn { font-size: 12px; padding: 6px 12px; }
+        }
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            .app-header .logo-icon { width: 34px; height: 34px; font-size: 18px; }
+            .app-header h1 { font-size: 15px; }
+            .controls-panel { flex-direction: column; align-items: stretch; }
+            .controls-panel input[type="text"] { min-width: unset; }
+            .controls-panel .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+            .controls-panel .btn-group .btn { flex: 1; justify-content: center; }
+            .result-area { min-height: 160px; max-height: 280px; }
+        }
     </style>
 </head>
 <body>
 <div class="app-container">
+
     <header class="app-header">
-        <div class="logo"><div class="logo-icon">🧠</div><div><h1>Kalm AI</h1><span class="subtitle">Asistente Inteligente</span></div></div>
-        <div class="status-badge"><span class="dot"></span><span id="status-text">Listo</span></div>
+        <div class="logo">
+            <div class="logo-icon">🧠</div>
+            <div>
+                <h1>Kalm AI</h1>
+                <span class="subtitle">Asistente Inteligente</span>
+            </div>
+        </div>
+        <div class="status-badge">
+            <span class="dot"></span>
+            <span id="status-text">Listo</span>
+        </div>
     </header>
+
     <div class="tabs">
-        <div class="tab active" data-tab="chat" onclick="switchTab('chat')">💬 Chat Academico <span class="badge">IA</span></div>
-        <div class="tab" data-tab="kroot" onclick="switchTab('kroot')">🏢 Kroot Corp <span class="badge">Empresarial</span></div>
-        <div class="tab" data-tab="external" onclick="switchTab('external')">🌐 Externos <span class="badge">Web</span></div>
+        <div class="tab active" data-tab="chat" onclick="switchTab('chat')">
+            💬 Chat Academico <span class="badge">IA</span>
+        </div>
+        <div class="tab" data-tab="kroot" onclick="switchTab('kroot')">
+            🏢 Kroot Corp <span class="badge">Empresarial</span>
+        </div>
+        <div class="tab" data-tab="external" onclick="switchTab('external')">
+            🌐 Externos <span class="badge">Web</span>
+        </div>
     </div>
-    <div class="progress-container" id="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
+
+    <div class="progress-container" id="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <!-- ═══ TAB: CHAT ACADEMICO ═══ -->
     <div class="tab-content active" id="tab-chat">
         <div class="controls-panel">
             <label>Modelo</label>
@@ -124,12 +373,20 @@ def get_html_template():
             </select>
             <input type="text" id="chat-tema" placeholder="Tema del trabajo academico..." />
             <div class="btn-group">
-                <button class="btn btn-primary" id="chat-generar">Generar</button>
-                <button class="btn btn-secondary" id="chat-chat">Chat</button>
+                <button class="btn btn-primary" id="chat-generar">📝 Generar</button>
+                <button class="btn btn-secondary" id="chat-chat">💬 Chat</button>
             </div>
         </div>
-        <div class="result-area" id="chat-result"><div class="empty-state"><div class="icon">📚</div><div class="title">Chat Academico</div><div class="desc">Escribe un tema y pulsa "Generar" para crear un trabajo academico.</div></div></div>
+        <div class="result-area" id="chat-result">
+            <div class="empty-state">
+                <div class="icon">📚</div>
+                <div class="title">Chat Academico</div>
+                <div class="desc">Escribe un tema y pulsa "Generar" para crear un trabajo academico.</div>
+            </div>
+        </div>
     </div>
+
+    <!-- ═══ TAB: KROOT CORP ═══ -->
     <div class="tab-content" id="tab-kroot">
         <div class="controls-panel">
             <label>Modelo</label>
@@ -142,12 +399,25 @@ def get_html_template():
                 <option value="mistral">Mistral</option>
             </select>
             <input type="text" id="kroot-tema" placeholder="Tema del informe ejecutivo..." />
-            <div class="btn-group"><button class="btn btn-primary" id="kroot-generar">Generar Informe</button></div>
+            <div class="btn-group">
+                <button class="btn btn-primary" id="kroot-generar">📊 Generar Informe</button>
+            </div>
         </div>
-        <div class="result-area" id="kroot-result"><div class="empty-state"><div class="icon">🏢</div><div class="title">Kroot Corp IA</div><div class="desc">Genera informes ejecutivos profesionales.</div></div></div>
+        <div class="result-area" id="kroot-result">
+            <div class="empty-state">
+                <div class="icon">🏢</div>
+                <div class="title">Kroot Corp IA</div>
+                <div class="desc">Genera informes ejecutivos profesionales.</div>
+            </div>
+        </div>
     </div>
+
+    <!-- ═══ TAB: EXTERNOS ═══ -->
     <div class="tab-content" id="tab-external">
-        <div class="controls-panel"><label>🌐 Acceso a IAs externas</label><span style="color:#9370db;font-size:13px;">Abre en nueva pestaña</span></div>
+        <div class="controls-panel">
+            <label>🌐 Acceso a IAs externas</label>
+            <span style="color:#9370db;font-size:13px;">Abre en nueva pestaña</span>
+        </div>
         <div style="padding:16px 20px;flex:1;">
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
                 <div style="background:rgba(10,5,20,0.4);border-radius:12px;padding:20px;border:1px solid rgba(106,13,173,0.15);">
@@ -174,14 +444,16 @@ def get_html_template():
             </div>
         </div>
     </div>
+
     <footer class="app-footer">
         <span class="info">Pollinations AI · DuckDuckGo · Sin API Key</span>
         <div class="actions">
-            <button class="btn btn-success btn-sm" id="btn-export">Exportar</button>
-            <button class="btn btn-secondary btn-sm" id="btn-limpiar">Limpiar</button>
+            <button class="btn btn-success btn-sm" id="btn-export">📄 Exportar</button>
+            <button class="btn btn-secondary btn-sm" id="btn-limpiar">🗑️ Limpiar</button>
         </div>
     </footer>
 </div>
+
 <script>
     // ═══════════════════════════════════════════════════════
     // ESTADO GLOBAL
@@ -191,43 +463,21 @@ def get_html_template():
     var isGenerating = false;
     var API_BASE = '/kalm-ai';
 
-    function $(id) { return document.getElementById(id); }
-
-    function switchTab(tab) {
-        currentTab = tab;
-        document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
-        var tabEl = document.querySelector('.tab[data-tab="' + tab + '"]');
-        if (tabEl) tabEl.classList.add('active');
-        document.querySelectorAll('.tab-content').forEach(function(c) {
-            c.classList.remove('active');
-            c.style.display = 'none';
-        });
-        var contentEl = $('tab-' + tab);
-        if (contentEl) {
-            contentEl.classList.add('active');
-            contentEl.style.display = 'flex';
-        }
-        setStatus('Listo', 'info');
-        setProgress(0);
-    }
+    function getId(id) { return document.getElementById(id); }
 
     function setStatus(text, type) {
         type = type || 'info';
         var colors = { info: '#9370db', success: '#00cc66', error: '#ff4444', loading: '#ffaa00' };
-        var el = $('status-text');
+        var el = getId('status-text');
         if (el) {
             el.textContent = text;
             el.style.color = colors[type] || '#9370db';
         }
-        var dot = document.querySelector('.dot');
-        if (dot) {
-            dot.style.background = type === 'error' ? '#ff4444' : type === 'loading' ? '#ffaa00' : '#00cc66';
-        }
     }
 
     function setProgress(pct) {
-        var container = $('progress-container');
-        var bar = $('progress-bar');
+        var container = getId('progress-container');
+        var bar = getId('progress-bar');
         if (!container || !bar) return;
         if (pct > 0) {
             container.classList.add('active');
@@ -238,11 +488,33 @@ def get_html_template():
         }
     }
 
+    function getResultContainer() {
+        return currentTab === 'chat' ? getId('chat-result') : getId('kroot-result');
+    }
+
+    function getTemaInput() {
+        return currentTab === 'chat' ? getId('chat-tema') : getId('kroot-tema');
+    }
+
+    function getModeloSelect() {
+        return currentTab === 'chat' ? getId('chat-modelo') : getId('kroot-modelo');
+    }
+
+    function getGenerarBtn() {
+        return currentTab === 'chat' ? getId('chat-generar') : getId('kroot-generar');
+    }
+
     function appendResult(text, type) {
         type = type || 'normal';
-        var container = currentTab === 'chat' ? $('chat-result') : $('kroot-result');
+        var container = getResultContainer();
         if (!container) return;
-        var classes = { titulo: 'titulo', subtitulo: 'subtitulo', error: 'error', exito: 'exito', normal: '' };
+        var classes = {
+            titulo: 'titulo',
+            subtitulo: 'subtitulo',
+            error: 'error',
+            exito: 'exito',
+            normal: ''
+        };
         var cls = classes[type] || '';
         var content = container.querySelector('.result-content');
         if (!content) {
@@ -260,11 +532,11 @@ def get_html_template():
     }
 
     function clearResult() {
-        var container = currentTab === 'chat' ? $('chat-result') : $('kroot-result');
+        var container = getResultContainer();
         if (!container) return;
         var icon = currentTab === 'chat' ? '📚' : '🏢';
         var title = currentTab === 'chat' ? 'Chat Academico' : 'Kroot Corp IA';
-        var desc = currentTab === 'chat' 
+        var desc = currentTab === 'chat'
             ? 'Escribe un tema y pulsa "Generar" para crear un trabajo academico.'
             : 'Genera informes ejecutivos profesionales.';
         container.innerHTML = '<div class="empty-state"><div class="icon">' + icon + '</div><div class="title">' + title + '</div><div class="desc">' + desc + '</div></div>';
@@ -272,24 +544,49 @@ def get_html_template():
         setProgress(0);
     }
 
+    // ═══ CAMBIAR PESTAÑA ═══
+    function switchTab(tab) {
+        currentTab = tab;
+        var tabs = document.querySelectorAll('.tab');
+        for (var i = 0; i < tabs.length; i++) {
+            tabs[i].classList.remove('active');
+        }
+        var tabEl = document.querySelector('.tab[data-tab="' + tab + '"]');
+        if (tabEl) tabEl.classList.add('active');
+        var contents = document.querySelectorAll('.tab-content');
+        for (var j = 0; j < contents.length; j++) {
+            contents[j].classList.remove('active');
+            contents[j].style.display = 'none';
+        }
+        var contentEl = getId('tab-' + tab);
+        if (contentEl) {
+            contentEl.classList.add('active');
+            contentEl.style.display = 'flex';
+        }
+        setStatus('Listo', 'info');
+        setProgress(0);
+    }
+
+    // ═══ GENERAR ═══
     function generar() {
-        var input = currentTab === 'chat' ? $('chat-tema') : $('kroot-tema');
+        var input = getTemaInput();
         if (!input) return;
         var tema = input.value.trim();
         if (!tema) { alert('Escribe un tema.'); return; }
         if (isGenerating) return;
 
-        var modelo = (currentTab === 'chat' ? $('chat-modelo') : $('kroot-modelo')).value;
+        var modelo = getModeloSelect().value;
         var tipo = currentTab;
-        var btn = currentTab === 'chat' ? $('chat-generar') : $('kroot-generar');
+        var btn = getGenerarBtn();
 
         isGenerating = true;
         btn.disabled = true;
         btn.innerHTML = 'Generando...';
+
         setProgress(10);
         setStatus('Generando...', 'loading');
 
-        var container = currentTab === 'chat' ? $('chat-result') : $('kroot-result');
+        var container = getResultContainer();
         container.innerHTML = '<div class="result-content"></div>';
         appendResult('Generando ' + (tipo === 'chat' ? 'trabajo academico' : 'informe ejecutivo') + ' sobre: "' + tema + '"\n', 'titulo');
         appendResult('========================================\n\n', 'normal');
@@ -310,8 +607,8 @@ def get_html_template():
                 setStatus('Error', 'error');
             } else {
                 var lines = data.resultado.split('\n');
-                for (var i = 0; i < lines.length; i++) {
-                    var line = lines[i];
+                for (var k = 0; k < lines.length; k++) {
+                    var line = lines[k];
                     if (line.startsWith('##') || line.startsWith('#')) appendResult(line + '\n', 'titulo');
                     else if (line.startsWith('**') || line.startsWith('*')) appendResult(line + '\n', 'subtitulo');
                     else if (line.match(/^[✅📊📝📌🔹]/)) appendResult(line + '\n', 'exito');
@@ -336,15 +633,16 @@ def get_html_template():
         });
     }
 
+    // ═══ CHAT ═══
     function chatLibre() {
-        var input = $('chat-tema');
+        var input = getId('chat-tema');
         if (!input) return;
         var mensaje = input.value.trim();
         if (!mensaje) { alert('Escribe un mensaje.'); return; }
         if (isGenerating) return;
 
-        var modelo = $('chat-modelo').value;
-        var btn = $('chat-chat');
+        var modelo = getId('chat-modelo').value;
+        var btn = getId('chat-chat');
 
         isGenerating = true;
         btn.disabled = true;
@@ -352,7 +650,7 @@ def get_html_template():
         setStatus('Pensando...', 'loading');
         setProgress(20);
 
-        var container = $('chat-result');
+        var container = getId('chat-result');
         if (!container.querySelector('.result-content')) {
             container.innerHTML = '<div class="result-content"></div>';
         }
@@ -393,6 +691,7 @@ def get_html_template():
         });
     }
 
+    // ═══ EXPORTAR ═══
     function exportarTxt() {
         if (!currentResult) { alert('No hay contenido para exportar.'); return; }
         var blob = new Blob([currentResult], { type: 'text/plain;charset=utf-8' });
@@ -408,32 +707,45 @@ def get_html_template():
         setStatus('Exportado', 'success');
     }
 
+    // ═══ LIMPIAR ═══
     function limpiar() {
         clearResult();
-        var input = currentTab === 'chat' ? $('chat-tema') : $('kroot-tema');
+        var input = getTemaInput();
         if (input) input.value = '';
         setStatus('Limpiado', 'info');
         setProgress(0);
     }
 
-    // Event listeners
+    // ═══ INICIALIZAR ═══
     document.addEventListener('DOMContentLoaded', function() {
-        $('chat-generar').addEventListener('click', generar);
-        $('chat-chat').addEventListener('click', chatLibre);
-        $('kroot-generar').addEventListener('click', generar);
-        $('btn-export').addEventListener('click', exportarTxt);
-        $('btn-limpiar').addEventListener('click', limpiar);
-        
-        document.querySelectorAll('#chat-tema, #kroot-tema').forEach(function(el) {
-            el.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    generar();
-                }
-            });
-        });
+        // Conectar botones
+        var btnGenerar = getId('chat-generar');
+        var btnChat = getId('chat-chat');
+        var btnKroot = getId('kroot-generar');
+        var btnExport = getId('btn-export');
+        var btnLimpiar = getId('btn-limpiar');
+
+        if (btnGenerar) btnGenerar.onclick = generar;
+        if (btnChat) btnChat.onclick = chatLibre;
+        if (btnKroot) btnKroot.onclick = generar;
+        if (btnExport) btnExport.onclick = exportarTxt;
+        if (btnLimpiar) btnLimpiar.onclick = limpiar;
+
+        // Enter para generar
+        var inputs = document.querySelectorAll('#chat-tema, #kroot-tema');
+        for (var i = 0; i < inputs.length; i++) {
+            (function(el) {
+                el.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        generar();
+                    }
+                });
+            })(inputs[i]);
+        }
     });
 
+    // Exponer funciones
     window.switchTab = switchTab;
     window.generar = generar;
     window.chatLibre = chatLibre;
@@ -441,7 +753,7 @@ def get_html_template():
     window.limpiar = limpiar;
 </script>
 </body>
-</html>"""
+</html>'''
 
 # ============================================================
 # 3. PROVEEDORES DE IA
@@ -463,7 +775,7 @@ class IAProvider:
             return resultado
         except Exception as e:
             raise Exception(f"Pollinations fallo: {str(e)}")
-    
+
     @staticmethod
     def duckduckgo(prompt):
         try:
@@ -473,7 +785,7 @@ class IAProvider:
                 return response
         except Exception as e:
             raise Exception(f"DuckDuckGo fallo: {str(e)}")
-    
+
     @staticmethod
     def get_response(prompt, model="openai"):
         providers = [
@@ -498,38 +810,28 @@ class IAProvider:
 # ============================================================
 
 def serve_kalm_ai_page():
-    """Sirve la pagina HTML de Kalm AI"""
-    try:
-        views_dir = Path(__file__).parent.parent.parent / "views"
-        html_file = views_dir / "kalm_ai.html"
-        if html_file.exists():
-            print("[KalmAI] Sirviendo desde views/kalm_ai.html")
-            return html_file.read_text(encoding="utf-8")
-        else:
-            print("[KalmAI] Usando template interno")
-            return get_html_template()
-    except Exception as e:
-        print(f"[KalmAI] Error: {e}")
-        return get_html_template()
+    """Sirve el HTML de Kalm AI directamente"""
+    return HTML_TEMPLATE
 
 def handle_generar(data):
-    """Genera trabajos/informes - DEVUELVE JSON VALIDO"""
+    """Genera trabajos/informes"""
     tema = data.get('tema', '').strip()
     modelo = data.get('modelo', 'openai')
     tipo = data.get('tipo', 'chat')
-    
+
     print(f"[KalmAI] generar: tema='{tema}', modelo='{modelo}', tipo='{tipo}'")
-    
+
     if not tema:
         return {"error": "El tema no puede estar vacio"}, 400
-    
+
     if tipo == 'chat':
         prompt = f"""Escribe un trabajo academico completo y profesional sobre: {tema}
 
 ESTRUCTURA EXACTA:
 ## INTRODUCCION
 ## INTRODUCTION (in English)
-## DESARROLLO## CONCLUSIONES
+## DESARROLLO
+## CONCLUSIONES
 ## BIBLIOGRAFIA
 
 El trabajo debe ser completo, bien estructurado, con lenguaje formal y academico."""
@@ -543,32 +845,27 @@ ESTRUCTURA EXACTA:
 ## RECOMENDACIONES
 
 El informe debe ser ejecutivo, directo y orientado a la toma de decisiones."""
-    
+
     try:
         resultado = IAProvider.get_response(prompt, modelo)
-        print(f"[KalmAI] Resultado obtenido: {len(resultado)} caracteres")
-        # Asegurar que devolvemos JSON valido
         return {"resultado": resultado}, 200
     except Exception as e:
-        print(f"[KalmAI] Error: {e}")
         return {"error": str(e)}, 500
 
 def handle_chat(data):
-    """Chat libre - DEVUELVE JSON VALIDO"""
+    """Chat libre"""
     mensaje = data.get('mensaje', '').strip()
     modelo = data.get('modelo', 'openai')
-    
+
     print(f"[KalmAI] chat: mensaje='{mensaje[:50]}...'")
-    
+
     if not mensaje:
         return {"error": "El mensaje no puede estar vacio"}, 400
-    
+
     try:
         respuesta = IAProvider.get_response(mensaje, modelo)
-        print(f"[KalmAI] Respuesta obtenida: {len(respuesta)} caracteres")
         return {"respuesta": respuesta}, 200
     except Exception as e:
-        print(f"[KalmAI] Error: {e}")
         return {"error": str(e)}, 500
 
 def handle_health():
