@@ -131,6 +131,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             if route == "/" or route == "/index" or route == "/index.html":
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(serve_kalm_ai_page())))
                 self.end_headers()
                 self.wfile.write(serve_kalm_ai_page().encode("utf-8"))
                 return
@@ -156,7 +157,8 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         
             try:
                 data = json.loads(body) if body else {}
-            except:
+            except Exception as e:
+                print(f"Error parseando JSON: {e}")
                 data = {}
         
             if route == "/generar":
