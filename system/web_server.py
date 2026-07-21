@@ -124,16 +124,18 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         if not route or route == "":
             route = "/"
     
-        print(f"Kalm AI route: {route}")
+        print(f"[KalmAI] Ruta solicitada: {route}")
     
         # GET requests
         if self.command == "GET":
             if route == "/" or route == "/index" or route == "/index.html":
+                content = serve_kalm_ai_page()
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.send_header("Content-Length", str(len(serve_kalm_ai_page())))
+                self.send_header("Content-Length", str(len(content)))
+                self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
-                self.wfile.write(serve_kalm_ai_page().encode("utf-8"))
+                self.wfile.write(content.encode("utf-8"))
                 return
         
             elif route == "/health":
@@ -158,7 +160,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             try:
                 data = json.loads(body) if body else {}
             except Exception as e:
-                print(f"Error parseando JSON: {e}")
+                print(f"[KalmAI] Error parseando JSON: {e}")
                 data = {}
         
             if route == "/generar":
