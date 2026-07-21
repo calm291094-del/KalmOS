@@ -7,9 +7,7 @@
     <link rel="stylesheet" href="/static/css/desktop.css">
     <link rel="stylesheet" href="/static/css/windows.css">
     <link rel="stylesheet" href="/static/css/themes.css">
-    <link rel="stylesheet" href="/static/css/filemanager.css">
-
-<style>
+    <style>
         /* ═══ ICONOS DE ESCRITORIO ═══ */
         .desktop-icon {
             width: 85px;
@@ -55,85 +53,122 @@
             .desktop-icon .lbl { font-size: 8px; }
         }
 
-        /* ═══ FILE MANAGER - ESTILOS WINDOWS ═══ */
-        .file-toolbar {
+        /* ═══ FILE MANAGER - ESTILOS DIRECTOS ═══ */
+        #win-explorer .window-body {
+            padding: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100% !important;
+            background: #0a0514 !important;
+        }
+
+        #win-explorer .file-toolbar {
             display: flex !important;
             gap: 6px !important;
             align-items: center !important;
             padding: 6px 12px !important;
-            background: rgba(10,5,20,0.7) !important;
-            border-bottom: 1px solid rgba(106,13,173,0.25) !important;
+            background: rgba(10, 5, 20, 0.8) !important;
+            border-bottom: 1px solid rgba(106, 13, 173, 0.3) !important;
             flex-wrap: wrap !important;
             min-height: 40px !important;
+            flex-shrink: 0 !important;
         }
-        .file-toolbar .act {
+
+        #win-explorer .file-toolbar .act {
             padding: 4px 12px !important;
             font-size: 12px !important;
             border-radius: 4px !important;
             border: none !important;
             cursor: pointer !important;
-            transition: all 0.2s !important;
-            background: rgba(75,0,130,0.35) !important;
+            background: rgba(75, 0, 130, 0.35) !important;
             color: #e6e6fa !important;
             height: 30px !important;
             display: inline-flex !important;
             align-items: center !important;
             gap: 4px !important;
+            transition: all 0.2s !important;
         }
-        .file-toolbar .act:hover {
-            background: rgba(106,13,173,0.5) !important;
-            transform: scale(1.03) !important;
+
+        #win-explorer .file-toolbar .act:hover {
+            background: rgba(106, 13, 173, 0.5) !important;
         }
-        .file-toolbar input[type="text"] {
+
+        #win-explorer .file-toolbar .act.danger {
+            background: rgba(139, 0, 0, 0.35) !important;
+            color: #ff4444 !important;
+        }
+
+        #win-explorer .file-toolbar .act.danger:hover {
+            background: rgba(139, 0, 0, 0.55) !important;
+        }
+
+        #win-explorer .file-toolbar input[type="text"] {
             padding: 4px 10px !important;
             border-radius: 4px !important;
-            border: 1px solid rgba(106,13,173,0.25) !important;
-            background: rgba(10,5,20,0.6) !important;
+            border: 1px solid rgba(106, 13, 173, 0.25) !important;
+            background: rgba(10, 5, 20, 0.6) !important;
             color: #e6e6fa !important;
             font-size: 12px !important;
             outline: none !important;
             height: 30px !important;
         }
-        .file-toolbar input[type="text"]:focus {
+
+        #win-explorer .file-toolbar input[type="text"]:focus {
             border-color: #6a0dad !important;
-            box-shadow: 0 0 15px rgba(106,13,173,0.15) !important;
+            box-shadow: 0 0 15px rgba(106, 13, 173, 0.15) !important;
         }
-        .file-path {
+
+        #win-explorer .file-toolbar .file-path {
             flex: 1 !important;
             min-width: 150px !important;
             font-family: 'Consolas', monospace !important;
             font-size: 12px !important;
             color: #9370db !important;
-            background: rgba(10,5,20,0.4) !important;
+            background: rgba(10, 5, 20, 0.4) !important;
+            cursor: default !important;
         }
-        #file-grid {
+
+        #win-explorer .file-toolbar #file-status {
+            color: #9370db !important;
+            font-size: 12px !important;
+            margin-left: auto !important;
+            padding: 0 12px !important;
+            font-weight: 500 !important;
+            white-space: nowrap !important;
+        }
+
+        #win-explorer #file-grid {
             padding: 4px 8px !important;
             overflow-y: auto !important;
-            height: calc(100% - 50px) !important;
-            background: rgba(0,0,0,0.1) !important;
+            flex: 1 !important;
+            background: rgba(0, 0, 0, 0.1) !important;
         }
-        #file-grid::-webkit-scrollbar {
+
+        #win-explorer #file-grid::-webkit-scrollbar {
             width: 6px !important;
         }
-        #file-grid::-webkit-scrollbar-track {
-            background: rgba(10,5,20,0.5) !important;
+
+        #win-explorer #file-grid::-webkit-scrollbar-track {
+            background: rgba(10, 5, 20, 0.5) !important;
             border-radius: 3px !important;
         }
-        #file-grid::-webkit-scrollbar-thumb {
+
+        #win-explorer #file-grid::-webkit-scrollbar-thumb {
             background: #6a0dad !important;
             border-radius: 3px !important;
         }
-        #file-grid::-webkit-scrollbar-thumb:hover {
+
+        #win-explorer #file-grid::-webkit-scrollbar-thumb:hover {
             background: #9370db !important;
         }
 
-        .file-header {
+        #win-explorer .file-header {
             display: grid !important;
             grid-template-columns: 36px 1fr 90px 140px auto !important;
             gap: 6px !important;
             padding: 4px 12px !important;
-            background: rgba(75,0,130,0.2) !important;
-            border-bottom: 2px solid rgba(106,13,173,0.3) !important;
+            background: rgba(75, 0, 130, 0.2) !important;
+            border-bottom: 2px solid rgba(106, 13, 173, 0.3) !important;
             font-size: 11px !important;
             color: #9370db !important;
             font-weight: 600 !important;
@@ -142,18 +177,21 @@
             border-radius: 4px 4px 0 0 !important;
             margin-bottom: 2px !important;
         }
-        .file-header div {
+
+        #win-explorer .file-header div {
             display: flex !important;
             align-items: center !important;
         }
-        .file-header div:last-child {
-            justify-content: center !important;
-        }
-        .file-header div:first-child {
+
+        #win-explorer .file-header div:last-child {
             justify-content: center !important;
         }
 
-        .file-row {
+        #win-explorer .file-header div:first-child {
+            justify-content: center !important;
+        }
+
+        #win-explorer .file-row {
             display: grid !important;
             grid-template-columns: 36px 1fr 90px 140px auto !important;
             gap: 6px !important;
@@ -165,51 +203,62 @@
             align-items: center !important;
             border-left: 3px solid transparent !important;
         }
-        .file-row .file-icon {
+
+        #win-explorer .file-row:hover {
+            background: rgba(106, 13, 173, 0.2) !important;
+        }
+
+        #win-explorer .file-row .file-icon {
             text-align: center !important;
             font-size: 20px !important;
             line-height: 1 !important;
         }
-        .file-row .file-name {
+
+        #win-explorer .file-row .file-name {
             font-size: 13px !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
             white-space: nowrap !important;
             color: #e6e6fa !important;
         }
-        .file-row .file-name.dir {
+
+        #win-explorer .file-row .file-name.dir {
             color: #da70d6 !important;
             font-weight: 600 !important;
             cursor: pointer !important;
         }
-        .file-row .file-size {
+
+        #win-explorer .file-row .file-size {
             font-size: 12px !important;
             text-align: right !important;
             color: #9370db !important;
         }
-        .file-row .file-size.dir-size {
+
+        #win-explorer .file-row .file-size.dir-size {
             color: #6a0dad !important;
         }
-        .file-row .file-modified {
+
+        #win-explorer .file-row .file-modified {
             font-size: 11px !important;
             text-align: right !important;
             color: #6a0dad !important;
         }
-        .file-row .file-actions {
+
+        #win-explorer .file-row .file-actions {
             display: flex !important;
             gap: 3px !important;
             justify-content: center !important;
             flex-wrap: wrap !important;
         }
 
-        .file-btn {
+        #win-explorer .file-btn {
             padding: 2px 6px !important;
             font-size: 11px !important;
             border: none !important;
             border-radius: 4px !important;
             cursor: pointer !important;
             transition: all 0.2s ease !important;
-            background: rgba(75,0,130,0.25) !important;
+            background: rgba(75, 0, 130, 0.25) !important;
             color: #e6e6fa !important;
             display: inline-flex !important;
             align-items: center !important;
@@ -217,155 +266,232 @@
             min-width: 24px !important;
             height: 24px !important;
         }
-        .file-btn:hover {
+
+        #win-explorer .file-btn:hover {
             transform: scale(1.1) !important;
-            background: rgba(106,13,173,0.4) !important;
-        }
-        .file-btn-success {
-            background: rgba(0,136,0,0.3) !important;
-            color: #00cc66 !important;
-        }
-        .file-btn-success:hover {
-            background: rgba(0,136,0,0.5) !important;
-        }
-        .file-btn-danger {
-            background: rgba(139,0,0,0.3) !important;
-            color: #ff4444 !important;
-        }
-        .file-btn-danger:hover {
-            background: rgba(139,0,0,0.5) !important;
-        }
-        .file-btn-info {
-            background: rgba(75,0,130,0.3) !important;
-            color: #9370db !important;
-        }
-        .file-btn-info:hover {
-            background: rgba(75,0,130,0.5) !important;
-        }
-        .file-btn-warning {
-            background: rgba(255,170,0,0.2) !important;
-            color: #ffaa00 !important;
-        }
-        .file-btn-warning:hover {
-            background: rgba(255,170,0,0.35) !important;
-        }
-        .file-btn-open {
-            background: rgba(0,100,200,0.25) !important;
-            color: #4da6ff !important;
-        }
-        .file-btn-open:hover {
-            background: rgba(0,100,200,0.45) !important;
+            background: rgba(106, 13, 173, 0.4) !important;
         }
 
-        #file-status {
+        #win-explorer .file-btn-success {
+            background: rgba(0, 136, 0, 0.3) !important;
+            color: #00cc66 !important;
+        }
+
+        #win-explorer .file-btn-success:hover {
+            background: rgba(0, 136, 0, 0.5) !important;
+        }
+
+        #win-explorer .file-btn-danger {
+            background: rgba(139, 0, 0, 0.3) !important;
+            color: #ff4444 !important;
+        }
+
+        #win-explorer .file-btn-danger:hover {
+            background: rgba(139, 0, 0, 0.5) !important;
+        }
+
+        #win-explorer .file-btn-info {
+            background: rgba(75, 0, 130, 0.3) !important;
             color: #9370db !important;
+        }
+
+        #win-explorer .file-btn-info:hover {
+            background: rgba(75, 0, 130, 0.5) !important;
+        }
+
+        #win-explorer .file-btn-warning {
+            background: rgba(255, 170, 0, 0.2) !important;
+            color: #ffaa00 !important;
+        }
+
+        #win-explorer .file-btn-warning:hover {
+            background: rgba(255, 170, 0, 0.35) !important;
+        }
+
+        #win-explorer .file-btn-open {
+            background: rgba(0, 100, 200, 0.25) !important;
+            color: #4da6ff !important;
+        }
+
+        #win-explorer .file-btn-open:hover {
+            background: rgba(0, 100, 200, 0.45) !important;
+        }
+
+        #win-explorer .file-empty {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            height: 200px !important;
+            color: #9370db !important;
+            flex-direction: column !important;
+        }
+
+        #win-explorer .file-empty .icon {
+            font-size: 48px !important;
+            margin-bottom: 15px !important;
+        }
+
+        #win-explorer .file-empty .title {
+            font-size: 14px !important;
+        }
+
+        #win-explorer .file-empty .subtitle {
             font-size: 12px !important;
-            margin-left: auto !important;
-            padding: 0 12px !important;
-            font-weight: 500 !important;
-            white-space: nowrap !important;
+            color: #6a0dad !important;
+            margin-top: 5px !important;
+        }
+
+        #win-explorer .file-loading {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            height: 200px !important;
+            color: #9370db !important;
+            flex-direction: column !important;
+        }
+
+        #win-explorer .file-loading .spinner {
+            font-size: 32px !important;
+            margin-bottom: 10px !important;
+            animation: spin 1s linear infinite !important;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        #win-explorer .file-error {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            height: 200px !important;
+            color: #ff6b6b !important;
+            flex-direction: column !important;
+        }
+
+        #win-explorer .file-error .icon {
+            font-size: 32px !important;
+            margin-bottom: 10px !important;
+        }
+
+        #win-explorer .file-error .message {
+            font-size: 13px !important;
+        }
+
+        #win-explorer .file-error .retry {
+            margin-top: 15px !important;
+            padding: 4px 16px !important;
+            border-radius: 4px !important;
+            border: none !important;
+            background: rgba(75, 0, 130, 0.35) !important;
+            color: #e6e6fa !important;
+            cursor: pointer !important;
+        }
+
+        #win-explorer .file-error .retry:hover {
+            background: rgba(106, 13, 173, 0.5) !important;
         }
 
         /* ═══ RESPONSIVE ═══ */
         @media (max-width: 768px) {
-            .file-row {
+            #win-explorer .file-row {
                 grid-template-columns: 30px 1fr 60px auto !important;
                 padding: 3px 8px !important;
             }
-            .file-row .file-modified {
+            #win-explorer .file-row .file-modified {
                 display: none !important;
             }
-            .file-header {
+            #win-explorer .file-header {
                 grid-template-columns: 30px 1fr 60px auto !important;
             }
-            .file-header div:nth-child(4) {
+            #win-explorer .file-header div:nth-child(4) {
                 display: none !important;
             }
-            .file-toolbar {
+            #win-explorer .file-toolbar {
                 padding: 4px 8px !important;
                 gap: 4px !important;
                 min-height: 34px !important;
             }
-            .file-toolbar .act {
+            #win-explorer .file-toolbar .act {
                 font-size: 10px !important;
                 padding: 3px 8px !important;
                 height: 26px !important;
             }
-            .file-toolbar input[type="text"] {
+            #win-explorer .file-toolbar input[type="text"] {
                 font-size: 10px !important;
                 padding: 3px 6px !important;
                 height: 26px !important;
             }
-            .file-path {
+            #win-explorer .file-toolbar .file-path {
                 min-width: 80px !important;
                 font-size: 10px !important;
             }
-            .file-btn {
+            #win-explorer .file-btn {
                 padding: 1px 4px !important;
                 font-size: 10px !important;
                 min-width: 20px !important;
                 height: 20px !important;
             }
-            .file-row .file-icon {
+            #win-explorer .file-row .file-icon {
                 font-size: 18px !important;
             }
-            .file-row .file-name {
+            #win-explorer .file-row .file-name {
                 font-size: 12px !important;
             }
-            #file-status {
+            #win-explorer .file-toolbar #file-status {
                 font-size: 10px !important;
                 padding: 0 6px !important;
             }
         }
 
         @media (max-width: 480px) {
-            .file-row {
+            #win-explorer .file-row {
                 grid-template-columns: 28px 1fr auto !important;
                 gap: 4px !important;
                 padding: 2px 6px !important;
             }
-            .file-row .file-size {
+            #win-explorer .file-row .file-size {
                 display: none !important;
             }
-            .file-header {
+            #win-explorer .file-header {
                 grid-template-columns: 28px 1fr auto !important;
             }
-            .file-header div:nth-child(3) {
+            #win-explorer .file-header div:nth-child(3) {
                 display: none !important;
             }
-            .file-toolbar {
+            #win-explorer .file-toolbar {
                 gap: 3px !important;
                 padding: 3px 6px !important;
                 min-height: 30px !important;
             }
-            .file-toolbar input[type="text"] {
+            #win-explorer .file-toolbar input[type="text"] {
                 min-width: 50px !important;
                 font-size: 9px !important;
             }
-            .file-toolbar .act {
+            #win-explorer .file-toolbar .act {
                 font-size: 9px !important;
                 padding: 2px 6px !important;
                 height: 22px !important;
             }
-            .file-btn {
+            #win-explorer .file-btn {
                 font-size: 9px !important;
                 min-width: 18px !important;
                 height: 18px !important;
                 padding: 1px 3px !important;
             }
-            .file-row .file-icon {
+            #win-explorer .file-row .file-icon {
                 font-size: 16px !important;
             }
-            .file-row .file-name {
+            #win-explorer .file-row .file-name {
                 font-size: 11px !important;
             }
-            #file-status {
+            #win-explorer .file-toolbar #file-status {
                 font-size: 9px !important;
                 padding: 0 4px !important;
             }
         }
-</style>
-    
+    </style>
 </head>
 <body>
 
@@ -407,7 +533,7 @@
     </div>
 </div>
 
-<!-- ═══ DESKTOP ICONOS - REDUCIDO A 12 ICONOS ═══ -->
+<!-- ═══ DESKTOP ICONOS ═══ -->
 <div id="desktop">
     
     <!-- Fila 1 -->
@@ -455,17 +581,17 @@
         <div class="ico">💾</div><div class="lbl">Persistencia</div>
     </div>
 
-    <!-- Kalm AI (unificado) -->
+    <!-- Kalm AI -->
     <div class="desktop-icon" style="top:350px;left:350px" data-win="kalmai" ondblclick="openKalmAI()">
         <div class="ico">🧠</div>
         <div class="lbl">Kalm AI</div>
     </div>
-    <!-- Chat Academico (abre Kalm AI en pestaña Chat) -->
+    <!-- Chat Academico -->
     <div class="desktop-icon" style="top:460px;left:20px" data-win="chatacademico" ondblclick="openChatAcademico()">
         <div class="ico">📚</div>
         <div class="lbl">Chat Académico</div>
     </div>
-    <!-- Kroot Corp (abre Kalm AI en pestaña Kroot) -->
+    <!-- Kroot Corp -->
     <div class="desktop-icon" style="top:350px;left:240px" data-win="kroot" ondblclick="openKrootCorp()">
         <div class="ico">🏢</div>
         <div class="lbl">Kroot Corp</div>
@@ -492,8 +618,9 @@
             <button class="act small" onclick="document.getElementById('file-upload').click()">📤 Subir</button>
             <input type="file" id="file-upload" multiple style="display:none" onchange="uploadFiles(this)">
             <input type="text" id="file-search" placeholder="🔍 Buscar..." style="width:200px" onkeydown="if(event.key==='Enter')searchFiles()">
+            <span id="file-status"></span>
         </div>
-        <div class="file-grid" id="file-grid"></div>
+        <div id="file-grid"></div>
     </div>
 </div>
 
@@ -884,37 +1011,31 @@
         </div>
     </div>
     <div class="window-body" style="display:flex;flex-direction:column;height:100%">
-        
-<!-- Controles mejorados -->
-<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:10px">
-    <button class="act btn-shuffle" onclick="musicShuffle()" style="border:1px solid transparent;">🔀 Shuffle</button>
-    <button class="act btn-repeat" onclick="musicRepeat()" style="border:1px solid transparent;">🔁 Repetir</button>
-    <button class="act btn-play" onclick="musicPlay()">▶️ Play</button>
-    <button class="act" onclick="musicPause()">⏸️ Pausa</button>
-    <button class="act" onclick="musicNext()">⏭️ Siguiente</button>
-    <button class="act" onclick="musicPrev()">⏮️ Anterior</button>
-</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-    <button class="act" onclick="musicVolumeUp()">🔊 Vol +</button>
-    <button class="act" onclick="musicVolumeDown()">🔉 Vol -</button>
-</div>
-<!-- Barra de volumen visual -->
-<div style="background:#0a0a1a;height:4px;border-radius:2px;margin-bottom:10px;overflow:hidden">
-    <div class="volume-bar" style="width:70%;height:100%;background:linear-gradient(to right,#6a0dad,#da70d6);border-radius:2px;"></div>
-</div>
-        
-        <!-- Info y progreso -->
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:10px">
+            <button class="act btn-shuffle" onclick="musicShuffle()" style="border:1px solid transparent;">🔀 Shuffle</button>
+            <button class="act btn-repeat" onclick="musicRepeat()" style="border:1px solid transparent;">🔁 Repetir</button>
+            <button class="act btn-play" onclick="musicPlay()">▶️ Play</button>
+            <button class="act" onclick="musicPause()">⏸️ Pausa</button>
+            <button class="act" onclick="musicNext()">⏭️ Siguiente</button>
+            <button class="act" onclick="musicPrev()">⏮️ Anterior</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+            <button class="act" onclick="musicVolumeUp()">🔊 Vol +</button>
+            <button class="act" onclick="musicVolumeDown()">🔉 Vol -</button>
+        </div>
+        <div style="background:#0a0a1a;height:4px;border-radius:2px;margin-bottom:10px;overflow:hidden">
+            <div class="volume-bar" style="width:70%;height:100%;background:linear-gradient(to right,#6a0dad,#da70d6);border-radius:2px;"></div>
+        </div>
         <div style="background:#1a0033;padding:10px;border-radius:5px;border:1px solid #4b0082;margin-bottom:10px">
             <div id="music-info" style="color:#d8bfd8;font-size:13px;min-height:20px">🎵 Selecciona una canción</div>
             <div style="margin-top:5px;background:#0a0a1a;height:6px;border-radius:3px;overflow:hidden">
-                <div id="music-progress" style="width:0%;height:100%;background:linear-gradient(to right,#6a0dad,#da70d6);border-radius:3px;transition:width 0.3s"></div>
+                <div id="music-progress" style="width:0%;height:100%;background:linear-gradient(to right,#6a0dad,#da70d6);border-radius:3px;"></div>
             </div>
             <div style="display:flex;justify-content:space-between;font-size:10px;color:#9370db;margin-top:3px">
                 <span id="music-time">0:00</span>
                 <span id="music-duration">0:00</span>
             </div>
         </div>
-        <!-- Playlist -->
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
             <span style="color:#9370db;font-size:11px">📋 Playlist</span>
             <span id="music-status" style="color:#9370db;font-size:10px">⏳ Cargando...</span>
