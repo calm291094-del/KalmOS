@@ -107,7 +107,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         return None, None
     
     def _serve_kalm_ai(self, path):
-        """Sirve Kalm AI - USANDO EL PROXY QUE FUNCIONABA"""
+        """Sirve Kalm AI - RUTAS CORREGIDAS"""
         if not KALM_AI_AVAILABLE:
             self.send_response(503)    
             self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -115,9 +115,11 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"<h1>Kalm AI no disponible</h1>")
             return
 
-        # Extraer la ruta
+        # ═══ EXTRAER LA RUTA CORRECTAMENTE (CORREGIDO) ═══
         if path.startswith("/api/kalm/"):
             route = path[9:]  # elimina "/api/kalm/"
+        elif path.startswith("/kalm-ai"):
+            route = path[8:]  # elimina "/kalm-ai"
         else:
             route = path
 
@@ -196,7 +198,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             return
         
         # ═══ KALM AI ═══
-        if p.startswith("/api/kalm/"):
+        if p.startswith("/api/kalm/") or p.startswith("/kalm-ai"):
             self._serve_kalm_ai(p)
             return
         
@@ -521,8 +523,8 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         p = parsed.path
         q = urllib.parse.parse_qs(parsed.query)
         
-        # ═══ KALM AI ═══
-        if p.startswith("/kalm-ai"):
+        # ═══ KALM AI (CORREGIDO: Acepta ambas rutas para evitar fallos) ═══
+        if p.startswith("/api/kalm/") or p.startswith("/kalm-ai"):
             self._serve_kalm_ai(p)
             return
         
