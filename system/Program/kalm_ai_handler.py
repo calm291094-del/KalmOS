@@ -3,6 +3,7 @@
 
 """
 KALM AI - Handler para integrar en el servidor principal
+VERSIÓN COMPLETA Y FUNCIONAL - SIN FLASK
 """
 
 import json
@@ -21,7 +22,7 @@ def instalar_dependencias():
         try:
             __import__(pkg.replace("-", "_"))
         except ImportError:
-            print(f"Instalando {pkg}...")
+            print(f"📦 Instalando {pkg}...")
             subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "--quiet"])
 
 instalar_dependencias()
@@ -84,7 +85,638 @@ class IAProvider:
         return "❌ Error: Todos los proveedores fallaron. Intenta de nuevo."
 
 # ============================================================
-# 3. FUNCIONES HANDLER
+# 3. HTML TEMPLATE
+# ============================================================
+HTML_TEMPLATE = """<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 Kalm AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0514 0%, #1a0033 50%, #2e0854 100%);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            color: #e6e6fa;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(10,5,20,0.5); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: #6a0dad; border-radius: 3px; }
+
+        .app-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(26, 0, 51, 0.7);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(106, 13, 173, 0.25);
+            box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+            overflow: hidden;
+            min-height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-header {
+            padding: 20px 28px;
+            background: linear-gradient(135deg, rgba(75,0,130,0.3), rgba(106,13,173,0.1));
+            border-bottom: 1px solid rgba(106,13,173,0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .app-header .logo { display: flex; align-items: center; gap: 12px; }
+        .app-header .logo-icon {
+            font-size: 28px;
+            background: linear-gradient(135deg, #6a0dad, #da70d6);
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .app-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #da70d6, #9370db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .app-header .subtitle { font-size: 12px; color: #9370db; }
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            background: rgba(0,204,102,0.12);
+            border: 1px solid rgba(0,204,102,0.25);
+            font-size: 12px;
+            color: #00cc66;
+        }
+        .status-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00cc66;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .tabs {
+            display: flex;
+            background: rgba(10,5,20,0.3);
+            border-bottom: 1px solid rgba(106,13,173,0.1);
+            padding: 0 16px;
+            gap: 4px;
+        }
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            color: #9370db;
+            font-weight: 600;
+            font-size: 13px;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab:hover { color: #da70d6; background: rgba(106,13,173,0.08); }
+        .tab.active {
+            color: #da70d6;
+            border-bottom-color: #da70d6;
+            background: rgba(106,13,173,0.1);
+        }
+        .tab .badge {
+            font-size: 9px;
+            background: rgba(106,13,173,0.25);
+            padding: 1px 8px;
+            border-radius: 10px;
+            color: #9370db;
+        }
+        .tab.active .badge { background: rgba(218,112,214,0.15); color: #da70d6; }
+
+        .controls-panel {
+            padding: 14px 20px;
+            background: rgba(10,5,20,0.25);
+            border-bottom: 1px solid rgba(106,13,173,0.08);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .controls-panel label { color: #9370db; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .controls-panel select {
+            padding: 7px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(106,13,173,0.2);
+            background: rgba(10,5,20,0.7);
+            color: #e6e6fa;
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+            min-width: 110px;
+        }
+        .controls-panel select:focus { border-color: #6a0dad; }
+        .controls-panel input[type="text"] {
+            flex: 1;
+            min-width: 160px;
+            padding: 7px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(106,13,173,0.2);
+            background: rgba(10,5,20,0.7);
+            color: #e6e6fa;
+            font-size: 13px;
+            outline: none;
+        }
+        .controls-panel input[type="text"]:focus { border-color: #6a0dad; }
+        .controls-panel input[type="text"]::placeholder { color: #4b0082; }
+
+        .btn {
+            padding: 7px 18px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6a0dad, #9370db);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(106,13,173,0.3);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(106,13,173,0.5); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-secondary {
+            background: rgba(75,0,130,0.2);
+            color: #e6e6fa;
+            border: 1px solid rgba(106,13,173,0.15);
+        }
+        .btn-secondary:hover { background: rgba(75,0,130,0.35); }
+        .btn-success {
+            background: linear-gradient(135deg, #008800, #00cc66);
+            color: #fff;
+        }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,204,102,0.3); }
+        .btn-sm { padding: 4px 12px; font-size: 11px; }
+
+        .result-area {
+            flex: 1;
+            padding: 16px 20px;
+            min-height: 320px;
+            max-height: 520px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.12);
+            margin: 0 14px 14px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(106,13,173,0.06);
+        }
+        .result-area .result-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.8;
+            font-size: 14px;
+            color: #d8bfd8;
+        }
+        .result-area .result-content .titulo { color: #da70d6; font-weight: 700; font-size: 1.1em; }
+        .result-area .result-content .subtitulo { color: #9370db; font-weight: 600; }
+        .result-area .result-content .error { color: #ff4444; }
+        .result-area .result-content .exito { color: #00cc66; }
+        .result-area .result-content .step {
+            color: #9370db;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 3px 0;
+        }
+        .result-area .result-content .step .spinner-small {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(106,13,173,0.2);
+            border-radius: 50%;
+            border-top-color: #da70d6;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 250px;
+            text-align: center;
+            color: #9370db;
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-state .title { font-size: 17px; font-weight: 600; color: #da70d6; }
+        .empty-state .desc { font-size: 13px; margin-top: 4px; max-width: 380px; color: #6a0dad; }
+
+        .app-footer {
+            padding: 10px 20px;
+            border-top: 1px solid rgba(106,13,173,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            background: rgba(10,5,20,0.15);
+        }
+        .app-footer .info { font-size: 11px; color: #6a0dad; }
+        .app-footer .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        .progress-container {
+            height: 3px;
+            background: rgba(106,13,173,0.12);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 0 14px 2px 14px;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .progress-container.active { opacity: 1; }
+        .progress-container .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, #6a0dad, #da70d6);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        @media (max-width: 768px) {
+            .app-header { padding: 14px 16px; }
+            .app-header h1 { font-size: 17px; }
+            .tabs { padding: 0 10px; overflow-x: auto; }
+            .tab { padding: 10px 14px; font-size: 12px; white-space: nowrap; }
+            .controls-panel { padding: 10px 14px; }
+            .controls-panel input[type="text"] { min-width: 100px; font-size: 12px; }
+            .result-area { padding: 12px 14px; margin: 0 10px 10px 10px; min-height: 220px; max-height: 380px; }
+            .btn { font-size: 12px; padding: 6px 12px; }
+        }
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            .app-header .logo-icon { width: 34px; height: 34px; font-size: 18px; }
+            .app-header h1 { font-size: 15px; }
+            .controls-panel { flex-direction: column; align-items: stretch; }
+            .controls-panel input[type="text"] { min-width: unset; }
+            .controls-panel .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+            .controls-panel .btn-group .btn { flex: 1; justify-content: center; }
+            .result-area { min-height: 180px; max-height: 320px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+
+    <header class="app-header">
+        <div class="logo">
+            <div class="logo-icon">🧠</div>
+            <div>
+                <h1>Kalm AI</h1>
+                <span class="subtitle">Asistente Inteligente</span>
+            </div>
+        </div>
+        <div class="status-badge">
+            <span class="dot"></span>
+            <span id="status-text">Listo</span>
+        </div>
+    </header>
+
+    <div class="tabs">
+        <div class="tab active" data-tab="chat" onclick="switchTab('chat')">
+            💬 Chat Académico <span class="badge">IA</span>
+        </div>
+        <div class="tab" data-tab="kroot" onclick="switchTab('kroot')">
+            🏢 Kroot Corp <span class="badge">Empresarial</span>
+        </div>
+    </div>
+
+    <div class="progress-container" id="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="tab-content active" id="tab-chat">
+        <div class="controls-panel">
+            <label>🧠 Modelo</label>
+            <select id="chat-modelo">
+                <option value="openai">OpenAI</option>
+                <option value="claude">Claude</option>
+                <option value="gemini">Gemini</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="llama">Llama</option>
+                <option value="mistral">Mistral</option>
+            </select>
+            <input type="text" id="chat-tema" placeholder="Escribe el tema del trabajo académico..." />
+            <div class="btn-group">
+                <button class="btn btn-primary" id="chat-generar">📝 Generar</button>
+                <button class="btn btn-secondary" id="chat-chat">💬 Chat</button>
+            </div>
+        </div>
+        <div class="result-area" id="chat-result">
+            <div class="empty-state">
+                <div class="icon">📚</div>
+                <div class="title">Chat Académico</div>
+                <div class="desc">Escribe un tema y pulsa "Generar" para crear un trabajo académico profesional.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="tab-kroot">
+        <div class="controls-panel">
+            <label>🧠 Modelo</label>
+            <select id="kroot-modelo">
+                <option value="openai">OpenAI</option>
+                <option value="claude">Claude</option>
+                <option value="gemini">Gemini</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="llama">Llama</option>
+                <option value="mistral">Mistral</option>
+            </select>
+            <input type="text" id="kroot-tema" placeholder="Escribe el tema del informe ejecutivo..." />
+            <div class="btn-group">
+                <button class="btn btn-primary" id="kroot-generar">📊 Generar Informe</button>
+            </div>
+        </div>
+        <div class="result-area" id="kroot-result">
+            <div class="empty-state">
+                <div class="icon">🏢</div>
+                <div class="title">Kroot Corp IA</div>
+                <div class="desc">Genera informes ejecutivos profesionales con estructura definida.</div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="app-footer">
+        <span class="info">🔒 Pollinations AI · DuckDuckGo · Sin API Key</span>
+        <div class="actions">
+            <button class="btn btn-success btn-sm" id="btn-export">📄 Exportar</button>
+            <button class="btn btn-secondary btn-sm" id="btn-limpiar">🗑️ Limpiar</button>
+        </div>
+    </footer>
+</div>
+
+<script>
+    // ═══════════════════════════════════════════════════════
+    // ESTADO GLOBAL
+    // ═══════════════════════════════════════════════════════
+    let currentResult = '';
+    let currentTab = 'chat';
+    let isGenerating = false;
+    const API_BASE = '/kalm-ai';
+
+    const $ = id => document.getElementById(id);
+    const statusText = $('status-text');
+    const progressContainer = $('progress-container');
+    const progressBar = $('progress-bar');
+
+    function setStatus(text, type = 'info') {
+        const colors = { info: '#9370db', success: '#00cc66', error: '#ff4444', loading: '#ffaa00' };
+        statusText.textContent = text;
+        statusText.style.color = colors[type] || '#9370db';
+        const dot = document.querySelector('.dot');
+        if (dot) dot.style.background = type === 'error' ? '#ff4444' : type === 'loading' ? '#ffaa00' : '#00cc66';
+    }
+
+    function setProgress(pct) {
+        if (pct > 0) { progressContainer.classList.add('active'); progressBar.style.width = Math.min(pct, 100) + '%'; }
+        else { progressContainer.classList.remove('active'); progressBar.style.width = '0%'; }
+    }
+
+    function getResultContainer() { return $(currentTab === 'chat' ? 'chat-result' : 'kroot-result'); }
+    function getTemaInput() { return $(currentTab === 'chat' ? 'chat-tema' : 'kroot-tema'); }
+    function getModeloSelect() { return $(currentTab === 'chat' ? 'chat-modelo' : 'kroot-modelo'); }
+    function getGenerarBtn() { return $(currentTab === 'chat' ? 'chat-generar' : 'kroot-generar'); }
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+        $(`tab-${tab}`).classList.add('active');
+        setStatus(`Listo - ${tab === 'chat' ? 'Chat' : 'Kroot'}`, 'info');
+        setProgress(0);
+    }
+
+    function appendResult(text, type = 'normal') {
+        const container = getResultContainer();
+        const classes = { titulo: 'titulo', subtitulo: 'subtitulo', error: 'error', exito: 'exito', step: 'step', normal: '' };
+        const cls = classes[type] || '';
+        let content = container.querySelector('.result-content');
+        if (!content) { content = document.createElement('div'); content.className = 'result-content'; container.innerHTML = ''; container.appendChild(content); }
+        if (cls) { content.innerHTML += `<span class="${cls}">${text}</span>`; }
+        else { content.innerHTML += text; }
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function clearResult() {
+        const container = getResultContainer();
+        container.innerHTML = `<div class="empty-state"><div class="icon">${currentTab === 'chat' ? '📚' : '🏢'}</div><div class="title">${currentTab === 'chat' ? 'Chat Académico' : 'Kroot Corp IA'}</div><div class="desc">${currentTab === 'chat' ? 'Escribe un tema y pulsa "Generar".' : 'Genera informes ejecutivos profesionales.'}</div></div>`;
+        currentResult = '';
+        setProgress(0);
+    }
+
+    async function generar() {
+        const tema = getTemaInput().value.trim();
+        if (!tema) { alert('✏️ Escribe un tema.'); return; }
+        if (isGenerating) return;
+
+        const modelo = getModeloSelect().value;
+        const tipo = currentTab;
+        const btn = getGenerarBtn();
+
+        isGenerating = true;
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Generando...';
+
+        setProgress(10);
+        setStatus('⏳ Generando...', 'loading');
+
+        const container = getResultContainer();
+        container.innerHTML = `<div class="result-content"></div>`;
+        appendResult(`📝 Generando ${tipo === 'chat' ? 'trabajo académico' : 'informe ejecutivo'} sobre: "${tema}"\n`, 'titulo');
+        appendResult('═══════════════════════════════════════════════\n\n', 'normal');
+
+        const steps = [
+            { pct: 20, msg: '🔍 Conectando con proveedores de IA...' },
+            { pct: 40, msg: '🧠 Procesando tu solicitud...' },
+            { pct: 60, msg: '✍️ Generando contenido...' },
+            { pct: 80, msg: '📊 Estructurando el resultado...' }
+        ];
+        let stepIndex = 0;
+        const stepInterval = setInterval(() => {
+            if (stepIndex < steps.length) {
+                const step = steps[stepIndex];
+                setProgress(step.pct);
+                appendResult(`  ${step.msg}\n`, 'step');
+                stepIndex++;
+            }
+        }, 700);
+
+        try {
+            const response = await fetch(`${API_BASE}/generar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tema, modelo, tipo })
+            });
+
+            const text = await response.text();
+            let data;
+            try { data = JSON.parse(text); }
+            catch (e) { throw new Error(`Error del servidor (${response.status}). Asegúrate de que Kalm AI esté ejecutándose.`); }
+
+            clearInterval(stepInterval);
+            setProgress(95);
+
+            if (data.error) {
+                appendResult(`\n❌ Error: ${data.error}\n`, 'error');
+                setStatus('❌ Error', 'error');
+            } else {
+                const lines = data.resultado.split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('##') || line.startsWith('#')) appendResult(line + '\n', 'titulo');
+                    else if (line.startsWith('**') || line.startsWith('*')) appendResult(line + '\n', 'subtitulo');
+                    else if (line.match(/^[✅📊📝📌🔹]/)) appendResult(line + '\n', 'exito');
+                    else if (line.startsWith('❌')) appendResult(line + '\n', 'error');
+                    else appendResult(line + '\n', 'normal');
+                }
+                currentResult = data.resultado;
+                setStatus('✅ Listo', 'success');
+                setProgress(100);
+                setTimeout(() => setProgress(0), 1000);
+            }
+        } catch (error) {
+            clearInterval(stepInterval);
+            appendResult(`\n❌ Error: ${error.message}\n`, 'error');
+            setStatus('❌ Error', 'error');
+            setProgress(0);
+        }
+
+        isGenerating = false;
+        btn.disabled = false;
+        btn.innerHTML = currentTab === 'chat' ? '📝 Generar' : '📊 Generar Informe';
+    }
+
+    async function chatLibre() {
+        const mensaje = getTemaInput().value.trim();
+        if (!mensaje) { alert('✏️ Escribe un mensaje.'); return; }
+        if (isGenerating) return;
+
+        const modelo = getModeloSelect().value;
+        const btn = getGenerarBtn();
+
+        isGenerating = true;
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Pensando...';
+        setStatus('💬 Pensando...', 'loading');
+        setProgress(20);
+
+        const container = getResultContainer();
+        if (!container.querySelector('.result-content')) {
+            container.innerHTML = `<div class="result-content"></div>`;
+        }
+        appendResult(`\n🧑 Tú: ${mensaje}\n`, 'subtitulo');
+        appendResult(`🤖 IA: `, 'exito');
+
+        try {
+            const response = await fetch(`${API_BASE}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mensaje, modelo })
+            });
+
+            const text = await response.text();
+            let data;
+            try { data = JSON.parse(text); }
+            catch (e) { throw new Error(`Error del servidor (${response.status}). Verifica que Kalm AI esté corriendo.`); }
+
+            setProgress(80);
+
+            if (data.error) {
+                appendResult(`❌ Error: ${data.error}\n`, 'error');
+                setStatus('❌ Error', 'error');
+            } else {
+                appendResult(`${data.respuesta}\n\n`, 'normal');
+                setStatus('✅ Listo', 'success');
+                setProgress(100);
+                setTimeout(() => setProgress(0), 800);
+            }
+        } catch (error) {
+            appendResult(`❌ Error: ${error.message}\n`, 'error');
+            setStatus('❌ Error', 'error');
+            setProgress(0);
+        }
+
+        isGenerating = false;
+        btn.disabled = false;
+        btn.innerHTML = currentTab === 'chat' ? '📝 Generar' : '📊 Generar Informe';
+        getTemaInput().value = '';
+    }
+
+    function exportarTxt() {
+        if (!currentResult) { alert('📋 No hay contenido para exportar.'); return; }
+        const blob = new Blob([currentResult], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+        a.download = `${currentTab}_${timestamp}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setStatus('📄 Exportado', 'success');
+    }
+
+    function limpiar() {
+        clearResult();
+        getTemaInput().value = '';
+        setStatus('🗑️ Limpiado', 'info');
+        setProgress(0);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        $('chat-generar').addEventListener('click', generar);
+        $('chat-chat').addEventListener('click', chatLibre);
+        $('kroot-generar').addEventListener('click', generar);
+        $('btn-export').addEventListener('click', exportarTxt);
+        $('btn-limpiar').addEventListener('click', limpiar);
+
+        document.querySelectorAll('#chat-tema, #kroot-tema').forEach(el => {
+            el.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generar(); }
+            });
+        });
+
+        console.log('🧠 Kalm AI v2.0 cargado');
+        console.log(`📡 API Base: ${API_BASE}`);
+    });
+
+    window.switchTab = switchTab;
+    window.generar = generar;
+    window.chatLibre = chatLibre;
+    window.exportarTxt = exportarTxt;
+    window.limpiar = limpiar;
+</script>
+</body>
+</html>"""
+
+# ============================================================
+# 4. FUNCIONES HANDLER
 # ============================================================
 
 def serve_kalm_ai_page():
@@ -95,16 +727,9 @@ def serve_kalm_ai_page():
         if html_file.exists():
             return html_file.read_text(encoding="utf-8")
         else:
-            return """
-            <html><body style="background:#0a0514;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;">
-                <div style="text-align:center;">
-                    <h1 style="color:#da70d6;">🧠 Kalm AI</h1>
-                    <p style="color:#9370db;">Error: kalm_ai.html no encontrado</p>
-                </div>
-            </body></html>
-            """
+            return HTML_TEMPLATE
     except Exception as e:
-        return f"<h1>Error: {str(e)}</h1>"
+        return HTML_TEMPLATE
 
 def handle_generar(data):
     """Genera trabajos/informes"""
@@ -113,25 +738,29 @@ def handle_generar(data):
     tipo = data.get('tipo', 'chat')
     
     if not tema:
-        return {"error": "Tema vacío"}, 400
+        return {"error": "El tema no puede estar vacío"}, 400
     
     if tipo == 'chat':
-        prompt = f"""Escribe un trabajo académico completo sobre: {tema}
-        Estructura:
-        ## INTRODUCCIÓN
-        ## INTRODUCTION (in English)
-        ## DESARROLLO
-        ## CONCLUSIONES
-        ## BIBLIOGRAFÍA
-        """
+        prompt = f"""Escribe un trabajo académico completo y profesional sobre: {tema}
+
+ESTRUCTURA EXACTA:
+## INTRODUCCIÓN
+## INTRODUCTION (in English)
+## DESARROLLO
+## CONCLUSIONES
+## BIBLIOGRAFÍA
+
+El trabajo debe ser completo, bien estructurado, con lenguaje formal y académico."""
     else:
-        prompt = f"""Genera un informe ejecutivo sobre: {tema}
-        Estructura:
-        ## INTRODUCCIÓN
-        ## PUNTOS CLAVE
-        ## CONCLUSIONES
-        ## RECOMENDACIONES
-        """
+        prompt = f"""Genera un informe ejecutivo profesional sobre: {tema}
+
+ESTRUCTURA EXACTA:
+## INTRODUCCIÓN
+## PUNTOS CLAVE
+## CONCLUSIONES
+## RECOMENDACIONES
+
+El informe debe ser ejecutivo, directo y orientado a la toma de decisiones."""
     
     try:
         print(f"📝 Generando: {tema[:50]}...")
@@ -146,7 +775,7 @@ def handle_chat(data):
     modelo = data.get('modelo', 'openai')
     
     if not mensaje:
-        return {"error": "Mensaje vacío"}, 400
+        return {"error": "El mensaje no puede estar vacío"}, 400
     
     try:
         print(f"💬 Chat: {mensaje[:50]}...")
