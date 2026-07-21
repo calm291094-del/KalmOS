@@ -115,16 +115,16 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"<h1>Kalm AI no disponible</h1>")
             return
     
-        # Extraer la ruta correctamente
+        # Extraer la ruta
         if path.startswith("/kalm-ai"):
-            route = path[8:]  # elimina "/kalm-ai"
+            route = path[8:]
         else:
             route = path
     
         if not route or route == "":
             route = "/"
     
-        log(f"Kalm AI route: {route}", "DEBUG")
+        print(f"Kalm AI route: {route}")
     
         # GET requests
         if self.command == "GET":
@@ -139,16 +139,14 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 result, code = handle_health()
                 self.send_response(code)
                 self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")    
+                self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
                 self.wfile.write(json.dumps(result).encode("utf-8"))
                 return
         
             else:
                 self.send_response(404)
-                self.send_header("Content-Type", "text/plain")
                 self.end_headers()
-                self.wfile.write(b"404 Not Found")
                 return
     
         # POST requests
@@ -158,13 +156,8 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         
             try:
                 data = json.loads(body) if body else {}
-            except json.JSONDecodeError as e:
-                log(f"❌ Error parseando JSON: {e}", "ERROR")
-                self.send_response(400)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"error": "JSON inválido"}).encode("utf-8"))
-                return
+            except:
+                data = {}
         
             if route == "/generar":
                 result, code = handle_generar(data)
