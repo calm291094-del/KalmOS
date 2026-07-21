@@ -3,7 +3,7 @@
 
 """
 KALM AI - Handler para integrar en el servidor principal
-SOLO CORREGIDO: DEVUELVE JSON EN LUGAR DE HTML
+VERSION CORREGIDA - DEVUELVE JSON VALIDO
 """
 
 import json
@@ -87,7 +87,7 @@ class IAProvider:
         return "Error: Todos los proveedores fallaron. Intenta de nuevo."
 
 # ============================================================
-# 4. FUNCIONES HANDLER - CORREGIDAS PARA DEVOLVER JSON
+# 4. FUNCIONES HANDLER
 # ============================================================
 
 def serve_kalm_ai_page():
@@ -141,7 +141,6 @@ El informe debe ser ejecutivo, directo y orientado a la toma de decisiones."""
     try:
         resultado = IAProvider.get_response(prompt, modelo)
         print(f"[KalmAI] Resultado obtenido: {len(resultado)} caracteres")
-        # ═══ ESTO ES LO QUE SE CORRIGIO: DEVOLVER JSON ═══
         return {"resultado": resultado}, 200
     except Exception as e:
         print(f"[KalmAI] Error: {e}")
@@ -160,7 +159,6 @@ def handle_chat(data):
     try:
         respuesta = IAProvider.get_response(mensaje, modelo)
         print(f"[KalmAI] Respuesta obtenida: {len(respuesta)} caracteres")
-        # ═══ ESTO ES LO QUE SE CORRIGIO: DEVOLVER JSON ═══
         return {"respuesta": respuesta}, 200
     except Exception as e:
         print(f"[KalmAI] Error: {e}")
