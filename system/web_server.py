@@ -107,31 +107,31 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         return None, None
     
     def _serve_kalm_ai(self, path):
-        """Sirve Kalm AI directamente"""
+        """Sirve Kalm AI - USANDO EL PROXY QUE FUNCIONABA"""
         if not KALM_AI_AVAILABLE:
-            self.send_response(503)
+            self.send_response(503)    
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
             self.wfile.write(b"<h1>Kalm AI no disponible</h1>")
             return
 
         # Extraer la ruta
-        if path.startswith("/kalm-ai"):
-            route = path[8:]
+        if path.startswith("/api/kalm/"):
+            route = path[9:]  # elimina "/api/kalm/"
         else:
             route = path
 
         if not route or route == "":
             route = "/"
 
-        log(f"Kalm AI route: {route}", "DEBUG")
+        print(f"[KalmAI] Ruta: {route}, Metodo: {self.command}")
 
         # ═══ GET ═══
         if self.command == "GET":
             if route == "/" or route == "/index" or route == "/index.html":
                 content = serve_kalm_ai_page()
                 self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Type", "text/html; charset=utf-8")    
                 self.send_header("Content-Length", str(len(content)))
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
@@ -160,7 +160,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             try:
                 data = json.loads(body) if body else {}
             except Exception as e:
-                log(f"Error JSON: {e}", "ERROR")
+                print(f"[KalmAI] Error JSON: {e}")
                 self.send_response(400)
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
@@ -196,7 +196,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
             return
         
         # ═══ KALM AI ═══
-        if p.startswith("/kalm-ai"):
+        if p.startswith("/api/kalm/"):
             self._serve_kalm_ai(p)
             return
         
