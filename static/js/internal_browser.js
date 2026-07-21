@@ -2,6 +2,8 @@
 
 let browserHistory = [];
 let browserIndex = -1;
+let bookmarksLoadedFlag = false;
+let bookmarksLoading = false;
 
 // ═══ SITIOS QUE NO FUNCIONAN EN IFRAME ═══
 const BLOCKED_IFRAME_SITES = [
@@ -93,86 +95,16 @@ function browserNavigate() {
     
     if (isBlockedInIframe(url)) {
         frame.srcdoc = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>⛔ Sitio no compatible</title>
-                <style>
-                    * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body {
-                        background: #0a0514;
-                        color: #e6e6fa;
-                        font-family: 'Segoe UI', sans-serif;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        height: 100vh;
-                        padding: 20px;
-                    }
-                    .container {
-                        background: rgba(26,0,51,0.8);
-                        border: 2px solid #6a0dad;
-                        border-radius: 16px;
-                        padding: 40px;
-                        max-width: 500px;
-                        text-align: center;
-                    }
-                    .icon { font-size: 64px; margin-bottom: 20px; }
-                    h2 { color: #da70d6; margin-bottom: 15px; }
-                    p { color: #9370db; margin-bottom: 20px; line-height: 1.6; }
-                    .url-box {
-                        background: #0a0a1a;
-                        padding: 12px;
-                        border-radius: 8px;
-                        word-break: break-all;
-                        font-family: monospace;
-                        color: #0f0;
-                        font-size: 13px;
-                        margin-bottom: 20px;
-                    }
-                    button {
-                        background: #4b0082;
-                        color: #fff;
-                        border: 1px solid #9370db;
-                        padding: 10px 24px;
-                        border-radius: 8px;
-                        cursor: pointer;
-                        font-size: 14px;
-                        transition: all 0.3s;
-                        margin: 5px;
-                    }
-                    button:hover {
-                        background: #6a0dad;
-                        transform: scale(1.05);
-                    }
-                    .btn-external {
-                        background: #008800;
-                        border-color: #00cc44;
-                    }
-                    .btn-external:hover {
-                        background: #00aa00;
-                    }
-                    .btn-back {
-                        background: #4b0082;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="icon">🔒</div>
-                    <h2>Este sitio no se puede cargar en el navegador interno</h2>
-                    <p>${url} utiliza medidas de seguridad que impiden su visualización en iframes.</p>
-                    <div class="url-box">${url}</div>
-                    <div>
-                        <button class="btn-external" onclick="window.open('${url}', '_blank')">🔗 Abrir en nueva pestaña</button>
-                        <button class="btn-back" onclick="history.back()">◀ Volver</button>
-                    </div>
-                    <p style="font-size:11px;color:#6a0dad;margin-top:20px">💡 Puedes configurar el proxy para redirigir este dominio</p>
-                </div>
-            </body>
-            </html>
+            <div style="text-align:center; padding: 40px; font-family: sans-serif;">
+                <h2>🔒 Este sitio no se puede cargar en el navegador interno</h2>
+                <p><strong>${url}</strong> utiliza medidas de seguridad que impiden su visualización en iframes.</p>
+                <br>
+                <a href="${url}" target="_blank" style="padding: 10px 20px; background: #6a0dad; color: white; text-decoration: none; border-radius: 5px;">🔗 Abrir en nueva pestaña</a>
+                <br><br>
+                <button onclick="window.history.back()" style="padding: 8px 16px; cursor: pointer;">◀ Volver</button>
+                <br><br>
+                <small>💡 Puedes configurar el proxy para redirigir este dominio</small>
+            </div>
         `;
         if (status) status.textContent = '⛔ Sitio no compatible con iframe';
         browserHistory.push(url);
@@ -292,13 +224,13 @@ function loadBrowserBookmarks() {
     
     if (bookmarksLoadedFlag) return;
     if (bookmarksLoading) return;
-    
+     
     bookmarksLoading = true;
     
     fetch('/api/browser/bookmarks')
         .then(r => {
             if (!r.ok) {
-                container.innerHTML = '<span style="color:#9370db;font-size:11px">📖 Marcadores</span>';
+                container.innerHTML = '📖 Marcadores';
                 bookmarksLoading = false;
                 bookmarksLoadedFlag = true;
                 return;
@@ -328,20 +260,20 @@ function loadBrowserBookmarks() {
                     container.appendChild(btn);
                 });
             } else {
-                container.innerHTML = '<span style="color:#9370db;font-size:11px">📖 Sin marcadores</span>';
+                container.innerHTML = '📖 Sin marcadores';
             }
             bookmarksLoading = false;
             bookmarksLoadedFlag = true;
         })
         .catch(err => {
             console.error('Error cargando bookmarks:', err);
-            container.innerHTML = '<span style="color:#9370db;font-size:11px">📖 Marcadores</span>';
+            container.innerHTML = '📖 Marcadores';
             bookmarksLoading = false;
             bookmarksLoadedFlag = true;
         });
 }
 
-// ═══ Inicializar - MODIFICADO ═══
+// ═══ Inicializar ═══
 document.addEventListener('DOMContentLoaded', function() {
     setupBrowserUrlInput();
     
@@ -349,14 +281,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const win = document.getElementById('win-browser');
         if (win && win.style.display !== 'none') {
             setTimeout(loadBrowserBookmarks, 300);
-            // ═══ NO CARGAR PÁGINA DE INICIO AUTOMÁTICAMENTE ═══
-            // La página de inicio solo se muestra si el usuario escribe una URL
         }
     });
     observer.observe(document.body, { childList: true, subtree: true });
-    
-    // ═══ YA NO CARGAR PÁGINA DE INICIO ═══
-    // Eliminar el setTimeout que cargaba la página de inicio
 });
 
 // ═══ FUNCIÓN PARA FORZAR CARGA DE KALM AI ═══
@@ -418,7 +345,6 @@ function forceLoadKalmAI() {
             console.log('⚠️ Kalm AI health check falló');
         });
 }
-
 
 window.browserNavigate = browserNavigate;
 window.browserBack = browserBack;
