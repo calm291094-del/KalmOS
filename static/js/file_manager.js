@@ -1,4 +1,4 @@
-// KALM OS v4.3 - File Manager Profesional (Estilo Windows)
+// KALM OS v4.3 - File Manager Profesional
 // Solo el usuario root puede eliminar archivos
 
 let currentPath = '/D';
@@ -162,14 +162,13 @@ function renderFiles(data) {
         return;
     }
     
-    // Separar carpetas y archivos
     const folders = items.filter(i => i.is_dir);
     const files = items.filter(i => !i.is_dir);
     const sortedItems = [...folders, ...files];
     
     let html = `
         <div class="file-header">
-            <div style="text-align:center;">📁</div>
+            <div>📁</div>
             <div>Nombre</div>
             <div style="text-align:right;">Tamaño</div>
             <div style="text-align:right;">Modificado</div>
@@ -189,9 +188,8 @@ function renderFiles(data) {
         
         const bgColor = isSelected 
             ? 'rgba(106,13,173,0.3)' 
-            : (index % 2 === 0 ? 'rgba(10,5,20,0.2)' : 'rgba(0,0,0,0.1)');
+            : (index % 2 === 0 ? 'rgba(10,5,20,0.15)' : 'rgba(0,0,0,0.05)');
         
-        const borderColor = isSelected ? '#da70d6' : 'transparent';
         const nameClass = isDir ? 'file-name dir' : 'file-name';
         const sizeClass = isDir ? 'file-size dir-size' : 'file-size';
         
@@ -200,7 +198,7 @@ function renderFiles(data) {
         if (isDir) {
             actionButtons = `
                 <button class="file-btn file-btn-open" onclick="openFolder('${item.path}')" title="Abrir carpeta">📂</button>
-                ${isRootUser ? `<button class="file-btn file-btn-danger" onclick="deleteFile('${item.path}')" title="Eliminar carpeta">🗑️</button>` : ''}
+                ${isRootUser ? `<button class="file-btn file-btn-danger" onclick="deleteFile('${item.path}')" title="Eliminar">🗑️</button>` : ''}
             `;
         } else if (MUSIC_EXTENSIONS.includes(ext)) {
             actionButtons = `
@@ -210,7 +208,7 @@ function renderFiles(data) {
             `;
         } else if (TEXT_EXTENSIONS.includes(ext) || PDF_EXTENSIONS.includes(ext) || IMAGE_EXTENSIONS.includes(ext) || VIDEO_EXTENSIONS.includes(ext)) {
             actionButtons = `
-                <button class="file-btn file-btn-info" onclick="openDocument('${item.path}')" title="Ver archivo">👁️</button>
+                <button class="file-btn file-btn-info" onclick="openDocument('${item.path}')" title="Ver">👁️</button>
                 ${isRootUser ? `<button class="file-btn file-btn-danger" onclick="deleteFile('${item.path}')" title="Eliminar">🗑️</button>` : ''}
             `;
         } else if (ARCHIVE_EXTENSIONS.includes(ext)) {
@@ -225,7 +223,7 @@ function renderFiles(data) {
             `;
         } else {
             actionButtons = `
-                <button class="file-btn file-btn-info" onclick="openDocument('${item.path}')" title="Ver archivo">👁️</button>
+                <button class="file-btn file-btn-info" onclick="openDocument('${item.path}')" title="Ver">👁️</button>
                 ${isRootUser ? `<button class="file-btn file-btn-danger" onclick="deleteFile('${item.path}')" title="Eliminar">🗑️</button>` : ''}
             `;
         }
@@ -240,7 +238,7 @@ function renderFiles(data) {
         
         html += `
             <div class="file-row" 
-                 style="background:${bgColor};border-left-color:${borderColor};"
+                 style="background:${bgColor};"
                  onmouseover="this.style.background='rgba(106,13,173,0.2)'"
                  onmouseout="this.style.background='${bgColor}'"
                  onclick="selectItem('${item.path}')"
@@ -578,7 +576,7 @@ function searchFiles() {
             }
             
             let html = `
-                <div style="display:grid;grid-template-columns:36px 1fr 90px auto;gap:6px;padding:5px 12px;background:rgba(75,0,130,0.2);border-bottom:2px solid rgba(106,13,173,0.3);font-size:11px;color:#9370db;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-radius:4px 4px 0 0;margin-bottom:2px;">
+                <div style="display:grid;grid-template-columns:36px 1fr 90px auto;gap:6px;padding:4px 12px;background:rgba(75,0,130,0.2);border-bottom:2px solid rgba(106,13,173,0.3);font-size:11px;color:#9370db;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-radius:4px 4px 0 0;margin-bottom:2px;">
                     <div style="text-align:center;">📁</div>
                     <div>Nombre</div>
                     <div style="text-align:right;">Tamaño</div>
@@ -591,7 +589,7 @@ function searchFiles() {
                 const safeName = item.name.replace(/[<>"']/g, '');
                 const icon = item.icon || getFileIcon('.' + ext, false);
                 const isMusic = MUSIC_EXTENSIONS.includes('.' + ext);
-                const bgColor = index % 2 === 0 ? 'rgba(10,5,20,0.2)' : 'rgba(0,0,0,0.1)';
+                const bgColor = index % 2 === 0 ? 'rgba(10,5,20,0.15)' : 'rgba(0,0,0,0.05)';
                 const isRootUser = isRoot();
                 
                 let actionBtn = '';
@@ -606,11 +604,11 @@ function searchFiles() {
                 }
                 
                 html += `
-                    <div style="display:grid;grid-template-columns:36px 1fr 90px auto;gap:6px;padding:5px 12px;background:${bgColor};border-radius:4px;margin:1px 0;align-items:center;">
+                    <div style="display:grid;grid-template-columns:36px 1fr 90px auto;gap:6px;padding:4px 12px;background:${bgColor};border-radius:4px;margin:1px 0;align-items:center;">
                         <div style="text-align:center;font-size:20px;">${icon}</div>
                         <div style="color:#e6e6fa;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${safeName}">${safeName}</div>
                         <div style="color:#9370db;font-size:12px;text-align:right;">${item.size_fmt || '-'}</div>
-                        <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">${actionBtn}</div>
+                        <div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap;">${actionBtn}</div>
                     </div>
                 `;
             });
