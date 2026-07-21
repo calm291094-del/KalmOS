@@ -3,7 +3,6 @@
 
 """
 KALM AI - Handler para integrar en el servidor principal
-VERSION CORREGIDA - DEVUELVE JSON VALIDO
 """
 
 import json
@@ -22,23 +21,19 @@ def instalar_dependencias():
         try:
             __import__(pkg.replace("-", "_"))
         except ImportError:
-            print(f"[KalmAI] Instalando {pkg}...")
+            print(f"Instalando {pkg}...")
             subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "--quiet"])
 
 instalar_dependencias()
 
 # ============================================================
-# 2. HTML TEMPLATE (FALLBACK)
+# 2. HTML (FALLBACK)
 # ============================================================
 def get_html_template():
-    """Retorna el HTML de Kalm AI (fallback si no existe views/kalm_ai.html)"""
-    return """<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Kalm AI</title></head>
-<body style="background:#0a0514;color:#fff;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;">
-    <h1 style="color:#da70d6;">🧠 Kalm AI</h1>
-    <p style="color:#9370db;">Error: views/kalm_ai.html no encontrado</p>
-    <p style="color:#6a0dad;font-size:12px;">Asegúrate de que el archivo existe en views/kalm_ai.html</p>
-</body></html>"""
+    return """<html><body style="background:#0a0514;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;">
+        <div style="text-align:center;"><h1 style="color:#da70d6;">🧠 Kalm AI</h1>
+        <p style="color:#9370db;">Error: views/kalm_ai.html no encontrado</p></div>
+    </body></html>"""
 
 # ============================================================
 # 3. PROVEEDORES DE IA
@@ -145,7 +140,6 @@ El informe debe ser ejecutivo, directo y orientado a la toma de decisiones."""
     try:
         resultado = IAProvider.get_response(prompt, modelo)
         print(f"[KalmAI] Resultado obtenido: {len(resultado)} caracteres")
-        # ═══ IMPORTANTE: DEVOLVER JSON VALIDO ═══
         return {"resultado": resultado}, 200
     except Exception as e:
         print(f"[KalmAI] Error: {e}")
@@ -164,7 +158,6 @@ def handle_chat(data):
     try:
         respuesta = IAProvider.get_response(mensaje, modelo)
         print(f"[KalmAI] Respuesta obtenida: {len(respuesta)} caracteres")
-        # ═══ IMPORTANTE: DEVOLVER JSON VALIDO ═══
         return {"respuesta": respuesta}, 200
     except Exception as e:
         print(f"[KalmAI] Error: {e}")
