@@ -1,11 +1,10 @@
-// KALM OS v4.3 - File Manager Moderno (Estilo Total Commander)
+// KALM OS v4.3 - File Manager Profesional (Estilo Windows)
 // Solo el usuario root puede eliminar archivos
 
 let currentPath = '/D';
 let fileManagerInitialized = false;
 let currentUser = null;
 let selectedItems = new Set();
-let viewMode = 'details'; // 'details' | 'icons'
 
 // ═══ OBTENER USUARIO ACTUAL ═══
 function getCurrentUser() {
@@ -43,14 +42,14 @@ function isRoot() {
 }
 
 // ═══ CONSTANTES ═══
-const TEXT_EXTENSIONS = ['.txt', '.md', '.log', '.json', '.xml', '.yaml', '.yml', '.csv', '.py', '.js', '.html', '.css', '.sql', '.sh', '.bat', '.cmd'];
 const MUSIC_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac', '.wma'];
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.ico', '.tiff', '.tif'];
 const PDF_EXTENSIONS = ['.pdf'];
 const VIDEO_EXTENSIONS = ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm'];
 const ARCHIVE_EXTENSIONS = ['.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz'];
+const TEXT_EXTENSIONS = ['.txt', '.md', '.log', '.json', '.xml', '.yaml', '.yml', '.csv', '.py', '.js', '.html', '.css', '.sql', '.sh', '.bat', '.cmd'];
 
-// ═══ ICONOS MODERNOS ═══
+// ═══ ICONOS EXTENDIDOS ═══
 function getFileIcon(ext, isDir) {
     if (isDir) return '📁';
     
@@ -86,7 +85,7 @@ function formatSize(bytes) {
     return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + units[i];
 }
 
-// ═══ NAVEGACIÓN ═══
+// ═══ CARGAR ARCHIVOS ═══
 function loadFiles(path) {
     const grid = document.getElementById('file-grid');
     const pathInput = document.getElementById('file-path');
@@ -105,11 +104,9 @@ function loadFiles(path) {
     if (pathInput) pathInput.value = path;
     
     grid.innerHTML = `
-        <div style="display:flex;justify-content:center;align-items:center;height:200px;color:#9370db;">
-            <div style="text-align:center;">
-                <div style="font-size:32px;margin-bottom:10px;">⏳</div>
-                <div style="font-size:13px;">Cargando...</div>
-            </div>
+        <div style="display:flex;justify-content:center;align-items:center;height:200px;color:#9370db;flex-direction:column;">
+            <div style="font-size:32px;margin-bottom:10px;">⏳</div>
+            <div style="font-size:13px;">Cargando...</div>
         </div>
     `;
     
@@ -128,7 +125,7 @@ function loadFiles(path) {
         .catch(err => {
             console.error('❌ Error:', err);
             grid.innerHTML = `
-                <div style="display:flex;justify-content:center;align-items:center;height:200px;flex-direction:column;color:#ff6b6b;">
+                <div style="display:flex;justify-content:center;align-items:center;height:200px;color:#ff6b6b;flex-direction:column;">
                     <div style="font-size:32px;margin-bottom:10px;">❌</div>
                     <div style="font-size:13px;">${err.message}</div>
                     <button class="act small" onclick="refreshFiles()" style="margin-top:15px;">🔄 Reintentar</button>
@@ -137,18 +134,16 @@ function loadFiles(path) {
         });
 }
 
-// ═══ RENDERIZAR (ESTILO TOTAL COMMANDER) ═══
+// ═══ RENDERIZAR ARCHIVOS - ESTILO WINDOWS PROFESIONAL ═══
 function renderFiles(data) {
     const grid = document.getElementById('file-grid');
     if (!grid) return;
     
     if (!data || data.error) {
         grid.innerHTML = `
-            <div style="display:flex;justify-content:center;align-items:center;height:200px;color:#ff6b6b;">
-                <div style="text-align:center;">
-                    <div style="font-size:32px;margin-bottom:10px;">⚠️</div>
-                    <div style="font-size:13px;">${data?.error || 'Error desconocido'}</div>
-                </div>
+            <div style="display:flex;justify-content:center;align-items:center;height:200px;color:#ff6b6b;flex-direction:column;">
+                <div style="font-size:32px;margin-bottom:10px;">⚠️</div>
+                <div style="font-size:13px;">${data?.error || 'Error desconocido'}</div>
             </div>
         `;
         return;
@@ -158,21 +153,39 @@ function renderFiles(data) {
     
     if (items.length === 0) {
         grid.innerHTML = `
-            <div style="display:flex;justify-content:center;align-items:center;height:200px;flex-direction:column;color:#9370db;">
+            <div style="display:flex;justify-content:center;align-items:center;height:200px;color:#9370db;flex-direction:column;">
                 <div style="font-size:48px;margin-bottom:15px;">📂</div>
-                <div style="font-size:14px;">Carpeta vacía</div>
+                <div style="font-size:14px;">Esta carpeta está vacía</div>
                 <div style="font-size:12px;color:#6a0dad;margin-top:5px;">Haz clic en "📁 Nuevo" para crear una carpeta</div>
             </div>
         `;
         return;
     }
     
+    // Separar carpetas y archivos
     const folders = items.filter(i => i.is_dir);
     const files = items.filter(i => !i.is_dir);
     const sortedItems = [...folders, ...files];
     
     let html = `
-        <div style="display:grid;grid-template-columns:45px 1fr 100px 130px auto;gap:4px;padding:4px 8px;background:rgba(75,0,130,0.2);border-bottom:1px solid rgba(106,13,173,0.3);font-size:11px;color:#9370db;font-weight:600;position:sticky;top:0;z-index:5;">
+        <div class="file-header" style="
+            display: grid;
+            grid-template-columns: 36px 1fr 90px 140px auto;
+            gap: 6px;
+            padding: 6px 12px;
+            background: linear-gradient(to right, rgba(75,0,130,0.25), rgba(106,13,173,0.15));
+            border-bottom: 2px solid rgba(106,13,173,0.3);
+            font-size: 11px;
+            color: #9370db;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-radius: 4px 4px 0 0;
+            margin-bottom: 2px;
+        ">
             <div style="text-align:center;">📁</div>
             <div>Nombre</div>
             <div style="text-align:right;">Tamaño</div>
@@ -191,66 +204,85 @@ function renderFiles(data) {
         const isRootUser = isRoot();
         const isSelected = selectedItems.has(item.path);
         
-        const bgColor = isSelected ? 'rgba(106,13,173,0.25)' : (index % 2 === 0 ? 'rgba(10,5,20,0.2)' : 'transparent');
+        // Color alternado para mejor legibilidad
+        const bgColor = isSelected 
+            ? 'rgba(106,13,173,0.35)' 
+            : (index % 2 === 0 ? 'rgba(10,5,20,0.3)' : 'rgba(20,10,35,0.2)');
         
         let actionButtons = '';
         
         if (isDir) {
             actionButtons = `
-                <button class="act small" onclick="openFolder('${item.path}')" title="Abrir">📂</button>
-                ${isRootUser ? `<button class="act small danger" onclick="deleteFile('${item.path}')" title="Eliminar">🗑️</button>` : ''}
+                <button class="file-btn file-btn-open" onclick="openFolder('${item.path}')" title="Abrir carpeta">📂</button>
+                ${isRootUser ? `<button class="file-btn file-btn-danger" onclick="deleteFile('${item.path}')" title="Eliminar carpeta">🗑️</button>` : ''}
             `;
         } else if (MUSIC_EXTENSIONS.includes(ext)) {
             actionButtons = `
-                <button class="act small success" onclick="playMusicFile('${item.path}', '${safeName}')" title="Reproducir">🎵</button>
-                <button class="act small" onclick="openMusicPlayer()" title="Abrir reproductor">📋</button>
-                ${isRootUser ? `<button class="act small danger" onclick="deleteFile('${item.path}')" title="Eliminar">🗑️</button>` : ''}
+                <button class="file-btn file-btn-success" onclick="playMusicFile('${item.path}', '${safeName}')" title="Reproducir">🎵</button>
+                <button class="file-btn file-btn-info" onclick="openMusicPlayer()" title="Abrir reproductor">📋</button>
+                ${isRootUser ? `<button class="file-btn file-btn-danger" onclick="deleteFile('${item.path}')" title="Eliminar">🗑️</button>` : ''}
             `;
         } else if (TEXT_EXTENSIONS.includes(ext) || PDF_EXTENSIONS.includes(ext) || IMAGE_EXTENSIONS.includes(ext) || VIDEO_EXTENSIONS.includes(ext)) {
             actionButtons = `
-                <button class="act small" onclick="openDocument('${item.path}')" title="Ver">👁️</button>
-                ${isRootUser ? `<button class="act small danger" onclick="deleteFile('${item.path}')" title="Eliminar">🗑️</button>` : ''}
+                <button class="file-btn file-btn-info" onclick="openDocument('${item.path}')" title="Ver archivo">👁️</button>
+                ${isRootUser ? `<button class="file-btn file-btn-danger" onclick="deleteFile('${item.path}')" title="Eliminar">🗑️</button>` : ''}
             `;
         } else if (ARCHIVE_EXTENSIONS.includes(ext)) {
             actionButtons = `
-                <button class="act small" onclick="openArchive('${item.path}', '${safeName}')" title="Extraer">📦</button>
-                ${isRootUser ? `<button class="act small danger" onclick="deleteFile('${item.path}')" title="Eliminar">🗑️</button>` : ''}
+                <button class="file-btn file-btn-warning" onclick="openArchive('${item.path}', '${safeName}')" title="Extraer">📦</button>
+                ${isRootUser ? `<button class="file-btn file-btn-danger" onclick="deleteFile('${item.path}')" title="Eliminar">🗑️</button>` : ''}
             `;
         } else if (['.py', '.sh', '.js', '.bat', '.cmd', '.exe', '.com', '.scr'].includes(ext)) {
             actionButtons = `
-                <button class="act small success" onclick="runProgram('${item.path}')" title="Ejecutar">▶️</button>
-                ${isRootUser ? `<button class="act small danger" onclick="deleteFile('${item.path}')" title="Eliminar">🗑️</button>` : ''}
+                <button class="file-btn file-btn-success" onclick="runProgram('${item.path}')" title="Ejecutar">▶️</button>
+                ${isRootUser ? `<button class="file-btn file-btn-danger" onclick="deleteFile('${item.path}')" title="Eliminar">🗑️</button>` : ''}
             `;
         } else {
             actionButtons = `
-                <button class="act small" onclick="openDocument('${item.path}')" title="Ver">👁️</button>
-                ${isRootUser ? `<button class="act small danger" onclick="deleteFile('${item.path}')" title="Eliminar">🗑️</button>` : ''}
+                <button class="file-btn file-btn-info" onclick="openDocument('${item.path}')" title="Ver archivo">👁️</button>
+                ${isRootUser ? `<button class="file-btn file-btn-danger" onclick="deleteFile('${item.path}')" title="Eliminar">🗑️</button>` : ''}
             `;
         }
         
-        if (!isRootUser) {
-            actionButtons = actionButtons.replace(/<button class="act small danger".*?<\/button>/, '');
-            if (actionButtons.trim() === '') {
-                actionButtons = `<span style="color:#6a0dad;font-size:10px;">🔒</span>`;
-            }
+        // Si no es root, mostrar candado en lugar de eliminar
+        if (!isRootUser && actionButtons.includes('🗑️')) {
+            actionButtons = actionButtons.replace(/<button class="file-btn file-btn-danger".*?<\/button>/, '');
         }
         
-        const nameStyle = isDir ? 'font-weight:600;color:#da70d6;' : 'color:#e6e6fa;';
+        if (!isRootUser && !actionButtons.trim()) {
+            actionButtons = `<span style="color:#6a0dad;font-size:11px;">🔒</span>`;
+        }
+        
+        const nameStyle = isDir 
+            ? 'color:#da70d6;font-weight:600;cursor:pointer;' 
+            : 'color:#e6e6fa;';
+        
         const sizeStyle = isDir ? 'color:#6a0dad;' : 'color:#9370db;';
         
         html += `
-            <div class="file-item-modern" 
-                 style="display:grid;grid-template-columns:45px 1fr 100px 130px auto;gap:4px;padding:6px 8px;background:${bgColor};border-radius:4px;margin:1px 0;cursor:pointer;transition:background 0.15s;align-items:center;"
-                 onmouseover="this.style.background='rgba(106,13,173,0.15)'"
-                 onmouseout="this.style.background='${bgColor}'"
-                 onclick="selectItem('${item.path}')"
-                 ondblclick="${isDir ? `openFolder('${item.path}')` : `openDocument('${item.path}')`}"
-                 data-path="${item.path}">
-                <div style="text-align:center;font-size:20px;">${icon}</div>
+            <div class="file-row" style="
+                display: grid;
+                grid-template-columns: 36px 1fr 90px 140px auto;
+                gap: 6px;
+                padding: 6px 12px;
+                background: ${bgColor};
+                border-radius: 4px;
+                margin: 1px 0;
+                cursor: ${isDir ? 'pointer' : 'default'};
+                transition: background 0.15s ease, transform 0.1s ease;
+                align-items: center;
+                border-left: 3px solid ${isSelected ? '#da70d6' : 'transparent'};
+            "
+            onmouseover="this.style.background='rgba(106,13,173,0.25)'"
+            onmouseout="this.style.background='${bgColor}'"
+            onclick="selectItem('${item.path}')"
+            ondblclick="${isDir ? `openFolder('${item.path}')` : `openDocument('${item.path}')`}"
+            data-path="${item.path}">
+                <div style="text-align:center;font-size:22px;line-height:1;">${icon}</div>
                 <div style="${nameStyle}font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${safeName}">${safeName}</div>
                 <div style="${sizeStyle}font-size:12px;text-align:right;">${fileSize}</div>
                 <div style="color:#6a0dad;font-size:11px;text-align:right;">${modified}</div>
-                <div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap;">${actionButtons}</div>
+                <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">${actionButtons}</div>
             </div>
         `;
     });
@@ -265,30 +297,30 @@ function selectItem(path) {
     } else {
         selectedItems.add(path);
     }
+    // Recargar para actualizar visualmente
     loadFiles(currentPath);
 }
 
 function updateStatusBar(count) {
-    const statusEl = document.getElementById('file-status');
-    if (!statusEl) {
-        const toolbar = document.querySelector('.file-toolbar');
-        if (toolbar) {
-            const el = document.createElement('span');
-            el.id = 'file-status';
-            el.style.cssText = 'color:#9370db;font-size:12px;margin-left:auto;padding:0 10px;';
-            toolbar.appendChild(el);
-        }
+    let statusEl = document.getElementById('file-status');
+    const toolbar = document.querySelector('.file-toolbar');
+    
+    if (!statusEl && toolbar) {
+        const el = document.createElement('span');
+        el.id = 'file-status';
+        el.style.cssText = 'color:#9370db;font-size:12px;margin-left:auto;padding:0 12px;font-weight:500;';
+        toolbar.appendChild(el);
+        statusEl = el;
     }
-    const el = document.getElementById('file-status');
-    if (el) {
+    
+    if (statusEl) {
         const selected = selectedItems.size;
-        el.textContent = `${count} elementos ${selected > 0 ? `(${selected} seleccionados)` : ''}`;
+        statusEl.textContent = `${count} elemento${count !== 1 ? 's' : ''} ${selected > 0 ? `(${selected} seleccionado${selected !== 1 ? 's' : ''})` : ''}`;
     }
 }
 
-// ═══ REPRODUCTOR DE MÚSICA ═══
+// ═══ FUNCIONES DE ACCIÓN ═══
 function playMusicFile(path, name) {
-    console.log('🎵 Reproduciendo:', path);
     showNotification(`🎵 ${name}`, 'info');
     openWin('music');
     
@@ -303,25 +335,13 @@ function playMusicFile(path, name) {
             }
             
             if (foundIndex >= 0) {
-                if (typeof selectTrack === 'function') {
-                    selectTrack(foundIndex);
-                }
+                if (typeof selectTrack === 'function') selectTrack(foundIndex);
             } else {
-                const newTrack = {
-                    name: name,
-                    path: path,
-                    url: path,
-                    isDemo: false,
-                    size: 0
-                };
+                const newTrack = { name: name, path: path, url: path, isDemo: false, size: 0 };
                 musicPlayer.playlist.push(newTrack);
                 const newIndex = musicPlayer.playlist.length - 1;
-                if (typeof selectTrack === 'function') {
-                    selectTrack(newIndex);
-                }
-                if (typeof updatePlaylistUI === 'function') {
-                    updatePlaylistUI();
-                }
+                if (typeof selectTrack === 'function') selectTrack(newIndex);
+                if (typeof updatePlaylistUI === 'function') updatePlaylistUI();
             }
         }
     }, 500);
@@ -336,9 +356,7 @@ function openMusicPlayer() {
     }, 500);
 }
 
-// ═══ ARCHIVOS COMPRIMIDOS ═══
 function openArchive(path, name) {
-    console.log('📦 Abriendo:', path);
     showNotification(`📦 Extrayendo ${name}...`, 'info');
     
     fetch('/api/run', {
@@ -361,14 +379,10 @@ function openArchive(path, name) {
             document.body.removeChild(link);
         }
     })
-    .catch(err => {
-        showNotification(`❌ Error: ${err.message}`, 'error');
-    });
+    .catch(err => showNotification(`❌ Error: ${err.message}`, 'error'));
 }
 
-// ═══ NAVEGACIÓN ═══
 function openFolder(path) {
-    console.log('📂 Abriendo:', path);
     selectedItems.clear();
     loadFiles(path);
 }
@@ -401,10 +415,8 @@ function refreshFiles() {
     }
 }
 
-// ═══ EJECUTAR PROGRAMA ═══
 function runProgram(path) {
     const name = path.split('/').pop();
-    console.log('▶️ Ejecutando:', path);
     showNotification(`⏳ Ejecutando ${name}...`, 'info');
     
     fetch('/api/run', {
@@ -414,7 +426,6 @@ function runProgram(path) {
     })
     .then(r => r.json())
     .then(data => {
-        console.log('📤 Respuesta:', data);
         if (data.ok) {
             if (data.viewer_url) {
                 window.open(data.viewer_url, '_blank');
@@ -434,10 +445,7 @@ function runProgram(path) {
             showNotification(`❌ Error: ${data.error || 'desconocido'}`, 'error');
         }
     })
-    .catch(err => {
-        console.error('❌ Error:', err);
-        showNotification(`❌ Error: ${err.message}`, 'error');
-    });
+    .catch(err => showNotification(`❌ Error: ${err.message}`, 'error'));
 }
 
 function showOutputWindow(name, output) {
@@ -473,10 +481,8 @@ function showOutputWindow(name, output) {
     updateTaskbar('output');
 }
 
-// ═══ ABRIR DOCUMENTO ═══
 function openDocument(path) {
     const name = path.split('/').pop();
-    console.log('📄 Abriendo:', path);
     showNotification(`📄 Abriendo ${name}...`, 'info');
     
     fetch('/api/run', {
@@ -501,10 +507,7 @@ function openDocument(path) {
             showNotification(`📄 ${name} descargado`, 'success');
         }
     })
-    .catch(err => {
-        console.error('❌ Error:', err);
-        showNotification(`❌ Error: ${err.message}`, 'error');
-    });
+    .catch(err => showNotification(`❌ Error: ${err.message}`, 'error'));
 }
 
 // ═══ ELIMINAR (SOLO ROOT) ═══
@@ -534,10 +537,7 @@ function deleteFile(path) {
             showNotification(`❌ Error: ${data.error || 'desconocido'}`, 'error');
         }
     })
-    .catch(err => {
-        console.error('❌ Error:', err);
-        showNotification(`❌ Error: ${err.message}`, 'error');
-    });
+    .catch(err => showNotification(`❌ Error: ${err.message}`, 'error'));
 }
 
 // ═══ CREAR CARPETA ═══
@@ -565,10 +565,7 @@ function createFolderPrompt() {
             showNotification(`❌ Error: ${data.error || 'desconocido'}`, 'error');
         }
     })
-    .catch(err => {
-        console.error('❌ Error:', err);
-        showNotification(`❌ Error: ${err.message}`, 'error');
-    });
+    .catch(err => showNotification(`❌ Error: ${err.message}`, 'error'));
 }
 
 // ═══ BUSCAR ═══
@@ -583,7 +580,7 @@ function searchFiles() {
     
     const grid = document.getElementById('file-grid');
     grid.innerHTML = `
-        <div style="display:flex;justify-content:center;align-items:center;height:200px;flex-direction:column;color:#9370db;">
+        <div style="display:flex;justify-content:center;align-items:center;height:200px;color:#9370db;flex-direction:column;">
             <div style="font-size:32px;margin-bottom:10px;">🔍</div>
             <div style="font-size:13px;">Buscando: "${query}"...</div>
         </div>
@@ -594,11 +591,9 @@ function searchFiles() {
         .then(data => {
             if (data.error) {
                 grid.innerHTML = `
-                    <div style="display:flex;justify-content:center;align-items:center;height:200px;color:#ff6b6b;">
-                        <div style="text-align:center;">
-                            <div style="font-size:32px;margin-bottom:10px;">❌</div>
-                            <div style="font-size:13px;">${data.error}</div>
-                        </div>
+                    <div style="display:flex;justify-content:center;align-items:center;height:200px;color:#ff6b6b;flex-direction:column;">
+                        <div style="font-size:32px;margin-bottom:10px;">❌</div>
+                        <div style="font-size:13px;">${data.error}</div>
                     </div>
                 `;
                 return;
@@ -607,7 +602,7 @@ function searchFiles() {
             const results = data.results || [];
             if (results.length === 0) {
                 grid.innerHTML = `
-                    <div style="display:flex;justify-content:center;align-items:center;height:200px;flex-direction:column;color:#9370db;">
+                    <div style="display:flex;justify-content:center;align-items:center;height:200px;color:#9370db;flex-direction:column;">
                         <div style="font-size:48px;margin-bottom:15px;">🔍</div>
                         <div style="font-size:14px;">No se encontraron resultados</div>
                         <div style="font-size:12px;color:#6a0dad;">"${query}"</div>
@@ -617,7 +612,7 @@ function searchFiles() {
             }
             
             let html = `
-                <div style="display:grid;grid-template-columns:45px 1fr 100px auto;gap:4px;padding:4px 8px;background:rgba(75,0,130,0.2);border-bottom:1px solid rgba(106,13,173,0.3);font-size:11px;color:#9370db;font-weight:600;position:sticky;top:0;z-index:5;">
+                <div style="display:grid;grid-template-columns:36px 1fr 90px auto;gap:6px;padding:6px 12px;background:linear-gradient(to right,rgba(75,0,130,0.25),rgba(106,13,173,0.15));border-bottom:2px solid rgba(106,13,173,0.3);font-size:11px;color:#9370db;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0;z-index:10;border-radius:4px 4px 0 0;margin-bottom:2px;">
                     <div style="text-align:center;">📁</div>
                     <div>Nombre</div>
                     <div style="text-align:right;">Tamaño</div>
@@ -630,39 +625,36 @@ function searchFiles() {
                 const safeName = item.name.replace(/[<>"']/g, '');
                 const icon = item.icon || getFileIcon('.' + ext, false);
                 const isMusic = MUSIC_EXTENSIONS.includes('.' + ext);
-                const bgColor = index % 2 === 0 ? 'rgba(10,5,20,0.2)' : 'transparent';
+                const bgColor = index % 2 === 0 ? 'rgba(10,5,20,0.3)' : 'rgba(20,10,35,0.2)';
                 const isRootUser = isRoot();
                 
                 let actionBtn = '';
                 if (isMusic) {
-                    actionBtn = `<button class="act small success" onclick="playMusicFile('${item.path}', '${safeName}')">🎵</button>`;
+                    actionBtn = `<button class="file-btn file-btn-success" onclick="playMusicFile('${item.path}', '${safeName}')">🎵</button>`;
                 } else {
-                    actionBtn = `<button class="act small" onclick="openDocument('${item.path}')">👁️</button>`;
+                    actionBtn = `<button class="file-btn file-btn-info" onclick="openDocument('${item.path}')">👁️</button>`;
                 }
                 
                 if (isRootUser) {
-                    actionBtn += ` <button class="act small danger" onclick="deleteFile('${item.path}')">🗑️</button>`;
+                    actionBtn += ` <button class="file-btn file-btn-danger" onclick="deleteFile('${item.path}')">🗑️</button>`;
                 }
                 
                 html += `
-                    <div style="display:grid;grid-template-columns:45px 1fr 100px auto;gap:4px;padding:6px 8px;background:${bgColor};border-radius:4px;margin:1px 0;align-items:center;">
-                        <div style="text-align:center;font-size:20px;">${icon}</div>
+                    <div style="display:grid;grid-template-columns:36px 1fr 90px auto;gap:6px;padding:6px 12px;background:${bgColor};border-radius:4px;margin:1px 0;align-items:center;">
+                        <div style="text-align:center;font-size:22px;">${icon}</div>
                         <div style="color:#e6e6fa;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${safeName}">${safeName}</div>
                         <div style="color:#9370db;font-size:12px;text-align:right;">${item.size_fmt || '-'}</div>
-                        <div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap;">${actionBtn}</div>
+                        <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">${actionBtn}</div>
                     </div>
                 `;
             });
             grid.innerHTML = html;
         })
         .catch(err => {
-            console.error('❌ Error:', err);
             grid.innerHTML = `
-                <div style="display:flex;justify-content:center;align-items:center;height:200px;color:#ff6b6b;">
-                    <div style="text-align:center;">
-                        <div style="font-size:32px;margin-bottom:10px;">❌</div>
-                        <div style="font-size:13px;">Error: ${err.message}</div>
-                    </div>
+                <div style="display:flex;justify-content:center;align-items:center;height:200px;color:#ff6b6b;flex-direction:column;">
+                    <div style="font-size:32px;margin-bottom:10px;">❌</div>
+                    <div style="font-size:13px;">Error: ${err.message}</div>
                 </div>
             `;
         });
@@ -693,7 +685,7 @@ function uploadFiles(input) {
             refreshFiles();
             showNotification(`✅ ${totalFiles} archivo${totalFiles > 1 ? 's' : ''} subido${totalFiles > 1 ? 's' : ''}`, 'success');
         } else {
-            showNotification(`❌ Error subiendo archivos: ${data.error || 'desconocido'}`, 'error');
+            showNotification(`❌ Error: ${data.error || 'desconocido'}`, 'error');
         }
     })
     .catch(() => {
@@ -727,7 +719,7 @@ function showNotification(message, type = 'info') {
         border: 2px solid ${colors[type] || '#9370db'};
         color: #fff;
         padding: 12px 20px;
-        border-radius: 8px;
+        border-radius: 10px;
         z-index: 10000;
         max-width: 400px;
         font-size: 13px;
@@ -736,7 +728,9 @@ function showNotification(message, type = 'info') {
         font-family: 'Segoe UI', sans-serif;
         backdrop-filter: blur(10px);
         border-left: 4px solid ${colors[type] || '#9370db'};
-        display:flex;align-items:center;gap:10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     `;
     div.innerHTML = `<span style="font-size:18px;">${icons[type] || 'ℹ️'}</span> <span>${message}</span>`;
     document.body.appendChild(div);
@@ -750,8 +744,6 @@ function showNotification(message, type = 'info') {
 }
 
 // ═══ EXPORTAR ═══
-window.openTerminalForProcess = openTerminalForProcess;
-window.closeTerminalWindow = closeTerminalWindow;
 window.loadFiles = loadFiles;
 window.renderFiles = renderFiles;
 window.openFolder = openFolder;
@@ -765,11 +757,12 @@ window.searchFiles = searchFiles;
 window.uploadFiles = uploadFiles;
 window.playMusicFile = playMusicFile;
 window.openMusicPlayer = openMusicPlayer;
-window.downloadFile = downloadFile;
 window.openArchive = openArchive;
 window.getCurrentUser = getCurrentUser;
 window.isRoot = isRoot;
 window.showNotification = showNotification;
+window.selectItem = selectItem;
+window.selectedItems = selectedItems;
 
 // ═══ INICIALIZAR ═══
 if (!fileManagerInitialized) {
@@ -801,26 +794,79 @@ if (!fileManagerInitialized) {
     });
     observer.observe(document.body, { childList: true, subtree: true });
     
+    // Estilos globales para el file manager
     const style = document.createElement('style');
     style.textContent = `
         @keyframes slideIn {
             from { transform: translateX(100px); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
-        .file-item-modern:hover {
-            background: rgba(106,13,173,0.2) !important;
+        
+        .file-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(75,0,130,0.3);
+            color: #e6e6fa;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            height: 28px;
         }
+        .file-btn:hover {
+            transform: scale(1.08);
+        }
+        .file-btn-success {
+            background: rgba(0,136,0,0.35);
+            color: #00cc66;
+        }
+        .file-btn-success:hover {
+            background: rgba(0,136,0,0.55);
+        }
+        .file-btn-danger {
+            background: rgba(139,0,0,0.35);
+            color: #ff4444;
+        }
+        .file-btn-danger:hover {
+            background: rgba(139,0,0,0.55);
+        }
+        .file-btn-info {
+            background: rgba(75,0,130,0.35);
+            color: #9370db;
+        }
+        .file-btn-info:hover {
+            background: rgba(75,0,130,0.55);
+        }
+        .file-btn-warning {
+            background: rgba(255,170,0,0.2);
+            color: #ffaa00;
+        }
+        .file-btn-warning:hover {
+            background: rgba(255,170,0,0.35);
+        }
+        .file-btn-open {
+            background: rgba(0,100,200,0.3);
+            color: #4da6ff;
+        }
+        .file-btn-open:hover {
+            background: rgba(0,100,200,0.5);
+        }
+        
         .file-toolbar {
             display: flex;
             gap: 6px;
             align-items: center;
-            padding: 6px 10px;
-            background: rgba(10,5,20,0.5);
+            padding: 8px 12px;
+            background: rgba(10,5,20,0.6);
             border-bottom: 1px solid rgba(106,13,173,0.2);
             flex-wrap: wrap;
         }
-        .file-toolbar .act.small {
-            padding: 4px 10px;
+        .file-toolbar .act {
+            padding: 5px 12px;
             font-size: 12px;
             border-radius: 4px;
             border: none;
@@ -829,36 +875,40 @@ if (!fileManagerInitialized) {
             background: rgba(75,0,130,0.3);
             color: #e6e6fa;
         }
-        .file-toolbar .act.small:hover {
+        .file-toolbar .act:hover {
             background: rgba(106,13,173,0.5);
             transform: scale(1.03);
         }
         .file-toolbar input {
-            padding: 4px 10px;
+            padding: 5px 10px;
             border-radius: 4px;
             border: 1px solid rgba(106,13,173,0.3);
             background: rgba(10,5,20,0.6);
             color: #e6e6fa;
             font-size: 12px;
             outline: none;
+            transition: border-color 0.3s;
         }
         .file-toolbar input:focus {
             border-color: #6a0dad;
-            box-shadow: 0 0 10px rgba(106,13,173,0.2);
+            box-shadow: 0 0 15px rgba(106,13,173,0.15);
         }
         .file-path {
             flex: 1;
             min-width: 150px;
-            font-family: monospace;
+            font-family: 'Consolas', monospace;
             font-size: 12px;
+            color: #9370db !important;
         }
-        .window-body {
-            background: #0a0514;
+        .file-path::placeholder {
+            color: #4b0082;
         }
+        
         #file-grid {
-            padding: 4px;
+            padding: 6px 8px;
             max-height: calc(100% - 50px);
             overflow-y: auto;
+            background: rgba(0,0,0,0.2);
         }
         #file-grid::-webkit-scrollbar {
             width: 6px;
@@ -874,34 +924,35 @@ if (!fileManagerInitialized) {
         #file-grid::-webkit-scrollbar-thumb:hover {
             background: #9370db;
         }
-        .act.small.success {
-            background: rgba(0,136,0,0.4);
-            color: #00cc66;
+        
+        .file-row:hover {
+            background: rgba(106,13,173,0.25) !important;
         }
-        .act.small.success:hover {
-            background: rgba(0,136,0,0.6);
-        }
-        .act.small.danger {
-            background: rgba(139,0,0,0.4);
-            color: #ff4444;
-        }
-        .act.small.danger:hover {
-            background: rgba(139,0,0,0.6);
-        }
+        
         @media (max-width: 768px) {
-            .file-item-modern {
-                grid-template-columns: 35px 1fr 60px auto !important;
+            .file-row {
+                grid-template-columns: 30px 1fr 60px auto !important;
                 font-size: 12px;
-                padding: 4px 6px !important;
+                padding: 4px 8px !important;
             }
-            .file-item-modern .file-modified {
+            .file-row div:nth-child(4) {
                 display: none;
             }
-            .file-toolbar input {
-                font-size: 10px;
-                padding: 3px 6px;
+            .file-header {
+                grid-template-columns: 30px 1fr 60px auto !important;
             }
-            .file-toolbar .act.small {
+            .file-header div:nth-child(4) {
+                display: none;
+            }
+            .file-toolbar {
+                padding: 4px 8px;
+                gap: 4px;
+            }
+            .file-toolbar .act {
+                font-size: 10px;
+                padding: 3px 8px;
+            }
+            .file-toolbar input {
                 font-size: 10px;
                 padding: 3px 6px;
             }
@@ -909,26 +960,52 @@ if (!fileManagerInitialized) {
                 min-width: 80px;
                 font-size: 10px;
             }
+            .file-btn {
+                padding: 2px 5px;
+                font-size: 10px;
+                min-width: 22px;
+                height: 22px;
+            }
         }
         @media (max-width: 480px) {
-            .file-item-modern {
-                grid-template-columns: 30px 1fr auto !important;
-                gap: 3px !important;
+            .file-row {
+                grid-template-columns: 28px 1fr auto !important;
+                gap: 4px !important;
+                padding: 3px 6px !important;
             }
-            .file-item-modern .file-size {
+            .file-row div:nth-child(3) {
+                display: none;
+            }
+            .file-header {
+                grid-template-columns: 28px 1fr auto !important;
+            }
+            .file-header div:nth-child(3) {
                 display: none;
             }
             .file-toolbar {
                 gap: 3px;
-                padding: 4px 6px;
+                padding: 3px 6px;
             }
             .file-toolbar input {
-                min-width: 60px;
+                min-width: 50px;
+                font-size: 9px;
+            }
+            .file-toolbar .act {
+                font-size: 9px;
+                padding: 2px 6px;
+            }
+            .file-btn {
+                font-size: 9px;
+                min-width: 18px;
+                height: 18px;
+                padding: 1px 3px;
+            }
+            .file-icon {
+                font-size: 16px !important;
             }
         }
     `;
     document.head.appendChild(style);
 }
 
-console.log('📁 File Manager Moderno v3.0 - Estilo Total Commander');
-console.log('📌 Características: Selección múltiple, diseño moderno, responsive');
+console.log('📁 File Manager Profesional v3.0 - Estilo Windows');
