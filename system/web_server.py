@@ -500,7 +500,13 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 log(f"Error en SSE: {e}", "ERROR")
             
             return
-        
+
+        # ═══ ENDPOINTS PÚBLICOS (sin auth) ═══
+        if p == "/api/system-stats":
+            self._json(TaskManager.get_system_stats())
+            return
+
+        # ═══ AQUI EMPIEZA LO QUE REQUIERE AUTH ═══
         session = self.require_auth()
         if not session:
             return
@@ -508,11 +514,7 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         if p == "/api/processes":
             self._json(TaskManager.list_processes())
             return
-        
-        if p == "/api/system-stats":
-            self._json(TaskManager.get_system_stats())
-            return
-        
+               
         if p == "/api/running-procs":
             self._json(ScriptRunner.list_running())
             return
