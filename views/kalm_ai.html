@@ -28,13 +28,15 @@
 html, body {
     height: 100%; width: 100%; overflow: hidden;
     background: var(--bg-deep); color: var(--text);
+    margin: 0; padding: 0;
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     font-size: 14px; line-height: 1.5;
 }
 
 /* ═══ LAYOUT ═══ */
 .kalm-ai-container {
-    display: flex; flex-direction: column; height: 100vh; width: 100%;
+    display: flex; flex-direction: column; height: 100%; width: 100%;
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
     background: linear-gradient(180deg, #0a0514 0%, #140a28 50%, #0a0514 100%);
 }
 
