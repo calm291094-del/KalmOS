@@ -492,10 +492,10 @@
             }
         }
 
+        
         /* ═══ ESTADOS DE VENTANA ═══ */
         .window {
-            display: flex !important;
-            flex-direction: column !important;
+            flex-direction: column;
         }
         .window.minimized {
             display: none !important;
@@ -503,11 +503,10 @@
         .window.maximized {
             transition: none !important;
         }
-        /* Forzar flex en el body de las ventanas para que los iframes funcionen */
         .window-body {
-            flex: 1 !important;
-            min-height: 0 !important;
-            overflow: hidden !important;
+            flex: 1 1 0%;
+            min-height: 0;
+            overflow: hidden;
         }
     </style>
     
