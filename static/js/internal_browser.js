@@ -12,35 +12,72 @@ function injectBrowserCSS() {
     const style = document.createElement('style');
     style.id = 'browser-custom-css';
     style.textContent = `
+        /* ═══ CRUCIAL: Forzar layout flex en la ventana del navegador ═══ */
+        #win-browser {
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            min-height: 0 !important;
+        }
+
         .browser-tabs-container {
-            display: flex; background: rgba(20, 10, 40, 0.95); padding: 8px 8px 0 8px; gap: 4px; border-bottom: 1px solid #4b0082;
-            overflow-x: auto; flex-shrink: 0;
+            display: flex; background: rgba(20, 10, 40, 0.95); padding: 8px 8px 0 8px; gap: 4px;
+            border-bottom: 1px solid #4b0082; overflow-x: auto; flex-shrink: 0;
         }
         .browser-tabs-container::-webkit-scrollbar { height: 3px; }
         .browser-tabs-container::-webkit-scrollbar-thumb { background: #6a0dad; border-radius: 2px; }
         .browser-tab {
-            display: flex; align-items: center; background: rgba(75, 0, 130, 0.3); color: #d8bfd8; padding: 8px 12px;
-            border-radius: 8px 8px 0 0; font-size: 12px; cursor: pointer; max-width: 200px; min-width: 100px;
-            border: 1px solid transparent; transition: all 0.2s; flex-shrink: 0;
+            display: flex; align-items: center; background: rgba(75, 0, 130, 0.3); color: #d8bfd8;
+            padding: 8px 12px; border-radius: 8px 8px 0 0; font-size: 12px; cursor: pointer;
+            max-width: 200px; min-width: 100px; border: 1px solid transparent;
+            transition: all 0.2s; flex-shrink: 0;
         }
-        .browser-tab.active { background: rgba(106, 13, 173, 0.6); color: #fff; border-color: #6a0dad; border-bottom-color: rgba(106, 13, 173, 0.6); }
+        .browser-tab.active {
+            background: rgba(106, 13, 173, 0.6); color: #fff; border-color: #6a0dad;
+            border-bottom-color: rgba(106, 13, 173, 0.6);
+        }
         .browser-tab:hover:not(.active) { background: rgba(75, 0, 130, 0.5); }
         .tab-icon { margin-right: 6px; flex-shrink: 0; }
         .tab-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .tab-close { margin-left: 8px; padding: 2px 6px; border-radius: 4px; font-size: 14px; line-height: 1; flex-shrink: 0; }
+        .tab-close {
+            margin-left: 8px; padding: 2px 6px; border-radius: 4px;
+            font-size: 14px; line-height: 1; flex-shrink: 0;
+        }
         .tab-close:hover { background: rgba(255, 68, 68, 0.3); color: #ff4444; }
         .browser-new-tab-btn {
-            display: flex; align-items: center; justify-content: center; width: 28px; height: 28px;
-            background: rgba(75, 0, 130, 0.3); color: #d8bfd8; border-radius: 6px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px; background: rgba(75, 0, 130, 0.3);
+            color: #d8bfd8; border-radius: 6px; cursor: pointer;
             font-size: 18px; margin-bottom: 4px; flex-shrink: 0; transition: all 0.2s;
         }
         .browser-new-tab-btn:hover { background: rgba(75, 0, 130, 0.6); color: #fff; }
-        .browser-iframe-container { flex: 1; position: relative; background: #fff; overflow: hidden; }
-        .browser-iframe { width: 100%; height: 100%; border: none; background: #fff; position: absolute; top: 0; left: 0; }
+
+        /* ═══ CRUCIAL: iframe container debe ocupar todo el espacio restante ═══ */
+        .browser-iframe-container {
+            flex: 1 1 0% !important;
+            position: relative !important;
+            background: #fff !important;
+            overflow: hidden !important;
+            min-height: 0 !important;
+        }
+        .browser-iframe {
+            width: 100% !important;
+            height: 100% !important;
+            border: none !important;
+            background: #fff !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            display: block !important;
+        }
+
         .browser-error-overlay {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #0a0514;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: #9370db; font-size: 14px; padding: 20px; text-align: center; z-index: 5;
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: #0a0514; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; color: #9370db;
+            font-size: 14px; padding: 20px; text-align: center; z-index: 5;
         }
         .browser-error-overlay .error-icon { font-size: 48px; margin-bottom: 12px; }
         .browser-error-overlay .error-msg { color: #ff4444; margin: 8px 0; font-size: 12px; max-width: 400px; }
