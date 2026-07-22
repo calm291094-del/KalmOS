@@ -107,35 +107,35 @@ class KalmWebHandler(BaseHTTPRequestHandler):
         return None, None
     
     def _serve_kalm_ai(self, path):
-        """Sirve Kalm AI - RUTAS CORREGIDAS"""
+        """Sirve Kalm AI - CON STREAMING CORREGIDO"""
         if not KALM_AI_AVAILABLE:
-            self.send_response(503)    
+            self.send_response(503)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
-            self.wfile.write(b"<h1>Kalm AI no disponible</h1>")
+            self.wfile.write(b"<h1 style='color:#da70d6;text-align:center;margin-top:40vh;font-family:sans-serif;'>Kalm AI no disponible</h1><p style='text-align:center;color:#9370db;font-family:sans-serif;'>Revisa los logs del servidor</p>")
             return
 
-        # ═══ EXTRAER LA RUTA CORRECTAMENTE (CORREGIDO) ═══
+        # ═══ EXTRAER RUTA ═══
         if path.startswith("/api/kalm/"):
             route = path[9:]  # elimina "/api/kalm/"
         elif path.startswith("/kalm-ai"):
-            route = path[8:]  # elimina "/kalm-ai"
+            route = path[8:]
         else:
             route = path
 
         if not route or route == "":
             route = "/"
 
-        print(f"[KalmAI] Ruta: {route}, Metodo: {self.command}")
-
         # ═══ GET ═══
         if self.command == "GET":
-            if route == "/" or route == "/index" or route == "/index.html":
+            if route in ("/", "/index", "/index.html"):
                 content = serve_kalm_ai_page()
                 self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8")    
-                self.send_header("Content-Length", str(len(content)))
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(content.encode("utf-8"))))
                 self.send_header("Access-Control-Allow-Origin", "*")
+                # Headers para permitir que funcione bien en iframes
+                self.send_header("X-Content-Type-Options", "nosniff")
                 self.end_headers()
                 self.wfile.write(content.encode("utf-8"))
                 return
@@ -146,46 +146,108 @@ class KalmWebHandler(BaseHTTPRequestHandler):
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
-                self.wfile.write(json.dumps(result).encode("utf-8"))
+                self.wfile.write(json.dumps(result, ensure_ascii=False).encode("utf-8"))
                 return
 
             else:
                 self.send_response(404)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
+                self.wfile.write(json.dumps({"error": "Ruta no encontrada"}).encode("utf-8"))
                 return
 
         # ═══ POST ═══
         elif self.command == "POST":
             content_length = int(self.headers.get("Content-Length", 0))
-            body = self.rfile.read(content_length).decode("utf-8")
+            body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
 
             try:
                 data = json.loads(body) if body else {}
             except Exception as e:
-                print(f"[KalmAI] Error JSON: {e}")
+                print(f"[KalmAI] Error parseando JSON: {e}, body={body[:200]}")
                 self.send_response(400)
                 self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
-                self.wfile.write(json.dumps({"error": "JSON invalido"}).encode("utf-8"))
+                self.wfile.write(json.dumps({"error": "JSON inválido"}).encode("utf-8"))
                 return
 
-            if route == "/generar":
+            # ═══ STREAMING CHAT (SSE) ═══
+            if route == "/chat/stream":
+                mensaje = data.get('mensaje', '').strip()
+                modelo = data.get('modelo', 'openai')
+
+                if not mensaje:
+                    self.send_response(400)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Mensaje vacío"}).encode("utf-8"))
+                    return
+
+                # Enviar headers SSE
+                self.send_response(200)
+                self.send_header("Content-Type", "text/event-stream")
+                self.send_header("Cache-Control", "no-cache, no-transform")
+                self.send_header("Connection", "keep-alive")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("X-Accel-Buffering", "no")
+                # Header adicional para Render/Cloudflare
+                self.send_header("Transfer-Encoding", "chunked")
+                self.end_headers()
+
+                try:
+                    for chunk_json in handle_chat_stream(data):
+                        self.wfile.write(f"data: {chunk_json}\n\n".encode("utf-8"))
+                        self.wfile.flush()
+                except BrokenPipeError:
+                    print("[KalmAI] Cliente desconectó del stream")
+                except ConnectionResetError:
+                    print("[KalmAI] Conexión reseteada en stream")
+                except Exception as e:
+                    print(f"[KalmAI] Error en stream: {e}")
+                    try:
+                        error_json = json.dumps({"error": str(e)}, ensure_ascii=False)
+                        self.wfile.write(f"data: {error_json}\n\n".encode("utf-8"))
+                        self.wfile.flush()
+                    except:
+                        pass
+
+                # Señal de fin
+                try:
+                    self.wfile.write(b"data: [DONE]\n\n")
+                    self.wfile.flush()
+                except:
+                    pass
+                return
+
+            # ═══ GENERAR DOCUMENTO ═══
+            elif route == "/generar":
                 result, code = handle_generar(data)
+
+            # ═══ CHAT NORMAL (non-streaming) ═══
             elif route == "/chat":
                 result, code = handle_chat(data)
+
             else:
                 result, code = {"error": "Ruta no encontrada"}, 404
 
             self.send_response(code)
             self.send_header("Content-Type", "application/json")
             self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.end_headers()
-            self.wfile.write(json.dumps(result).encode("utf-8"))
+            self.wfile.write(json.dumps(result, ensure_ascii=False).encode("utf-8"))
             return
 
         else:
             self.send_response(405)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
+            self.wfile.write(json.dumps({"error": "Método no permitido"}).encode("utf-8"))
     
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
