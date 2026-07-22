@@ -1,4 +1,4 @@
-// KALM OS v4.3 - Window Manager (OPTIMIZADO)
+// KALM OS v4.3 - Window Manager (CORREGIDO v3.0)
 
 const windowState = {};
 let windowZIndex = 1000;
@@ -8,32 +8,40 @@ function openWin(id) {
     const win = document.getElementById(`win-${id}`);
     if (!win) return;
     
-    if (win.classList.contains('minimized')) {
+    // Si estaba minimizada, restaurar
+    if (win.style.display === 'none') {
+        win.style.display = 'flex';
         win.classList.remove('minimized');
     }
     
-    win.style.display = 'flex';
     win.classList.add('active');
     win.style.zIndex = ++windowZIndex;
     
     updateTaskbar(id);
     
-    // ═══ SI ES EL NAVEGADOR, NO CARGAR PÁGINA DE INICIO ═══
-    if (id === 'browser') {
-        // No hacer nada, dejar que forceLoadKalmAI maneje la carga
-        return;
-    }
+    // Si es el navegador, no cargar página de inicio (lo maneja internal_browser.js)
+    if (id === 'browser') return;
     
-    // Cargar contenido según ventana
+    // Cargar contenido según ventana - CON GUARDIANES PARA EVITAR ERRORES
     const loaders = {
-        'explorer': () => { const grid = document.getElementById('file-grid'); if (grid && grid.children.length === 0) loadFiles('/D'); },
-        'taskmgr': loadProcs,
-        'dns': loadDNS,
-        'proxy': loadProxy,
-        'servers': loadServers,
-        'pac': loadPACInfo,
+        'explorer': () => {
+            const grid = document.getElementById('file-grid');
+            if (grid && grid.children.length === 0 && typeof loadFiles === 'function') loadFiles('/D');
+        },
+        'taskmgr': () => { if (typeof loadProcs === 'function') loadProcs(); },
+        'dns': () => { if (typeof loadDNS === 'function') loadDNS(); },
+        'proxy': () => { if (typeof loadProxy === 'function') loadProxy(); },
+        'servers': () => { if (typeof loadServers === 'function') loadServers(); },
+        'pac': () => { if (typeof loadPACInfo === 'function') loadPACInfo(); },
         'tools': () => { if (typeof loadTools === 'function') loadTools(); },
-        'games': () => { if (typeof loadGames === 'function') loadGames(); }
+        'games': () => { if (typeof loadGames === 'function') loadGames(); },
+        'music': () => { if (typeof loadMusic === 'function') loadMusic(); },
+        'console': () => { /* Terminal ya está lista */ },
+        'notepad': () => { /* Notepad ya está listo */ },
+        'settings': () => { /* Settings ya está listo */ },
+        'calc': () => { /* Calc ya está listo */ },
+        'clock': () => { if (typeof startWorldClocks === 'function') startWorldClocks(); },
+        'persistence': () => { if (typeof loadPersistence === 'function') loadPersistence(); }
     };
     
     if (loaders[id]) {
@@ -47,46 +55,92 @@ function closeWin(id) {
     if (!win) return;
     
     win.style.display = 'none';
-    win.classList.remove('active', 'minimized');
+    win.classList.remove('active', 'minimized', 'maximized');
+    
+    // Limpiar dataset de maximizar
+    delete win.dataset.origTop;
+    delete win.dataset.origLeft;
+    delete win.dataset.origWidth;
+    delete win.dataset.origHeight;
+    
+    // Si es el navegador, limpiar iframes de pestañas
+    if (id === 'browser' && typeof window.browserTabs !== 'undefined') {
+        window.browserTabs.forEach(function(tab) {
+            var iframe = document.getElementById('iframe-' + tab.id);
+            if (iframe) { iframe.src = 'about:blank'; iframe.remove(); }
+        });
+        window.browserTabs = [];
+        window.activeTabId = null;
+    }
     
     const tbItem = document.querySelector(`.tb-window[data-win="${id}"]`);
     if (tbItem) tbItem.remove();
 }
 
-// ═══ Minimizar ventana ═══
+// ═══ Minimizar ventana (CORREGIDO) ═══
 function minimizeWin(id) {
     const win = document.getElementById(`win-${id}`);
     if (!win) return;
     
-    win.classList.add('minimized');
-    win.classList.remove('active');
-}
-
-// ═══ Maximizar/Restaurar ═══
-function maximizeWin(id) {
-    const win = document.getElementById(`win-${id}`);
-    if (!win) return;
-    
-    win.classList.toggle('maximized');
+    // Si está maximizada, restaurar ANTES de minimizar
+    // Esto es crucial: si no restauras, al re-abrir se ve rota
     if (win.classList.contains('maximized')) {
-        if (!win.dataset.origTop) {
-            win.dataset.origTop = win.style.top;
-            win.dataset.origLeft = win.style.left;
-            win.dataset.origWidth = win.style.width;
-            win.dataset.origHeight = win.style.height;
-        }
-        win.style.top = '0';
-        win.style.left = '0';
-        win.style.width = '100%';
-        win.style.height = 'calc(100% - 50px)';
-    } else {
+        // Restaurar dimensiones guardadas
         if (win.dataset.origTop) {
             win.style.top = win.dataset.origTop;
             win.style.left = win.dataset.origLeft;
             win.style.width = win.dataset.origWidth;
             win.style.height = win.dataset.origHeight;
         }
+        win.classList.remove('maximized');
+        
+        // Restaurar icono del botón maximizar
+        const maxBtn = win.querySelector('.btn-max');
+        if (maxBtn) maxBtn.textContent = '▢';
     }
+    
+    // Ahora sí minimizar: OCULTAR la ventana
+    win.style.display = 'none';
+    win.classList.add('minimized');
+    win.classList.remove('active');
+}
+
+// ═══ Maximizar/Restaurar (CORREGIDO) ═══
+function maximizeWin(id) {
+    const win = document.getElementById(`win-${id}`);
+    if (!win) return;
+    
+    if (win.classList.contains('maximized')) {
+        // ═══ RESTAURAR ═══
+        if (win.dataset.origTop) {
+            win.style.top = win.dataset.origTop;
+            win.style.left = win.dataset.origLeft;
+            win.style.width = win.dataset.origWidth;
+            win.style.height = win.dataset.origHeight;
+        }
+        win.classList.remove('maximized');
+        
+        const maxBtn = win.querySelector('.btn-max');
+        if (maxBtn) maxBtn.textContent = '▢';
+    } else {
+        // ═══ MAXIMIZAR - Guardar estado ACTUAL primero ═══
+        win.dataset.origTop = win.style.top || '0px';
+        win.dataset.origLeft = win.style.left || '0px';
+        win.dataset.origWidth = win.style.width || '800px';
+        win.dataset.origHeight = win.style.height || '500px';
+        
+        win.style.top = '0';
+        win.style.left = '0';
+        win.style.width = '100%';
+        win.style.height = 'calc(100% - 50px)';
+        win.classList.add('maximized');
+        
+        const maxBtn = win.querySelector('.btn-max');
+        if (maxBtn) maxBtn.textContent = '❐';
+    }
+    
+    win.classList.add('active');
+    win.style.zIndex = ++windowZIndex;
 }
 
 // ═══ Traer al frente ═══
@@ -94,11 +148,16 @@ function bringToFront(winId) {
     const win = document.getElementById(`win-${winId}`);
     if (!win) return;
     
+    // Quitar 'active' de todas las ventanas primero
+    document.querySelectorAll('.window').forEach(function(w) {
+        w.classList.remove('active');
+    });
+    
     win.classList.add('active');
     win.style.zIndex = ++windowZIndex;
 }
 
-// ═══ Taskbar ═══
+// ═══ Taskbar (CORREGIDO - toggle minimizar) ═══
 function updateTaskbar(id) {
     const container = document.getElementById('taskbar-windows');
     if (!container) return;
@@ -111,29 +170,34 @@ function updateTaskbar(id) {
         tbItem.dataset.win = id;
         
         const win = document.getElementById(`win-${id}`);
-        const title = win ? win.dataset.title || id : id;
+        const title = win ? (win.dataset.title || id) : id;
         tbItem.textContent = title;
         
-        tbItem.addEventListener('click', (e) => {
+        tbItem.addEventListener('click', function(e) {
             e.stopPropagation();
             const winEl = document.getElementById(`win-${id}`);
             if (!winEl) return;
             
-            if (winEl.classList.contains('minimized')) {
+            if (winEl.style.display === 'none') {
+                // ═══ ESTABA MINIMIZADA → RESTAURAR ═══
+                winEl.style.display = 'flex';
                 winEl.classList.remove('minimized');
                 winEl.classList.add('active');
-                winEl.style.display = 'flex';
                 winEl.style.zIndex = ++windowZIndex;
-            } else if (winEl) {
-                winEl.classList.add('active');
-                winEl.style.zIndex = ++windowZIndex;
+            } else if (winEl.classList.contains('active')) {
+                // ═══ ESTÁ ACTIVA Y EN FOCO → MINIMIZAR ═══
+                minimizeWin(id);
+            } else {
+                // ═══ ESTÁ VISIBLE PERO NO EN FOCO → TRAER AL FRENTE ═══
+                bringToFront(id);
             }
         });
         
         container.appendChild(tbItem);
     }
     
-    container.querySelectorAll('.tb-window').forEach(el => {
+    // Marcar como activa en la taskbar
+    container.querySelectorAll('.tb-window').forEach(function(el) {
         el.classList.toggle('active', el.dataset.win === id);
     });
 }
@@ -147,8 +211,7 @@ function startDrag(e, winId) {
     
     const event = e.touches ? e.touches[0] : e;
     
-    win.classList.add('active');
-    win.style.zIndex = ++windowZIndex;
+    bringToFront(winId);
     
     const rect = win.getBoundingClientRect();
     
@@ -163,7 +226,7 @@ function startDrag(e, winId) {
     e.preventDefault();
 }
 
-document.addEventListener('mousemove', (e) => {
+document.addEventListener('mousemove', function(e) {
     if (!dragData) return;
     
     const win = dragData.win;
@@ -177,11 +240,11 @@ document.addEventListener('mousemove', (e) => {
     win.style.top = Math.max(0, Math.min(y, maxY)) + 'px';
 });
 
-document.addEventListener('mouseup', () => {
+document.addEventListener('mouseup', function() {
     dragData = null;
 });
 
-document.addEventListener('touchmove', (e) => {
+document.addEventListener('touchmove', function(e) {
     if (!dragData || !dragData.isTouch) return;
     
     const touch = e.touches[0];
@@ -198,7 +261,7 @@ document.addEventListener('touchmove', (e) => {
     e.preventDefault();
 }, { passive: false });
 
-document.addEventListener('touchend', () => {
+document.addEventListener('touchend', function() {
     dragData = null;
 });
 
@@ -228,12 +291,12 @@ function startResize(e, winId, direction) {
     e.preventDefault();
 }
 
-document.addEventListener('mousemove', (e) => {
+document.addEventListener('mousemove', function(e) {
     if (!resizeData) return;
     handleResize(e.clientX, e.clientY);
 });
 
-document.addEventListener('touchmove', (e) => {
+document.addEventListener('touchmove', function(e) {
     if (!resizeData || !resizeData.isTouch) return;
     const touch = e.touches[0];
     handleResize(touch.clientX, touch.clientY);
@@ -283,11 +346,11 @@ function handleResize(clientX, clientY) {
     win.style.top = newTop + 'px';
 }
 
-document.addEventListener('mouseup', () => {
+document.addEventListener('mouseup', function() {
     resizeData = null;
 });
 
-document.addEventListener('touchend', () => {
+document.addEventListener('touchend', function() {
     resizeData = null;
 });
 
@@ -315,7 +378,7 @@ function toggleStart() {
     menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 }
 
-document.addEventListener('click', (e) => {
+document.addEventListener('click', function(e) {
     const menu = document.getElementById('start-menu');
     const startBtn = document.getElementById('start-btn');
     if (!menu || !startBtn) return;
@@ -325,7 +388,7 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// ═══ MONITOREO (CORREGIDO - SIN ERRORES DE RED) ═══
+// ═══ MONITOREO DE RECURSOS ═══
 let monitorInterval = null;
 
 function startMonitoring() {
@@ -335,57 +398,64 @@ function startMonitoring() {
 }
 
 function updateStats() {
-    // Usar fetch con timeout para evitar errores de red
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(function() { controller.abort(); }, 5000);
     
     fetch('/api/system-stats', { signal: controller.signal })
-        .then(r => {
-            if (!r.ok) throw new Error('Error en respuesta');
+        .then(function(r) {
+            if (!r.ok) throw new Error('Error HTTP');
             return r.json();
         })
-        .then(data => {
-            const cpuVal = document.getElementById('rm-cpu-val');
-            const cpuBar = document.getElementById('rm-cpu-bar');
+        .then(function(data) {
+            // CPU
+            var cpuVal = document.getElementById('rm-cpu-val');
+            var cpuBar = document.getElementById('rm-cpu-bar');
             if (cpuVal) cpuVal.textContent = data.cpu + '%';
             if (cpuBar) cpuBar.style.width = Math.min(data.cpu, 100) + '%';
             
-            const ramVal = document.getElementById('rm-ram-val');
-            const ramBar = document.getElementById('rm-ram-bar');
-            if (ramVal) ramVal.textContent = `${data.ram_used} / ${data.ram_total}`;
+            // RAM
+            var ramVal = document.getElementById('rm-ram-val');
+            var ramBar = document.getElementById('rm-ram-bar');
+            if (ramVal) ramVal.textContent = (data.ram_used || '0') + ' / ' + (data.ram_total || '0');
             if (ramBar) ramBar.style.width = Math.min(data.ram_percent || 0, 100) + '%';
             
-            const diskVal = document.getElementById('rm-disk-val');
-            const diskBar = document.getElementById('rm-disk-bar');
-            if (diskVal) diskVal.textContent = `${data.disk_used} / ${data.disk_total}`;
+            // Disco
+            var diskVal = document.getElementById('rm-disk-val');
+            var diskBar = document.getElementById('rm-disk-bar');
+            if (diskVal) diskVal.textContent = (data.disk_used || '0') + ' / ' + (data.disk_total || '0');
             if (diskBar) diskBar.style.width = Math.min(data.disk_percent || 0, 100) + '%';
             
-            const procs = document.getElementById('rm-procs');
+            // Procesos
+            var procs = document.getElementById('rm-procs');
             if (procs) procs.textContent = data.processes || 0;
             
+            // Red
             if (data.net_upload) {
-                const netUp = document.getElementById('rm-net-up');
-                const netDown = document.getElementById('rm-net-down');
-                const netSent = document.getElementById('rm-net-total-sent');
-                const netRecv = document.getElementById('rm-net-total-recv');
+                var netUp = document.getElementById('rm-net-up');
+                var netDown = document.getElementById('rm-net-down');
+                var netSent = document.getElementById('rm-net-total-sent');
+                var netRecv = document.getElementById('rm-net-total-recv');
                 
                 if (netUp) netUp.textContent = data.net_upload;
                 if (netDown) netDown.textContent = data.net_download;
                 if (netSent) netSent.textContent = data.net_total_sent || '0 B';
                 if (netRecv) netRecv.textContent = data.net_total_recv || '0 B';
             }
+
+            // Servidores
+            var servers = document.getElementById('rm-servers');
+            if (servers && data.servers !== undefined) servers.textContent = data.servers;
         })
-        .catch(err => {
-            // Silenciar errores de red - no mostrar en consola
-            if (err.name === 'AbortError') {
-                // Timeout, ignorar
+        .catch(function(err) {
+            if (err.name !== 'AbortError') {
+                // Silenciar otros errores de red
             }
         })
-        .finally(() => {
+        .finally(function() {
             clearTimeout(timeoutId);
         });
 }
 
 document.addEventListener('DOMContentLoaded', startMonitoring);
 
-console.log('🪟 Window Manager v2.0 - Windows 10 Style');
+console.log('🪟 Window Manager v3.0 (Corregido)');
