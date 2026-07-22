@@ -228,14 +228,25 @@ function escapeHtml(text) {
 }
 
 function createIframeForTab(tabId, url) {
+    // Buscar el contenedor existente (ya está en desktop.html)
     var iframeContainer = document.getElementById('browser-iframe-container');
     if (!iframeContainer) {
+        // Fallback: buscar dentro de win-browser
         var browserWin = document.getElementById('win-browser');
         if (browserWin) {
-            iframeContainer = document.createElement('div');
-            iframeContainer.id = 'browser-iframe-container';
-            iframeContainer.className = 'browser-iframe-container';
-            browserWin.appendChild(iframeContainer);
+            var winBody = browserWin.querySelector('.window-body');
+            if (winBody) {
+                iframeContainer = document.createElement('div');
+                iframeContainer.id = 'browser-iframe-container';
+                iframeContainer.className = 'browser-iframe-container';
+                // Insertar ANTES de la barra de estado (último hijo del window-body)
+                var statusBar = winBody.lastElementChild;
+                if (statusBar) {
+                    winBody.insertBefore(iframeContainer, statusBar);
+                } else {
+                    winBody.appendChild(iframeContainer);
+                }
+            }
         }
     }
     if (!iframeContainer) return;
@@ -249,55 +260,27 @@ function createIframeForTab(tabId, url) {
     iframe.className = 'browser-iframe';
     iframe.style.display = 'none';
 
-    // ═══ CORREGIDO: Sin sandbox para same-origin, sandbox seguro para cross-origin ═══
-    if (isSameOrigin(url)) {
-        // Same-origin: NO usar sandbox. El contenido necesita acceso completo
-        // al origin para que fetch() y otras APIs funcionen correctamente.
-        // No hay riesgo de seguridad porque el contenido es del mismo origin.
-    } else {
-        // Cross-origin: usar sandbox restrictivo SIN allow-same-origin
-        // Esto previene que el contenido cross-origin acceda al origin del padre
+    // Sin sandbox para same-origin (permite fetch, etc.)
+    if (!isSameOrigin(url)) {
         iframe.sandbox = 'allow-scripts allow-forms allow-popups';
     }
 
     iframe.src = url;
 
-    // Manejar carga exitosa
     iframe.onload = function() {
         try {
             var docTitle = iframe.contentDocument.title;
-            if (docTitle) {
-                updateTabTitle(tabId, docTitle);
-            }
-            // Ocultar overlay de error si existía
+            if (docTitle) updateTabTitle(tabId, docTitle);
             var errorOverlay = document.getElementById('error-' + tabId);
             if (errorOverlay) errorOverlay.style.display = 'none';
-        } catch (e) {
-            // Cross-origin: no se puede acceder al título, está bien
-        }
+        } catch (e) {}
     };
 
-    // Manejar errores de carga
     iframe.onerror = function() {
         showTabError(tabId, url, 'No se pudo cargar la página');
     };
 
     iframeContainer.appendChild(iframe);
-
-    // Timeout para detectar carga lenta o fallida (para same-origin)
-    if (isSameOrigin(url)) {
-        setTimeout(function() {
-            try {
-                // Si después de 5 segundos no tenemos título y el iframe está vacío
-                var doc = iframe.contentDocument;
-                if (doc && doc.body && doc.body.innerHTML.length < 50) {
-                    // Podría estar cargando aún, no mostrar error todavía
-                }
-            } catch (e) {
-                // Cross-origin, ignorar
-            }
-        }, 5000);
-    }
 }
 
 function showTabError(tabId, url, message) {
