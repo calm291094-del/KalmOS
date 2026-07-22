@@ -58,11 +58,10 @@ def get_html_template():
 # 3. PROVEEDORES DE IA
 # ============================================================
 class IAProvider:
-    """Proveedores de IA con fallback automático"""
+    """Proveedores de IA con fallback automático y manejo robusto de errores"""
 
     @staticmethod
     def pollinations(prompt, model="openai", stream=False):
-        """Pollinations AI - Proveedor principal"""
         url = "https://text.pollinations.ai/openai"
         payload = {
             "model": model,
@@ -74,19 +73,45 @@ class IAProvider:
             "User-Agent": "KalmOS/4.3"
         }
 
-        print(f"[KalmAI] Pollinations: modelo={model}, stream={stream}, prompt_len={len(prompt)}")
-        response = requests.post(url, json=payload, headers=headers, timeout=180, stream=stream)
-        response.raise_for_status()
+        print(f"[KalmAI] Pollinations: modelo={model}, stream={stream}")
 
-        if stream:
-            return response  # Devolver el response para iterar
-        else:
-            data = response.json()
-            if "choices" not in data or not data["choices"]:
-                raise Exception("Respuesta vacía de Pollinations")
-            resultado = data["choices"][0]["message"]["content"]
-            print(f"[KalmAI] Pollinations OK: {len(resultado)} chars")
-            return resultado
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=60, stream=stream)
+
+            # ═══ DETECTAR ERRORES HTTP (502, 503, etc.) ═══
+            if response.status_code >= 400:
+                error_body = ""
+                try:
+                    error_body = response.text[:500]
+                except:
+                    pass
+                print(f"[KalmAI] Pollinations HTTP {response.status_code}: {error_body[:200]}")
+                raise Exception(f"Pollinations HTTP {response.status_code}")
+
+            # Verificar que es JSON, no HTML de error
+            content_type = response.headers.get('Content-Type', '')
+            if 'text/html' in content_type and not stream:
+                print(f"[KalmAI] Pollinations devolvió HTML en vez de JSON")
+                raise Exception("Pollinations devolvió HTML (servidor en error)")
+
+            if stream:
+                return response
+            else:
+                data = response.json()
+                if "choices" not in data or not data["choices"]:
+                    raise Exception("Respuesta vacía de Pollinations")
+                resultado = data["choices"][0]["message"]["content"]
+                print(f"[KalmAI] Pollinations OK: {len(resultado)} chars")
+                return resultado
+
+        except requests.exceptions.Timeout:
+            raise Exception("Timeout: Pollinations tardó demasiado")
+        except requests.exceptions.ConnectionError:
+            raise Exception("Sin conexión a Pollinations")
+        except Exception as e:
+            if "HTTP" in str(e) or "HTML" in str(e) or "Timeout" in str(e) or "Sin conexión" in str(e):
+                raise
+            raise Exception(f"Pollinations error: {str(e)}")
 
     @staticmethod
     def pollinations_stream(prompt, model="openai"):
@@ -112,26 +137,29 @@ class IAProvider:
                     if content:
                         full_text += content
                         yield content
-                except json.JSONDecodeError:
+                except (json.JSONDecodeError, KeyError, IndexError):
                     continue
-                except (KeyError, IndexError):
-                    continue
+
+            if not full_text:
+                raise Exception("Stream vacío de Pollinations")
 
             print(f"[KalmAI] Stream completado: {len(full_text)} chars")
 
         except requests.exceptions.Timeout:
-            yield "\n\n⚠️ *Tiempo de espera agotado. Intenta con un prompt más corto.*"
+            yield "\n\n⚠️ *Tiempo de espera agotado.*"
         except requests.exceptions.ConnectionError:
             raise Exception("Sin conexión a Pollinations")
         except Exception as e:
-            raise Exception(f"Error en streaming: {str(e)}")
+            # Si ya es un error conocido, relanzar
+            if any(x in str(e) for x in ["HTTP", "HTML", "vacío", "Sin conexión"]):
+                raise
+            raise Exception(f"Stream error: {str(e)}")
 
     @staticmethod
     def duckduckgo(prompt):
-        """DuckDuckGo AI Chat - Fallback"""
         try:
             from duckduckgo_search import DDGS
-            print(f"[KalmAI] DuckDuckGo: prompt_len={len(prompt)}")
+            print(f"[KalmAI] DuckDuckGo fallback...")
             with DDGS() as ddgs:
                 response = ddgs.chat(prompt)
                 if response and len(response.strip()) > 10:
@@ -139,19 +167,20 @@ class IAProvider:
                     return response
                 raise Exception("Respuesta vacía de DuckDuckGo")
         except ImportError:
-            raise Exception("duckduckgo-search no instalado")
+            raise Exception("duckduckgo-search no disponible")
         except Exception as e:
-            raise Exception(f"DuckDuckGo falló: {str(e)}")
+            raise Exception(f"DuckDuckGo: {str(e)}")
 
     @staticmethod
     def get_response(prompt, model="openai"):
-        """Obtiene respuesta con fallback automático entre proveedores"""
+        """Obtiene respuesta con fallback automático"""
+        # Lista de proveedores a intentar
         providers = [
             ("Pollinations", lambda: IAProvider.pollinations(prompt, model)),
             ("DuckDuckGo", lambda: IAProvider.duckduckgo(prompt)),
         ]
 
-        last_error = "Todos los proveedores fallaron"
+        errors = []
         for name, func in providers:
             try:
                 print(f"[KalmAI] Intentando {name}...")
@@ -160,14 +189,26 @@ class IAProvider:
                     print(f"[KalmAI] ✅ Éxito con {name}")
                     return str(result)
                 else:
-                    last_error = f"{name} devolvió respuesta vacía"
+                    errors.append(f"{name}: respuesta vacía")
             except Exception as e:
-                last_error = f"{name}: {str(e)}"
-                print(f"[KalmAI] ❌ {name} falló: {e}")
+                err_msg = str(e)
+                errors.append(f"{name}: {err_msg}")
+                print(f"[KalmAI] ❌ {name}: {err_msg}")
                 time.sleep(1)
                 continue
 
-        return f"Lo siento, no pude generar una respuesta.\n\n**Error:** {last_error}\n\nPor favor, intenta de nuevo en unos momentos."
+        # Si todos fallaron, intentar con modelo alternativo
+        if model != "openai":
+            try:
+                print(f"[KalmAI] Último intento con modelo openai...")
+                result = IAProvider.pollinations(prompt, "openai")
+                if result and len(str(result).strip()) > 5:
+                    return str(result)
+            except:
+                pass
+
+        error_summary = " | ".join(errors[:3])
+        return f"Lo siento, no pude generar una respuesta en este momento.\n\n**Detalles:** {error_summary}\n\nPor favor intenta de nuevo en unos segundos. Si el problema persiste, cambia el modelo en el selector superior."
 
 
 # ============================================================
