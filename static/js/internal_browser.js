@@ -12,8 +12,9 @@ function injectBrowserCSS() {
     const style = document.createElement('style');
     style.id = 'browser-custom-css';
     style.textContent = `
-        /* ═══ CRUCIAL: Forzar layout flex en la ventana del navegador ═══ */
-        #win-browser {
+        /* ═══ NUNCA poner display en #win-browser para no romper minimize/close ═══ */
+        /* Aplicar flex solo al window-body del navegador ═══ */
+        #win-browser > .window-body {
             display: flex !important;
             flex-direction: column !important;
             overflow: hidden !important;
@@ -52,7 +53,6 @@ function injectBrowserCSS() {
         }
         .browser-new-tab-btn:hover { background: rgba(75, 0, 130, 0.6); color: #fff; }
 
-        /* ═══ CRUCIAL: iframe container debe ocupar todo el espacio restante ═══ */
         .browser-iframe-container {
             flex: 1 1 0% !important;
             position: relative !important;
@@ -66,10 +66,8 @@ function injectBrowserCSS() {
             border: none !important;
             background: #fff !important;
             position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
+            top: 0 !important; left: 0 !important;
+            right: 0 !important; bottom: 0 !important;
             display: block !important;
         }
 
