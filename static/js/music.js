@@ -1,22 +1,20 @@
-// KALM OS v4.3 - Reproductor de Música Moderno v2.2
-// ✅ Eventos registrados UNA VEZ - Sin duplicados
-// ✅ Auto-next, pausa, siguiente, anterior funcionan
+// KALM OS v4.3 - Reproductor de Música v2.3
+// ✅ Fix: condición de carrera pause/play resuelta con flag
 
 let musicPlayer = {
     isPlaying: false,
     currentTrack: 0,
     playlist: [],
     volume: 70,
-    progress: 0,
     duration: 0,
     audio: null,
     isLoaded: false,
     isLoading: false,
     shuffle: false,
-    repeat: false
+    repeat: false,
+    transitioning: false  // ← FLAG CLAVE: ignora eventos pause durante transiciones
 };
 
-// ═══ PLAYLIST DE DEMOSTRACIÓN ═══
 const DEMO_PLAYLIST = [
     { 
         name: 'Beethoven - Sonata No. 8 (Pathétique)', 
@@ -42,22 +40,24 @@ const DEMO_PLAYLIST = [
 ];
 
 // ═══ CREAR AUDIO UNA SOLA VEZ ═══
-// Esto es clave: un solo elemento audio, eventos registrados una vez
 musicPlayer.audio = new Audio();
 musicPlayer.audio.preload = 'auto';
 
-// ═══ REGISTRAR EVENTOS UNA SOLA VEZ ═══
-// Todos leen el estado actual de musicPlayer, no usan closures de canciones
+// ═══ HELPER ═══
+function getCurrentTrack() {
+    return musicPlayer.playlist[musicPlayer.currentTrack] || null;
+}
+
+// ═══ EVENTOS GLOBALES (una sola vez, sin duplicados) ═══
 
 musicPlayer.audio.addEventListener('loadedmetadata', function() {
     musicPlayer.duration = this.duration;
-    var track = musicPlayer.playlist[musicPlayer.currentTrack];
+    var track = getCurrentTrack();
     if (track) {
         updateInfo('⏸️ ' + track.name + ' (' + formatTime(this.duration) + ')', '#d8bfd8');
     }
     updateTime(formatTime(0), formatTime(this.duration));
     updateProgress(0);
-    console.log('📊 Duración: ' + this.duration + 's');
 });
 
 musicPlayer.audio.addEventListener('timeupdate', function() {
@@ -69,43 +69,29 @@ musicPlayer.audio.addEventListener('timeupdate', function() {
 });
 
 musicPlayer.audio.addEventListener('play', function() {
+    console.log('🎵 Evento: play');
     musicPlayer.isPlaying = true;
-    var track = musicPlayer.playlist[musicPlayer.currentTrack];
+    var track = getCurrentTrack();
     if (track) updateInfo('▶️ ' + track.name, '#da70d6');
     updatePlaylistUI();
-    var playBtn = document.querySelector('.btn-play');
-    if (playBtn) playBtn.classList.add('playing');
 });
 
 musicPlayer.audio.addEventListener('pause', function() {
+    console.log('🎵 Evento: pause (transitioning=' + musicPlayer.transitioning + ')');
+    // ═══ CLAVE: Si estamos en transición, IGNORAR este pause ═══
+    // Esto evita que el pause encolado al cambiar de canción
+    // sobreescriba isPlaying a false después del play
+    if (musicPlayer.transitioning) {
+        return;
+    }
     musicPlayer.isPlaying = false;
-    var track = musicPlayer.playlist[musicPlayer.currentTrack];
+    var track = getCurrentTrack();
     if (track) updateInfo('⏸️ ' + track.name, '#9370db');
     updatePlaylistUI();
-    var playBtn = document.querySelector('.btn-play');
-    if (playBtn) playBtn.classList.remove('playing');
 });
 
-musicPlayer.audio.addEventListener('error', function() {
-    var track = musicPlayer.playlist[musicPlayer.currentTrack];
-    var errorMsg = this.error ? this.error.message : 'Desconocido';
-    console.error('❌ Error de audio:', errorMsg, track ? track.name : '');
-    if (track) updateInfo('❌ Error: ' + track.name, '#ff4444');
-    musicPlayer.isPlaying = false;
-    updatePlaylistUI();
-    // Saltar a la siguiente tras un error
-    setTimeout(function() {
-        if (track && track.isDemo) {
-            selectTrack(musicPlayer.currentTrack);
-        } else {
-            goToNext();
-        }
-    }, 2000);
-});
-
-// ═══ ENDED - SIGUIENTE CANCIÓN ═══
 musicPlayer.audio.addEventListener('ended', function() {
-    console.log('⏹️ Canción terminada');
+    console.log('🎵 Evento: ended');
     musicPlayer.isPlaying = false;
     updatePlaylistUI();
 
@@ -119,7 +105,40 @@ musicPlayer.audio.addEventListener('ended', function() {
     goToNext();
 });
 
-// ═══ FUNCIÓN: IR A LA SIGUIENTE (reutilizable) ═══
+musicPlayer.audio.addEventListener('error', function() {
+    var track = getCurrentTrack();
+    var errMsg = this.error ? this.error.message : 'desconocido';
+    console.error('❌ Error de audio:', errMsg, track ? track.name : '');
+    musicPlayer.transitioning = false;
+    musicPlayer.isPlaying = false;
+    if (track) updateInfo('❌ Error: ' + track.name, '#ff4444');
+    updatePlaylistUI();
+    setTimeout(function() {
+        if (track && track.isDemo) {
+            selectTrack(musicPlayer.currentTrack);
+        } else {
+            goToNext();
+        }
+    }, 2000);
+});
+
+// ═══ AUTO-PLAY: cuando canplay se dispara y estamos esperando ═══
+musicPlayer.audio.addEventListener('canplay', function() {
+    if (musicPlayer.transitioning) {
+        console.log('🎵 canplay → auto-play');
+        musicPlayer.transitioning = false;
+        this.play().then(function() {
+            console.log('✅ Auto-play exitoso');
+        }).catch(function(err) {
+            console.log('⏸️ Auto-play bloqueado:', err.message);
+            musicPlayer.transitioning = false;
+            updateInfo('▶️ Click ▶ para continuar', '#ffaa00');
+            updatePlaylistUI();
+        });
+    }
+});
+
+// ═══ IR A SIGUIENTE (usado por ended y por botón) ═══
 function goToNext() {
     if (musicPlayer.playlist.length === 0) return;
 
@@ -142,38 +161,69 @@ function goToNext() {
     updateProgress(0);
     updateTime('0:00', '0:00');
 
-    // Cambiar src en el MISMO audio (mantiene el gesto del usuario)
+    // Activar transición ANTES de pausar para que el evento pause se ignore
+    musicPlayer.transitioning = true;
+    musicPlayer.audio.pause();
+
+    // Cambiar src
     musicPlayer.audio.src = nextTrack.url;
     musicPlayer.audio.load();
 
-    // Reproducir inmediatamente
-    musicPlayer.audio.play().then(function() {
-        console.log('✅ Reproduciendo: ' + nextTrack.name);
-    }).catch(function(err) {
-        console.log('⏸️ Autoplay bloqueado:', err.message);
-        updateInfo('▶️ Click ▶ para continuar', '#ffaa00');
-    });
+    updatePlaylistUI();
 
-    // Seguridad: si en 8s no reproduce, forzar
+    // Seguridad: si en 8s no reproduce, desactivar transición
     setTimeout(function() {
-        if (!musicPlayer.isPlaying && musicPlayer.currentTrack === nextIndex) {
-            console.log('⚠️ Timeout, forzando selectTrack');
-            // No usamos selectTrack aquí para evitar bucle, solo play
-            musicPlayer.audio.play().catch(function() {
-                updateInfo('▶️ Click ▶ para continuar', '#ffaa00');
-            });
+        if (musicPlayer.transitioning && musicPlayer.currentTrack === nextIndex) {
+            console.log('⚠️ Timeout auto-next');
+            musicPlayer.transitioning = false;
+            updateInfo('▶️ Click ▶ para continuar', '#ffaa00');
+            updatePlaylistUI();
         }
     }, 8000);
 }
 
-// ═══ FUNCIÓN PRINCIPAL DE CARGA ═══
+// ═══ SELECCIONAR CANCIÓN (usado por click en playlist) ═══
+function selectTrack(index) {
+    if (index < 0 || index >= musicPlayer.playlist.length) return;
+
+    var track = musicPlayer.playlist[index];
+    console.log('🎵 Seleccionando: ' + track.name);
+
+    // Activar transición ANTES de pausar
+    musicPlayer.transitioning = true;
+    musicPlayer.audio.pause();
+
+    musicPlayer.currentTrack = index;
+    musicPlayer.isPlaying = false;
+
+    updateInfo('⏳ Cargando: ' + track.name + '...', '#ffaa00');
+    updateProgress(0);
+    updateTime('0:00', '0:00');
+
+    musicPlayer.audio.src = track.url;
+    musicPlayer.audio.volume = musicPlayer.volume / 100;
+    musicPlayer.audio.load();
+
+    updatePlaylistUI();
+
+    // Seguridad
+    setTimeout(function() {
+        if (musicPlayer.transitioning && musicPlayer.currentTrack === index) {
+            console.log('⚠️ Timeout selectTrack');
+            musicPlayer.transitioning = false;
+            updateInfo('▶️ Click ▶ para continuar', '#ffaa00');
+            updatePlaylistUI();
+        }
+    }, 8000);
+}
+
+// ═══ CARGA DE ARCHIVOS ═══
 function loadMusicFiles() {
     var status = document.getElementById('music-status');
     var playlistDiv = document.getElementById('music-playlist');
 
     if (musicPlayer.isLoading) return;
     musicPlayer.isLoading = true;
-
     updateStatus('⏳ Cargando canciones...', '#ffaa00');
 
     if (playlistDiv) {
@@ -225,7 +275,7 @@ function loadMusicFiles() {
         });
 }
 
-// ═══ FUNCIONES DE ESTADO Y UI ═══
+// ═══ FUNCIONES DE UI ═══
 function updateStatus(text, color) {
     var el = document.getElementById('music-status');
     if (el) { el.textContent = text; el.style.color = color || '#9370db'; }
@@ -255,7 +305,6 @@ function formatTime(seconds) {
     return m + ':' + (s < 10 ? '0' : '') + s;
 }
 
-// ═══ PLAYLIST UI ═══
 function updatePlaylistUI() {
     var div = document.getElementById('music-playlist');
     if (!div) return;
@@ -302,111 +351,69 @@ function updatePlaylistUI() {
     }, 100);
 }
 
-// ═══ SELECCIONAR CANCIÓN ═══
-function selectTrack(index) {
-    if (index < 0 || index >= musicPlayer.playlist.length) return;
-
-    // Pausar lo que sea que esté sonando
-    musicPlayer.audio.pause();
-    musicPlayer.isPlaying = false;
-    musicPlayer.progress = 0;
-    musicPlayer.duration = 0;
-
-    musicPlayer.currentTrack = index;
-    var track = musicPlayer.playlist[index];
-
-    console.log('🎵 Seleccionando: ' + track.name);
-    updateInfo('⏳ Cargando: ' + track.name + '...', '#ffaa00');
-    updateProgress(0);
-    updateTime('0:00', '0:00');
-
-    // Cambiar src y cargar
-    musicPlayer.audio.src = track.url;
-    musicPlayer.audio.volume = musicPlayer.volume / 100;
-    musicPlayer.audio.load();
-
-    // Esperar a que esté listo y reproducir
-    var onReady = function() {
-        musicPlayer.audio.removeEventListener('canplay', onReady);
-        musicPlayer.audio.removeEventListener('canplaythrough', onReady);
-        autoPlay();
-    };
-
-    musicPlayer.audio.addEventListener('canplay', onReady);
-    musicPlayer.audio.addEventListener('canplaythrough', onReady);
-
-    updatePlaylistUI();
-}
-
-// ═══ AUTO-REPRODUCIR ═══
-function autoPlay() {
-    if (!musicPlayer.audio || !musicPlayer.audio.src) return;
-
-    var intentos = 0;
-    function intentar() {
-        if (intentos >= 3) {
-            updateInfo('▶️ Click ▶ para reproducir', '#ffaa00');
-            return;
-        }
-        intentos++;
-        musicPlayer.audio.play()
-            .then(function() {
-                console.log('▶️ Reproduciendo (intento ' + intentos + ')');
-            })
-            .catch(function(err) {
-                console.log('⏸️ Intento ' + intentos + ' falló:', err.message);
-                if (intentos < 3) setTimeout(intentar, 400);
-                else updateInfo('▶️ Click ▶ para continuar', '#ffaa00');
-            });
-    }
-    intentar();
-}
-
-// ═══ CONTROLES ═══
+// ═══ CONTROLES DE USUARIO ═══
 function musicPlay() {
+    console.log('🎵 musicPlay() llamado, isPlaying=' + musicPlayer.isPlaying + ', transitioning=' + musicPlayer.transitioning);
+
     if (musicPlayer.playlist.length === 0) {
         loadMusicFiles();
         return;
     }
-    if (!musicPlayer.audio.src || musicPlayer.audio.src === '' || musicPlayer.audio.src === window.location.href) {
+
+    // Si no hay canción cargada, seleccionar la primera
+    if (!musicPlayer.audio.src || musicPlayer.audio.src === '' || musicPlayer.audio.src === location.href) {
         selectTrack(musicPlayer.currentTrack || 0);
         return;
     }
+
+    // Si estamos en transición (cargando canción), ignorar click
+    if (musicPlayer.transitioning) {
+        console.log('⏳ En transición, ignorando click');
+        return;
+    }
+
     if (musicPlayer.isPlaying) {
+        // Reproduciendo → pausar
         musicPlayer.audio.pause();
     } else {
-        musicPlayer.audio.play()
-            .catch(function(err) {
-                console.error('❌ Error:', err);
-                updateInfo('❌ Error al reproducir', '#ff4444');
-            });
+        // Pausado → reproducir
+        musicPlayer.audio.play().catch(function(err) {
+            console.error('❌ Error al reproducir:', err);
+            updateInfo('❌ Error al reproducir', '#ff4444');
+        });
     }
 }
 
 function musicPause() {
+    console.log('🎵 musicPause() llamado');
+    // Ignorar si estamos en transición
+    if (musicPlayer.transitioning) return;
+    
     if (musicPlayer.audio) {
         musicPlayer.audio.pause();
     }
 }
 
 function musicNext() {
+    console.log('🎵 musicNext() llamado');
     if (musicPlayer.playlist.length === 0) {
         loadMusicFiles();
         return;
     }
-    // Si está reproduciendo y lleva menos de 3s, ir a la siguiente
-    // Si no, simplemente ir a la siguiente
     goToNext();
 }
 
 function musicPrev() {
+    console.log('🎵 musicPrev() llamado');
     if (musicPlayer.playlist.length === 0) return;
-    // Si lleva más de 3 segundos, reiniciar la canción actual
+
+    // Si lleva más de 3 segundos, reiniciar
     if (musicPlayer.audio && musicPlayer.audio.currentTime > 3) {
         musicPlayer.audio.currentTime = 0;
         return;
     }
-    // Si no, ir a la anterior
+
+    // Ir a la anterior
     var prevIndex = (musicPlayer.currentTrack - 1 + musicPlayer.playlist.length) % musicPlayer.playlist.length;
     selectTrack(prevIndex);
 }
@@ -418,11 +425,7 @@ function musicShuffle() {
         btn.style.color = musicPlayer.shuffle ? '#da70d6' : '#9370db';
         btn.style.borderColor = musicPlayer.shuffle ? '#da70d6' : 'transparent';
     }
-    updateInfo('🔀 Shuffle ' + (musicPlayer.shuffle ? 'ON' : 'OFF'), '#ffaa00');
-    setTimeout(function() {
-        var t = musicPlayer.playlist[musicPlayer.currentTrack];
-        if (t) updateInfo((musicPlayer.isPlaying ? '▶️ ' : '⏸️ ') + t.name, musicPlayer.isPlaying ? '#da70d6' : '#9370db');
-    }, 1000);
+    flashInfo('🔀 Shuffle ' + (musicPlayer.shuffle ? 'ON' : 'OFF'));
 }
 
 function musicRepeat() {
@@ -432,33 +435,29 @@ function musicRepeat() {
         btn.style.color = musicPlayer.repeat ? '#da70d6' : '#9370db';
         btn.style.borderColor = musicPlayer.repeat ? '#da70d6' : 'transparent';
     }
-    updateInfo('🔁 Repeat ' + (musicPlayer.repeat ? 'ON' : 'OFF'), '#ffaa00');
+    flashInfo('🔁 Repeat ' + (musicPlayer.repeat ? 'ON' : 'OFF'));
+}
+
+function flashInfo(text) {
+    updateInfo(text, '#ffaa00');
     setTimeout(function() {
-        var t = musicPlayer.playlist[musicPlayer.currentTrack];
-        if (t) updateInfo((musicPlayer.isPlaying ? '▶️ ' : '⏸️ ') + t.name, musicPlayer.isPlaying ? '#da70d6' : '#9370db');
+        var t = getCurrentTrack();
+        if (t) {
+            updateInfo((musicPlayer.isPlaying ? '▶️ ' : '⏸️ ') + t.name, musicPlayer.isPlaying ? '#da70d6' : '#9370db');
+        }
     }, 1000);
 }
 
 function musicVolumeUp() {
     musicPlayer.volume = Math.min(100, musicPlayer.volume + 10);
     if (musicPlayer.audio) musicPlayer.audio.volume = musicPlayer.volume / 100;
-    updateVolumeUI();
+    flashInfo('🔊 Volumen: ' + musicPlayer.volume + '%');
 }
 
 function musicVolumeDown() {
     musicPlayer.volume = Math.max(0, musicPlayer.volume - 10);
     if (musicPlayer.audio) musicPlayer.audio.volume = musicPlayer.volume / 100;
-    updateVolumeUI();
-}
-
-function updateVolumeUI() {
-    updateInfo('🔊 Volumen: ' + musicPlayer.volume + '%', '#ffaa00');
-    var volBar = document.querySelector('.volume-bar');
-    if (volBar) volBar.style.width = musicPlayer.volume + '%';
-    setTimeout(function() {
-        var t = musicPlayer.playlist[musicPlayer.currentTrack];
-        if (t) updateInfo((musicPlayer.isPlaying ? '▶️ ' : '⏸️ ') + t.name, musicPlayer.isPlaying ? '#da70d6' : '#9370db');
-    }, 1200);
+    flashInfo('🔊 Volumen: ' + musicPlayer.volume + '%');
 }
 
 // ═══ PROGRESO CLICKEABLE ═══
@@ -475,7 +474,7 @@ function seekTo(e) {
 
 // ═══ INICIALIZAR ═══
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🎵 Inicializando reproductor v2.2...');
+    console.log('🎵 Inicializando reproductor v2.3...');
 
     var win = document.getElementById('win-music');
     if (win) {
@@ -514,5 +513,5 @@ window.selectTrack = selectTrack;
 window.loadMusicFiles = loadMusicFiles;
 window.seekTo = seekTo;
 
-console.log('🎵 Reproductor v2.2 cargado');
-console.log('📌 Auto-next, Shuffle, Repeat, controles corregidos');
+console.log('🎵 Reproductor v2.3 cargado');
+console.log('📌 Fix: condición de carrera pause/play resuelta');
